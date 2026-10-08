@@ -20,7 +20,7 @@ pub fn command(program: &str, args: &[&str], dir: &Path) -> Result<Command> {
         cmd.args(args).current_dir(dir);
         // UCRT64 GCC runtime DLLs can be needed by the compiled game.
         if let Ok(root) = msys_root() {
-            let mut paths = vec![root.join("ucrt64/bin")];
+            let mut paths = vec![root.join("ucrt64/bin"), root.join("usr/bin")];
             if let Some(path) = std::env::var_os("PATH") { paths.extend(std::env::split_paths(&path)); }
             cmd.env("PATH", std::env::join_paths(paths)?);
         }
