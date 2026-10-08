@@ -1,0 +1,43 @@
+name: Native builds
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --no-default-features
+      - run: cargo build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z3-launcher-windows
+          path: |
+            target/release/z3-launcher.exe
+            locales/
+            WINDOWS.md
+            LICENSE
+            LICENSE-MIT-original
+            LICENSING.md
+            assets/DejaVu-LICENSE.txt
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libxkbcommon-dev libwayland-dev libgl1-mesa-dev
+      - run: cargo test
+      - run: cargo build --release
+  appimage:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config cmake curl file python3 libsdl2-dev libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev libgl1-mesa-dev
+      - run: cargo test
+      - run: |
+          chmod +x packaging/AppRun
+          bash ./build-appimage.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z3-launcher-appimage-x86_64
+          path: dist/*.AppImage*
