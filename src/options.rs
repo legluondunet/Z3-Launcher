@@ -315,7 +315,7 @@ fn shader_path_allowed(value: &str) -> bool {
         .is_some_and(|ext|ext.eq_ignore_ascii_case("glsl") || ext.eq_ignore_ascii_case("glslp"))
 }
 
-fn game_section(ui: &mut egui::Ui, title: &str, contents: impl FnOnce(&mut egui::Ui)) {
+fn settings_section(ui: &mut egui::Ui, title: &str, contents: impl FnOnce(&mut egui::Ui)) {
     let width=(ui.available_width() - 24.0).max(0.0);
     egui::Frame::new().fill(crate::theme::FOREST)
         .stroke(egui::Stroke::new(1.0_f32, crate::theme::GOLD))
@@ -329,7 +329,7 @@ fn game_section(ui: &mut egui::Ui, title: &str, contents: impl FnOnce(&mut egui:
 }
 fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String>) {
     ui.columns(2, |columns| {
-        game_section(&mut columns[0], tr("text.general"), |ui| {
+        settings_section(&mut columns[0], tr("text.general"), |ui| {
             for (key,label) in [("Autosave",tr("text.automatically_save_state_on_exit")),("DisplayPerfInTitle",tr("text.show_fps_in_the_window_title")),("DisableFrameDelay",tr("text.disable_frame_delay"))] {flag(ui,doc,dirty,"General",key,label,false);}
             let original = doc.value("General", "Language", "");
             let mut selected = original.clone();
@@ -347,7 +347,7 @@ fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String
             if !original.is_empty() && ui.button(tr("game_language.reimport")).on_hover_text(tr("help.action.reimport")).clicked() { *request = Some(original); }
             ui.small(tr("game_language.hint"));
         });
-        game_section(&mut columns[1], tr("text.gameplay_enhancements"), |ui| {
+        settings_section(&mut columns[1], tr("text.gameplay_enhancements"), |ui| {
             for (key,label) in [
                 ("ItemSwitchLR",tr("text.advanced_item_selection_with_l_r")),("ItemSwitchLRLimit",tr("text.limit_cycling_to_the_first_four_items")),
                 ("TurnWhileDashing",tr("text.allow_turning_while_dashing")),("MirrorToDarkworld",tr("text.allow_mirror_travel_to_the_dark_world")),
@@ -361,39 +361,49 @@ fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String
     });
 }
 fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
-    ui.heading(tr("text.display"));
-    let raw=doc.value("General","ExtendedAspectRatio","4:3");let parts:Vec<&str>=raw.split(',').map(str::trim).collect();
-    let mut ratio=parts.iter().find(|p|p.contains(':')).copied().unwrap_or("4:3").to_owned();
-    let mut extended=parts.contains(&"extend_y");let mut unchanged=parts.contains(&"unchanged_sprites");let mut nofix=parts.contains(&"no_visual_fixes");
-    let old=(ratio.clone(),extended,unchanged,nofix);
-    egui::ComboBox::from_id_salt("ratio").selected_text(&ratio).show_ui(ui,|ui|{for r in ["4:3","16:9","16:10","18:9"] {ui.selectable_value(&mut ratio,r.into(),r);} }).response.on_hover_text(tr("help.aspect.ratio"));
-    ui.checkbox(&mut extended,tr("text.extend_height_to_240_lines")).on_hover_text(tr("help.aspect.extend"));ui.checkbox(&mut unchanged,tr("text.preserve_original_sprite_behavior")).on_hover_text(tr("help.aspect.sprites"));ui.checkbox(&mut nofix,tr("text.disable_visual_fixes")).on_hover_text(tr("help.aspect.fixes"));
-    if old!=(ratio.clone(),extended,unchanged,nofix) {let mut p=Vec::new();if extended {p.push("extend_y".to_owned());}p.push(ratio);if unchanged {p.push("unchanged_sprites".into());}if nofix {p.push("no_visual_fixes".into());}doc.set("General","ExtendedAspectRatio",&p.join(", "));*dirty=true;}
-    text(ui,doc,dirty,"Graphics","WindowSize",tr("text.window_size_auto_or_widthxheight"),"Auto");
-    choice(ui,doc,dirty,"Graphics","Fullscreen",tr("text.fullscreen_mode"),"0",&[("0",tr("text.windowed")),("1",tr("text.borderless_fullscreen")),("2",tr("text.exclusive_fullscreen"))]);
-    choice(ui,doc,dirty,"Graphics","WindowScale",tr("text.window_scale"),"3",&[("1","100 %"),("2","200 %"),("3","300 %"),("4","400 %"),("5","500 %"),("6","600 %")]);
-    choice(ui,doc,dirty,"Graphics","OutputMethod",tr("text.renderer"),"SDL",&[("SDL","SDL"),("SDL-Software",tr("text.sdl_software")),("OpenGL","OpenGL"),("OpenGL ES","OpenGL ES")]);
-    for (key,label,default) in [("NewRenderer",tr("text.optimized_snes_ppu"),true),("EnhancedMode7",tr("text.high_resolution_world_map_mode_7"),true),("IgnoreAspectRatio",tr("text.stretch_image"),false),("NoSpriteLimits",tr("text.remove_sprite_limits"),true),("LinearFiltering",tr("text.linear_filtering"),false),("DimFlashes",tr("text.reduce_flashing"),false)] {flag(ui,doc,dirty,"Graphics",key,label,default);}
-    file(ui,doc,dirty,"LinkGraphics",tr("text.link_sprite_zspr"),&["zspr"]);
-    let renderer=doc.value("Graphics","OutputMethod","SDL");
-    let shaders_enabled=renderer.eq_ignore_ascii_case("OpenGL") || renderer.eq_ignore_ascii_case("OpenGL ES");
-    let shader_controls=ui.add_enabled_ui(shaders_enabled, |ui| {
-        file(ui,doc,dirty,"Shader",tr("text.opengl_shader_glsl_glslp"),&["glsl","glslp","GLSL","GLSLP"]);
+    ui.columns(2, |columns| {
+        columns[0].vertical(|ui| {
+            let raw=doc.value("General","ExtendedAspectRatio","4:3");let parts:Vec<&str>=raw.split(',').map(str::trim).collect();
+            let mut ratio=parts.iter().find(|p|p.contains(':')).copied().unwrap_or("4:3").to_owned();
+            let mut extended=parts.contains(&"extend_y");let mut unchanged=parts.contains(&"unchanged_sprites");let mut nofix=parts.contains(&"no_visual_fixes");
+            let old=(ratio.clone(),extended,unchanged,nofix);
+            egui::ComboBox::from_id_salt("ratio").selected_text(&ratio).show_ui(ui,|ui|{for r in ["4:3","16:9","16:10","18:9"] {ui.selectable_value(&mut ratio,r.into(),r);} }).response.on_hover_text(tr("help.aspect.ratio"));
+            ui.checkbox(&mut extended,tr("text.extend_height_to_240_lines")).on_hover_text(tr("help.aspect.extend"));ui.checkbox(&mut unchanged,tr("text.preserve_original_sprite_behavior")).on_hover_text(tr("help.aspect.sprites"));ui.checkbox(&mut nofix,tr("text.disable_visual_fixes")).on_hover_text(tr("help.aspect.fixes"));
+            if old!=(ratio.clone(),extended,unchanged,nofix) {let mut p=Vec::new();if extended {p.push("extend_y".to_owned());}p.push(ratio);if unchanged {p.push("unchanged_sprites".into());}if nofix {p.push("no_visual_fixes".into());}doc.set("General","ExtendedAspectRatio",&p.join(", "));*dirty=true;}
+            text(ui,doc,dirty,"Graphics","WindowSize",tr("text.window_size_auto_or_widthxheight"),"Auto");
+            choice(ui,doc,dirty,"Graphics","Fullscreen",tr("text.fullscreen_mode"),"0",&[("0",tr("text.windowed")),("1",tr("text.borderless_fullscreen")),("2",tr("text.exclusive_fullscreen"))]);
+            choice(ui,doc,dirty,"Graphics","WindowScale",tr("text.window_scale"),"3",&[("1","100 %"),("2","200 %"),("3","300 %"),("4","400 %"),("5","500 %"),("6","600 %")]);
+            choice(ui,doc,dirty,"Graphics","OutputMethod",tr("text.renderer"),"SDL",&[("SDL","SDL"),("SDL-Software",tr("text.sdl_software")),("OpenGL","OpenGL"),("OpenGL ES","OpenGL ES")]);
+        });
+        columns[1].vertical(|ui| {
+            for (key,label,default) in [("NewRenderer",tr("text.optimized_snes_ppu"),true),("EnhancedMode7",tr("text.high_resolution_world_map_mode_7"),true),("IgnoreAspectRatio",tr("text.stretch_image"),false),("NoSpriteLimits",tr("text.remove_sprite_limits"),true),("LinearFiltering",tr("text.linear_filtering"),false),("DimFlashes",tr("text.reduce_flashing"),false)] {flag(ui,doc,dirty,"Graphics",key,label,default);}
+            file(ui,doc,dirty,"LinkGraphics",tr("text.link_sprite_zspr"),&["zspr"]);
+            let renderer=doc.value("Graphics","OutputMethod","SDL");
+            let shaders_enabled=renderer.eq_ignore_ascii_case("OpenGL") || renderer.eq_ignore_ascii_case("OpenGL ES");
+            let shader_controls=ui.add_enabled_ui(shaders_enabled, |ui| {
+                file(ui,doc,dirty,"Shader",tr("text.opengl_shader_glsl_glslp"),&["glsl","glslp","GLSL","GLSLP"]);
+            });
+            if !shaders_enabled { shader_controls.response.on_hover_text(tr("shaders.requires_opengl")); }
+        });
     });
-    if !shaders_enabled { shader_controls.response.on_hover_text(tr("shaders.requires_opengl")); }
 }
 fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
-    ui.heading(tr("text.sound"));flag(ui,doc,dirty,"Sound","EnableAudio",tr("text.enable_audio"),true);
-    choice(ui,doc,dirty,"Sound","AudioChannels",tr("text.channels"),"2",&[("1","Mono"),("2",tr("text.stereo"))]);
-    choice(ui,doc,dirty,"Sound","AudioFreq",tr("text.sample_rate"),"44100",&[("11025","11025 Hz"),("22050","22050 Hz"),("32000","32000 Hz"),("44100","44100 Hz"),("48000","48000 Hz")]);
-    choice(ui,doc,dirty,"Sound","AudioSamples",tr("text.buffer_size"),"512",&[("256","256"),("512","512"),("1024","1024"),("2048","2048"),("4096","4096")]);
-    ui.separator();ui.heading(tr("text.msu_music"));
-    choice(ui,doc,dirty,"Sound","EnableMSU",tr("text.format"),"false",&[("false",tr("text.disabled")),("true","MSU PCM"),("deluxe","MSU Deluxe PCM"),("opuz","OPUZ"),("deluxe-opuz","OPUZ Deluxe")]);
-    ui.small(tr("text.pcm_requires_44100_hz_opuz_requires_48000_hz_music"));
-    flag(ui,doc,dirty,"Sound","ResumeMSU",tr("text.resume_music_from_its_previous_position"),true);
-    let mut volume=doc.value("Sound","MSUVolume","100%").trim_end_matches('%').parse::<u32>().unwrap_or(100);
-    if ui.add(egui::Slider::new(&mut volume,0..=100).text(tr("text.msu_volume"))).on_hover_text(help("Sound","MSUVolume")).changed() {doc.set("Sound","MSUVolume",&format!("{volume}%"));*dirty=true;}
-    text(ui,doc,dirty,"Sound","MSUPath",tr("text.music_track_path_prefix"),"msu/alttp_msu-");
+    ui.columns(2, |columns| {
+        settings_section(&mut columns[0], tr("text.sound"), |ui| {
+            flag(ui,doc,dirty,"Sound","EnableAudio",tr("text.enable_audio"),true);
+            choice(ui,doc,dirty,"Sound","AudioChannels",tr("text.channels"),"2",&[("1","Mono"),("2",tr("text.stereo"))]);
+            choice(ui,doc,dirty,"Sound","AudioFreq",tr("text.sample_rate"),"44100",&[("11025","11025 Hz"),("22050","22050 Hz"),("32000","32000 Hz"),("44100","44100 Hz"),("48000","48000 Hz")]);
+            choice(ui,doc,dirty,"Sound","AudioSamples",tr("text.buffer_size"),"512",&[("256","256"),("512","512"),("1024","1024"),("2048","2048"),("4096","4096")]);
+        });
+        settings_section(&mut columns[1], tr("text.msu_music"), |ui| {
+            choice(ui,doc,dirty,"Sound","EnableMSU",tr("text.format"),"false",&[("false",tr("text.disabled")),("true","MSU PCM"),("deluxe","MSU Deluxe PCM"),("opuz","OPUZ"),("deluxe-opuz","OPUZ Deluxe")]);
+            ui.small(tr("text.pcm_requires_44100_hz_opuz_requires_48000_hz_music"));
+            flag(ui,doc,dirty,"Sound","ResumeMSU",tr("text.resume_music_from_its_previous_position"),true);
+            let mut volume=doc.value("Sound","MSUVolume","100%").trim_end_matches('%').parse::<u32>().unwrap_or(100);
+            if ui.add(egui::Slider::new(&mut volume,0..=100).text(tr("text.msu_volume"))).on_hover_text(help("Sound","MSUVolume")).changed() {doc.set("Sound","MSUVolume",&format!("{volume}%"));*dirty=true;}
+            text(ui,doc,dirty,"Sound","MSUPath",tr("text.music_track_path_prefix"),"msu/alttp_msu-");
+        });
+    });
 }
 fn shortcuts(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<(Target,bool)>) {
     ui.label(tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field"));
