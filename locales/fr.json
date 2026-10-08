@@ -59,7 +59,7 @@
     "text.carry_up_to_9_999_rupees": "Bourse de 9 999 rubis",
     "text.changing_the_language_does_not_create_translated_assets_extract": "Changer la langue ne crée pas les ressources traduites. Leur extraction depuis une ROM correspondante reste nécessaire.",
     "text.channels": "Canaux",
-    "text.check_dependencies": "Vérifier",
+    "text.check_dependencies": "Vérification des dépendances",
     "text.choose_a_file": "Choisir un fichier…",
     "text.clear": "Effacer",
     "text.clear_display": "Effacer l'affichage",
@@ -322,6 +322,11 @@
     "shaders.requires_opengl": "Choisissez OpenGL ou OpenGL ES comme moteur de rendu pour configurer les shaders.",
     "text.ini_tab": "INI",
     "settings.ini_hint": "Les modifications sont enregistrées automatiquement lorsque vous quittez cet onglet. Les réglages du launcher sont alors actualisés.",
-    "settings.ini_saved": "Fichier INI enregistré ; réglages du launcher actualisés."
+    "settings.ini_saved": "Fichier INI enregistré ; réglages du launcher actualisés.",
+    "windows.probing": "Vérification : {name}…",
+    "windows.probe_timeout": "L’outil ne répond pas après 5 secondes.",
+    "windows.probe_failed": "L’outil a échoué ({status}).",
+    "windows.tool_not_installed": "Outil absent de l’installation MSYS2 UCRT64.",
+    "windows.python_unavailable": "Python UCRT64 est absent ou inutilisable ; vérification du module ignorée."
   }
 }
