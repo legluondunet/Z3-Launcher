@@ -27,13 +27,8 @@ fn start() -> core::Result<()> {
     if args.is_empty() {
         #[cfg(feature = "gui")]
         {
-            let Some(_instance) = single_instance::acquire()? else {
-                rfd::MessageDialog::new().set_title("Z3-Launcher")
-                    .set_description(tr("instance.already_running"))
-                    .set_level(rfd::MessageLevel::Info).show();
-                return Ok(());
-            };
-            return ui::start().map_err(|e| e.to_string().into());
+            let Some(instance) = single_instance::acquire()? else { return Ok(()); };
+            return ui::start(instance).map_err(|e| e.to_string().into());
         }
         #[cfg(not(feature = "gui"))]
         { help(); return Ok(()); }

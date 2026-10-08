@@ -344,7 +344,6 @@
     "install.windows_plan": "MSYS2 location: {path}\nMSYS2 will be fully updated before installing the missing packages.",
     "install.msys_bootstrap": "MSYS2 is missing. Its official installer will be downloaded and checked using its SHA-256 checksum before installation.",
     "install.msys_existing": "The MSYS2 directory already exists but is incomplete. Repair it or choose a different MSYS2_ROOT; it will not be overwritten.",
-    "install.bootstrap_progress": "Downloading and installing official MSYS2 in {path}…",
-    "instance.already_running": "Z3-Launcher is already running. Use the window that is already open."
+    "install.bootstrap_progress": "Downloading and installing official MSYS2 in {path}…"
   }
 }
