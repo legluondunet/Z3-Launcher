@@ -27,7 +27,7 @@ try {
     $expected = $Matches[1]
     if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash -ne $expected) { throw 'MSYS2 SHA-256 verification failed.' }
     Write-Output 'MSYS2 SHA-256 verified. Installing...'
-    & $file in --confirm-command --accept-messages --root $root
+    & $file in --confirm-command --accept-messages --root $root | Out-Default
     if ($LASTEXITCODE -ne 0) { throw ('MSYS2 installer failed: ' + $LASTEXITCODE) }
     if (-not (Test-Path -LiteralPath (Join-Path $root 'usr/bin/bash.exe'))) { throw 'MSYS2 installation is incomplete.' }
     # Initialize the first login before invoking pacman directly from the launcher.
