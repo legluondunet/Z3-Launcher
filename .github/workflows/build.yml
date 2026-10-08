@@ -3,6 +3,8 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
