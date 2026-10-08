@@ -59,7 +59,7 @@
     "text.carry_up_to_9_999_rupees": "Carry up to 9,999 rupees",
     "text.changing_the_language_does_not_create_translated_assets_extract": "Changing the language does not create translated assets. Extract them from a matching ROM first.",
     "text.channels": "Channels",
-    "text.check_dependencies": "Dependency verification",
+    "text.check_dependencies": "Check dependencies",
     "text.choose_a_file": "Choose a file…",
     "text.clear": "Clear",
     "text.clear_display": "Clear display",
