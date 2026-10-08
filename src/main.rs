@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 legluondunet — https://github.com/legluondunet
+#![cfg_attr(all(windows, feature = "gui"), windows_subsystem = "windows")]
+
 #[cfg(windows)]
 mod windows;
 use crate::i18n::{tr, tf};
@@ -14,6 +16,8 @@ mod ui;
 mod options;
 use std::{path::PathBuf, sync::Arc};
 fn main() {
+    #[cfg(all(windows, feature = "gui"))]
+    windows::attach_parent_console_for_cli();
     i18n::init();
     if let Err(e) = start() { eprintln!("{}", tf("status.error", &[("error", e.to_string())])); std::process::exit(1); }
 }
