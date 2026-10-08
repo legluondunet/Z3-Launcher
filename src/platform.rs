@@ -90,6 +90,8 @@ pub fn canonicalize(path: impl AsRef<Path>) -> std::io::Result<PathBuf> {
 /// Keep packaged GUI libraries out of system Python, Git, compilers and the game.
 pub fn host_command(program: &str) -> std::process::Command {
     let mut command = std::process::Command::new(program);
+    #[cfg(windows)]
+    crate::windows::hide_console_for_gui(&mut command);
     if std::env::var_os("Z3_APPIMAGE_ENV").is_some() {
         if let Some(path) = std::env::var_os("Z3_HOST_LIBRARY_PATH") {
             command.env("LD_LIBRARY_PATH", path);
