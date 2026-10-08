@@ -6,6 +6,13 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + S
 pub const ROM_HASH: &str = "66871d66be19ad2c34c927d6b14cd8eb6fc3181965b6e517cb361f7316009cfb";
 pub type Log = Arc<dyn Fn(String) + Send + Sync>;
 #[derive(Clone)]
+pub struct DependencyPlan {
+    pub description: String,
+    pub packages: Vec<String>,
+    pub family: crate::dependencies::Family,
+    pub bootstrap_msys: bool,
+}
+#[derive(Clone)]
 pub struct Launcher { pub root: PathBuf }
 impl Launcher {
     pub fn new(root: impl AsRef<Path>) -> Result<Self> {
@@ -25,19 +32,8 @@ impl Launcher {
     }
     pub fn command(&self, program: &str, args: &[&str], dir: &Path, log: &Log) -> Result<()> {
         log(tf("process.command", &[("program", program.to_owned()), ("args", format!("{args:?}")), ("path", dir.display().to_string())]));
-        let mut command = Self::process(program, args, dir)?;
-        let mut child = command
-            .env("PYTHONUNBUFFERED", "1").stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
-        let out = child.stdout.take().ok_or(tr("text.stdout_is_unavailable"))?;
-        let err = child.stderr.take().ok_or(tr("text.stderr_is_unavailable"))?;
-        let l = log.clone();
-        let a = thread::spawn(move || { for line in BufReader::new(out).lines() { match line { Ok(line) => l(line), Err(_) => break } } });
-        let l = log.clone();
-        let b = thread::spawn(move || { for line in BufReader::new(err).lines() { match line { Ok(line) => l(line), Err(_) => break } } });
-        let status = child.wait()?;
-        let _ = a.join(); let _ = b.join();
-        if !status.success() { return Err(tf("process.failed", &[("program", program.to_owned()), ("status", status.to_string())]).into()); }
-        Ok(())
+        let command = Self::process(program, args, dir)?;
+        run_logged(command, program, log)
     }
     fn process(program: &str, args: &[&str], dir: &Path) -> Result<Command> {
         #[cfg(windows)]
@@ -54,6 +50,67 @@ impl Launcher {
         for line in report.lines() { log(line.to_owned()); }
         if report.missing.is_empty() { Ok(()) } else { Err(tr("text.some_dependencies_are_missing_or_unusable_see_the_report").into()) }
         }
+    }
+    pub fn dependency_plan(&self, log: &Log) -> Result<Option<DependencyPlan>> {
+        #[cfg(windows)]
+        { crate::windows::install_plan(log) }
+        #[cfg(not(windows))]
+        {
+            let report=crate::dependencies::inspect();
+            for line in report.lines() { log(line); }
+            if report.missing.is_empty() { return Ok(None); }
+            if report.distribution.family == crate::dependencies::Family::Unknown {
+                return Err(tr("text.unsupported_distribution_install_these_dependencies_using_its_package_manager").into());
+            }
+            let description=crate::dependencies::install_command(report.distribution.family, &report.missing)
+                .ok_or(tr("install.unavailable"))?;
+            Ok(Some(DependencyPlan { description,
+                packages:crate::dependencies::package_names(report.distribution.family, &report.missing),
+                family:report.distribution.family, bootstrap_msys:false }))
+        }
+    }
+    pub fn install_dependencies(&self, plan: &DependencyPlan, log: &Log) -> Result<()> {
+        if plan.packages.is_empty() { return Ok(()); }
+        log(tr("install.started").into());
+        #[cfg(windows)]
+        {
+            let root=crate::windows::installation_root();
+            if plan.bootstrap_msys {
+                if root.exists() { return Err(tr("install.msys_existing").into()); }
+                log(tf("install.bootstrap_progress", &[("path", root.display().to_string())]));
+                let script=include_str!("../tools/install-msys2.ps1");
+                // Pass the destination via an environment variable rather than shell interpolation.
+                let mut command=crate::platform::host_command("powershell.exe");
+                command.args(["-NoProfile", "-NonInteractive", "-Command", script])
+                    .env("Z3_MSYS2_ROOT", &root);
+                run_logged(command, "MSYS2 installer", log)?;
+                if !root.join("usr/bin/pacman.exe").is_file() { return Err(tr("windows.msys_missing").into()); }
+            }
+            let pacman=root.join("usr/bin/pacman.exe");
+            let program=pacman.to_str().ok_or(tr("text.the_executable_path_is_not_utf_8"))?;
+            // Core MSYS2 updates may require a second invocation after the first exits.
+            self.command(program, &["-Syu", "--noconfirm"], &self.root, log)?;
+            self.command(program, &["-Syu", "--noconfirm"], &self.root, log)?;
+            let mut args=vec!["-S", "--needed", "--noconfirm"];
+            args.extend(plan.packages.iter().map(String::as_str));
+            self.command(program, &args, &self.root, log)?;
+        }
+        #[cfg(not(windows))]
+        {
+            // pkexec delegates authentication to the desktop; the launcher never reads a password.
+            let script=match plan.family {
+                crate::dependencies::Family::Debian => "/usr/bin/apt-get update && exec /usr/bin/apt-get install -y \"$@\"",
+                crate::dependencies::Family::Arch => "exec /usr/bin/pacman -S --needed --noconfirm \"$@\"",
+                crate::dependencies::Family::Fedora => "exec /usr/bin/dnf -y install \"$@\"",
+                crate::dependencies::Family::Suse => "exec /usr/bin/zypper --non-interactive install \"$@\"",
+                crate::dependencies::Family::Unknown => return Err(tr("install.unavailable").into()),
+            };
+            let mut args=vec!["/bin/sh", "-c", script, "Z3-Launcher"];
+            args.extend(plan.packages.iter().map(String::as_str));
+            self.command("pkexec", &args, &self.root, log)?;
+        }
+        log(tr("install.completed").into());
+        Ok(())
     }
     pub fn clone_repo(&self, log: &Log) -> Result<()> {
         if self.repo().join(".git").exists() { return Ok(()); }
@@ -213,6 +270,19 @@ impl Launcher {
         }
     }
 }
+fn run_logged(mut command: Command, program: &str, log: &Log) -> Result<()> {
+    let mut child=command.env("PYTHONUNBUFFERED", "1").stdin(Stdio::null())
+        .stdout(Stdio::piped()).stderr(Stdio::piped()).spawn()?;
+    let out=child.stdout.take().ok_or(tr("text.stdout_is_unavailable"))?;
+    let err=child.stderr.take().ok_or(tr("text.stderr_is_unavailable"))?;
+    let l=log.clone();
+    let a=thread::spawn(move || { for line in BufReader::new(out).lines() { match line { Ok(line)=>l(line), Err(_)=>break } } });
+    let l=log.clone();
+    let b=thread::spawn(move || { for line in BufReader::new(err).lines() { match line { Ok(line)=>l(line), Err(_)=>break } } });
+    let status=child.wait()?; let _=a.join(); let _=b.join();
+    if !status.success() { return Err(tf("process.failed", &[("program", program.to_owned()), ("status", status.to_string())]).into()); }
+    Ok(())
+}
 pub fn save_ini(path: &Path, text: &str) -> Result<()> {
     if !path.is_file() { return Err(tr("text.load_an_existing_ini_file_first").into()); }
     fs::copy(path, path.with_extension("ini.bak"))?;
@@ -246,3 +316,4 @@ mod tests {
         fs::remove_dir_all(d).unwrap();
     }
 }
+
