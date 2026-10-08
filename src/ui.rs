@@ -5,9 +5,10 @@ use crate::core::Launcher;
 use eframe::egui;
 use crate::theme;
 use std::{fs, path::PathBuf, sync::{mpsc::{self, Receiver}, Arc}, thread};
-enum Event { Line(String), Done(std::result::Result<(), String>), LanguageDone(String, std::result::Result<(), String>) }
+enum Event { DependenciesDone(std::result::Result<Option<crate::core::DependencyPlan>, String>), Line(String), Done(std::result::Result<(), String>), LanguageDone(String, std::result::Result<(), String>) }
 struct App {
     root: String, rom: String, lines: Vec<String>, rx: Option<Receiver<Event>>,
+    dependency_plan: Option<crate::core::DependencyPlan>, confirm_dependencies: bool, installing_dependencies: bool,
     importing_language: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize,
 }
 impl Default for App {
@@ -15,7 +16,7 @@ impl Default for App {
         let root = if crate::platform::is_portable() {
             crate::default_root().to_string_lossy().into_owned()
         } else { fs::read_to_string(preferences()).unwrap_or_else(|_| crate::default_root().to_string_lossy().into_owned()) };
-        Self { root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, importing_language: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
+        Self { root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, dependency_plan: None, confirm_dependencies: false, installing_dependencies: false, importing_language: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
     }
 }
 fn preferences() -> PathBuf { crate::platform::config_dir().join("workspace.txt") }
@@ -50,10 +51,24 @@ impl App {
         if let Some(parent) = prefs.parent() { if let Err(e) = fs::create_dir_all(parent).and_then(|_| fs::write(&prefs, &self.root)) { self.status = e.to_string(); return; } }
         let rom = if self.rom.is_empty() { None } else { Some(PathBuf::from(&self.rom)) };
         let (tx, rx) = mpsc::channel(); self.rx = Some(rx); self.status = tf("status.running", &[("action", action.to_owned())]);
+        let plan=self.dependency_plan.clone();
+        if action == "check" { self.dependency_plan=None; }
+        self.installing_dependencies=action == "install-dependencies";
         let ctx = ctx.clone();
         thread::spawn(move || {
             let t = tx.clone(); let c = ctx.clone();
-            let result = launcher.log(Arc::new(move |line| { let _ = t.send(Event::Line(line)); c.request_repaint(); }))
+            let log=launcher.log(Arc::new(move |line| { let _=t.send(Event::Line(line)); c.request_repaint(); }));
+            if action == "check" || action == "install-dependencies" {
+                let result=log.and_then(|log| {
+                    if action == "install-dependencies" {
+                        let plan=plan.as_ref().ok_or(tr("install.unavailable"))?;
+                        launcher.install_dependencies(plan, &log)?;
+                    }
+                    launcher.dependency_plan(&log)
+                }).map_err(|e| e.to_string());
+                let _=tx.send(Event::DependenciesDone(result)); ctx.request_repaint(); return;
+            }
+            let result = log
                 .and_then(|log| launcher.action(action, rom.as_deref(), &log)).map_err(|e| e.to_string());
             let _ = tx.send(Event::Done(result)); ctx.request_repaint();
         });
@@ -61,17 +76,19 @@ impl App {
 }
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
-        if self.importing_language {
+        if self.importing_language || self.installing_dependencies {
             if ctx.input(|i| i.viewport().close_requested()) {
                 ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-                self.status = tr("game_language.wait_before_close").into();
+                self.status = tr(if self.installing_dependencies { "install.wait_close" } else { "game_language.wait_before_close" }).into();
             }
         } else { self.options.close_guard(ctx, &mut self.status); }
         let mut done = None;
         let mut imported = None;
+        let mut dependencies=None;
         if let Some(rx) = &self.rx {
             for event in rx.try_iter() { match event {
                 Event::Line(line) => { self.lines.push(line); if self.lines.len() > 2000 { self.lines.remove(0); } },
+                Event::DependenciesDone(result) => dependencies=Some(result),
                 Event::Done(result) => done = Some(result),
                 Event::LanguageDone(code, result) => { imported = Some(code); done = Some(result); },
             } }
@@ -84,6 +101,14 @@ impl eframe::App for App {
                     tr("settings.language_imported").into()
                 } else { tr("text.done").into() },
                 Err(e) => tf("status.error", &[("error", e.to_string())]),
+            };
+        }
+        if let Some(result)=dependencies {
+            self.rx=None; self.installing_dependencies=false;
+            self.status=match result {
+                Ok(plan) => { let ready=plan.is_none(); self.dependency_plan=plan;
+                    tr(if ready { "install.all_available" } else { "install.missing_ready" }).into() },
+                Err(error) => tf("status.error", &[("error", error)]),
             };
         }
         let busy = self.rx.is_some();
@@ -220,6 +245,9 @@ impl eframe::App for App {
                         } else { egui::Button::new(label) };
                         if ui.add(button).on_hover_text(tr(&format!("help.launcher.{action}"))).clicked() { self.dispatch(action, ctx); }
                     }
+                    if self.dependency_plan.is_some() && ui.button(tr("install.button")).on_hover_text(tr("install.help")).clicked() {
+                        self.confirm_dependencies=true;
+                    }
                 });
             });
                 ui.add_space(12.0);
@@ -272,6 +300,25 @@ impl eframe::App for App {
                 });
             }
         });
+        if self.confirm_dependencies {
+            let plan=self.dependency_plan.clone();
+            egui::Window::new(tr("install.confirm_title")).collapsible(false).resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
+                    if let Some(plan)=plan {
+                        ui.set_max_width(580.0);
+                        ui.label(&plan.description);
+                        ui.label(tr("install.packages"));
+                        ui.monospace(plan.packages.join("\n"));
+                        ui.label(tr("install.confirm_notice"));
+                        ui.horizontal(|ui| {
+                            if ui.add_enabled(!busy, egui::Button::new(tr("install.confirm"))).clicked() {
+                                self.confirm_dependencies=false; self.dispatch("install-dependencies", ctx);
+                            }
+                            if ui.button(tr("install.cancel")).clicked() { self.confirm_dependencies=false; }
+                        });
+                    } else { self.confirm_dependencies=false; }
+                });
+        }
         if !busy { self.options.autosave(&mut self.status); }
         if let Some((code, root)) = self.options.take_language_request() { self.import_game_language(code, root, ctx); }
         // Status changes made by widgets are reflected in the footer on the next frame.
@@ -286,3 +333,4 @@ pub fn start() -> eframe::Result<()> {
         Ok(Box::new(app))
     }))
 }
+
