@@ -315,17 +315,22 @@ fn shader_path_allowed(value: &str) -> bool {
         .is_some_and(|ext|ext.eq_ignore_ascii_case("glsl") || ext.eq_ignore_ascii_case("glslp"))
 }
 
-fn settings_section(ui: &mut egui::Ui, title: &str, contents: impl FnOnce(&mut egui::Ui)) {
+fn settings_frame(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
     let width=(ui.available_width() - 24.0).max(0.0);
     egui::Frame::new().fill(crate::theme::FOREST)
         .stroke(egui::Stroke::new(1.0_f32, crate::theme::GOLD))
         .corner_radius(egui::CornerRadius::same(8)).inner_margin(12)
         .show(ui, |ui| {
             ui.set_min_width(width);
-            ui.label(egui::RichText::new(title).size(18.0).strong().color(crate::theme::GOLD));
-            ui.separator();
             contents(ui);
         });
+}
+fn settings_section(ui: &mut egui::Ui, title: &str, contents: impl FnOnce(&mut egui::Ui)) {
+    settings_frame(ui, |ui| {
+        ui.label(egui::RichText::new(title).size(16.0).strong().color(crate::theme::GOLD));
+        ui.separator();
+        contents(ui);
+    });
 }
 fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String>) {
     ui.columns(2, |columns| {
@@ -362,7 +367,7 @@ fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String
 }
 fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
     ui.columns(2, |columns| {
-        columns[0].vertical(|ui| {
+        settings_frame(&mut columns[0], |ui| {
             let raw=doc.value("General","ExtendedAspectRatio","4:3");let parts:Vec<&str>=raw.split(',').map(str::trim).collect();
             let mut ratio=parts.iter().find(|p|p.contains(':')).copied().unwrap_or("4:3").to_owned();
             let mut extended=parts.contains(&"extend_y");let mut unchanged=parts.contains(&"unchanged_sprites");let mut nofix=parts.contains(&"no_visual_fixes");
@@ -373,12 +378,12 @@ fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             text(ui,doc,dirty,"Graphics","WindowSize",tr("text.window_size_auto_or_widthxheight"),"Auto");
             choice(ui,doc,dirty,"Graphics","Fullscreen",tr("text.fullscreen_mode"),"0",&[("0",tr("text.windowed")),("1",tr("text.borderless_fullscreen")),("2",tr("text.exclusive_fullscreen"))]);
             choice(ui,doc,dirty,"Graphics","WindowScale",tr("text.window_scale"),"3",&[("1","100 %"),("2","200 %"),("3","300 %"),("4","400 %"),("5","500 %"),("6","600 %")]);
-            choice(ui,doc,dirty,"Graphics","OutputMethod",tr("text.renderer"),"SDL",&[("SDL","SDL"),("SDL-Software",tr("text.sdl_software")),("OpenGL","OpenGL"),("OpenGL ES","OpenGL ES")]);
+            choice(ui,doc,dirty,"Graphics","OutputMethod",tr("text.renderer"),crate::core::DEFAULT_RENDERER,&[("SDL","SDL"),("SDL-Software",tr("text.sdl_software")),("OpenGL","OpenGL"),("OpenGL ES","OpenGL ES")]);
         });
-        columns[1].vertical(|ui| {
+        settings_frame(&mut columns[1], |ui| {
             for (key,label,default) in [("NewRenderer",tr("text.optimized_snes_ppu"),true),("EnhancedMode7",tr("text.high_resolution_world_map_mode_7"),true),("IgnoreAspectRatio",tr("text.stretch_image"),false),("NoSpriteLimits",tr("text.remove_sprite_limits"),true),("LinearFiltering",tr("text.linear_filtering"),false),("DimFlashes",tr("text.reduce_flashing"),false)] {flag(ui,doc,dirty,"Graphics",key,label,default);}
             file(ui,doc,dirty,"LinkGraphics",tr("text.link_sprite_zspr"),&["zspr"]);
-            let renderer=doc.value("Graphics","OutputMethod","SDL");
+            let renderer=doc.value("Graphics","OutputMethod",crate::core::DEFAULT_RENDERER);
             let shaders_enabled=renderer.eq_ignore_ascii_case("OpenGL") || renderer.eq_ignore_ascii_case("OpenGL ES");
             let shader_controls=ui.add_enabled_ui(shaders_enabled, |ui| {
                 file(ui,doc,dirty,"Shader",tr("text.opengl_shader_glsl_glslp"),&["glsl","glslp","GLSL","GLSLP"]);
