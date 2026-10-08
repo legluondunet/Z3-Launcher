@@ -75,8 +75,8 @@ pub fn inspect() -> Report {
     }
     Report {distribution,missing,rows}
 }
-pub fn install_command(family:Family,missing:&[Dependency]) -> Option<String> {
-    if missing.is_empty() || family==Family::Unknown {return None;}
+pub fn package_names(family: Family, missing: &[Dependency]) -> Vec<String> {
+    if family == Family::Unknown { return Vec::new(); }
     let packages:BTreeSet<&str>=missing.iter().map(|d|match family {
         Family::Debian=>match d {Dependency::Git=>"git",Dependency::Python=>"python3",Dependency::Pillow=>"python3-pil",Dependency::Yaml=>"python3-yaml",Dependency::Make|Dependency::Compiler=>"build-essential",Dependency::Sdl=>"libsdl2-dev",Dependency::Sha=>"coreutils"},
         Family::Arch=>match d {Dependency::Git=>"git",Dependency::Python=>"python",Dependency::Pillow=>"python-pillow",Dependency::Yaml=>"python-yaml",Dependency::Make|Dependency::Compiler=>"base-devel",Dependency::Sdl=>"sdl2-compat",Dependency::Sha=>"coreutils"},
@@ -84,7 +84,11 @@ pub fn install_command(family:Family,missing:&[Dependency]) -> Option<String> {
         Family::Suse=>match d {Dependency::Git=>"git",Dependency::Python=>"python3",Dependency::Pillow=>"python3-Pillow",Dependency::Yaml=>"python3-PyYAML",Dependency::Make=>"make",Dependency::Compiler=>"gcc",Dependency::Sdl=>"libSDL2-devel",Dependency::Sha=>"coreutils"},
         Family::Unknown=>unreachable!(),
     }).collect();
-    let packages=packages.into_iter().collect::<Vec<_>>().join(" ");
+    packages.into_iter().map(str::to_owned).collect()
+}
+pub fn install_command(family:Family,missing:&[Dependency]) -> Option<String> {
+    if missing.is_empty() || family==Family::Unknown {return None;}
+    let packages=package_names(family, missing).join(" ");
     Some(match family {
         Family::Debian=>format!("sudo apt update && sudo apt install {packages}"),
         Family::Arch=>format!("sudo pacman -S --needed {packages}"),
@@ -107,3 +111,4 @@ mod tests {
         assert!(!command.contains("libsdl2"));assert!(install_command(Family::Unknown,&[Dependency::Git]).is_none());
     }
 }
+
