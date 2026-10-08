@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 legluondunet — https://github.com/legluondunet
 //! Windows tools run in the MSYS2 UCRT64 environment; the game runs natively.
-use std::{path::{Path, PathBuf}, process::Command};
+use std::{path::{Path, PathBuf}, process::{Command, Stdio, ExitStatus}, time::{Duration, Instant}, io};
 use crate::{core::{Log, Result}, i18n::{tr, tf}};
 
 fn msys_root() -> Result<PathBuf> {
@@ -34,31 +34,73 @@ pub fn command(program: &str, args: &[&str], dir: &Path) -> Result<Command> {
     Ok(cmd)
 }
 
+
+fn probe_status(command: &mut Command, timeout: Duration) -> io::Result<ExitStatus> {
+    use std::os::windows::process::CommandExt;
+    command.creation_flags(0x0800_0000)
+        .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+    let mut child = command.spawn()?;
+    let start = Instant::now();
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => return Ok(status),
+            Ok(None) if start.elapsed() < timeout => std::thread::sleep(Duration::from_millis(25)),
+            result => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return match result {
+                    Err(error) => Err(error),
+                    _ => Err(io::Error::new(io::ErrorKind::TimedOut, tr("windows.probe_timeout"))),
+                };
+            }
+        }
+    }
+}
+
 pub fn check(log: &Log) -> Result<()> {
     log(tr("windows.check").into());
-    if let Err(error) = msys_root() {
-        log(error.to_string()); log("https://www.msys2.org/".into());
-        return Err(error);
-    }
+    let root = match msys_root() {
+        Ok(root) => root,
+        Err(error) => {
+            log(error.to_string()); log("https://www.msys2.org/".into());
+            return Err(error);
+        }
+    };
     let cwd = std::env::current_dir()?;
-    let probes: &[(&str, &str, &[&str], &str)] = &[
-        ("Git", "git", &["--version"], "git"),
-        ("Make", "make", &["--version"], "make"),
-        ("GCC", "gcc", &["--version"], "mingw-w64-ucrt-x86_64-gcc"),
-        ("windres", "windres", &["--version"], "mingw-w64-ucrt-x86_64-binutils"),
-        ("Python", "python3", &["--version"], "mingw-w64-ucrt-x86_64-python"),
-        ("Pillow", "python3", &["-c", "import PIL"], "mingw-w64-ucrt-x86_64-python-pillow"),
-        ("PyYAML", "python3", &["-c", "import yaml"], "mingw-w64-ucrt-x86_64-python-yaml"),
-        ("SDL2", "sdl2-config", &["--version"], "mingw-w64-ucrt-x86_64-SDL2"),
+    let probes: &[(&str, &str, &[&str], &str, &[&str])] = &[
+        ("Git", "git", &["--version"], "git", &["usr/bin/git.exe"]),
+        ("Make", "make", &["--version"], "make", &["usr/bin/make.exe"]),
+        ("GCC", "gcc", &["--version"], "mingw-w64-ucrt-x86_64-gcc", &["ucrt64/bin/gcc.exe"]),
+        ("windres", "windres", &["--version"], "mingw-w64-ucrt-x86_64-binutils", &["ucrt64/bin/windres.exe"]),
+        ("Python", "python3", &["--version"], "mingw-w64-ucrt-x86_64-python", &["ucrt64/bin/python.exe", "ucrt64/bin/python3.exe"]),
+        ("Pillow", "python3", &["-c", "import PIL"], "mingw-w64-ucrt-x86_64-python-pillow", &["ucrt64/bin/python.exe", "ucrt64/bin/python3.exe"]),
+        ("PyYAML", "python3", &["-c", "import yaml"], "mingw-w64-ucrt-x86_64-python-yaml", &["ucrt64/bin/python.exe", "ucrt64/bin/python3.exe"]),
+        ("SDL2", "sdl2-config", &["--version"], "mingw-w64-ucrt-x86_64-SDL2", &["ucrt64/bin/sdl2-config"]),
     ];
     let mut missing = std::collections::BTreeSet::new();
-    for (name, program, args, package) in probes {
-        let result = command(program, args, &cwd)?.output();
-        let error = match result {
-            Ok(output) if output.status.success() => None,
-            Ok(output) => Some(String::from_utf8_lossy(&output.stderr).trim().to_owned()),
-            Err(error) => Some(error.to_string()),
+    let mut python_ok = false;
+    for (name, program, args, package, candidates) in probes {
+        log(tf("windows.probing", &[("name", (*name).into())]));
+        let executable = candidates.iter().map(|p| root.join(p)).find(|p| p.is_file());
+        let error = if (*name == "Pillow" || *name == "PyYAML") && !python_ok {
+            Some(tr("windows.python_unavailable").to_owned())
+        } else if let Some(executable) = executable {
+            // Resolve Python directly in UCRT64, never through Windows Store aliases.
+            let mut cmd = if *program == "sdl2-config" {
+                command(program, args, &cwd)?
+            } else {
+                command(executable.to_str().ok_or(tr("text.the_executable_path_is_not_utf_8"))?, args, &cwd)?
+            };
+            cmd.env("PATH", std::env::join_paths([root.join("ucrt64/bin"), root.join("usr/bin")])?);
+            match probe_status(&mut cmd, Duration::from_secs(5)) {
+                Ok(status) if status.success() => None,
+                Ok(status) => Some(tf("windows.probe_failed", &[("status", status.to_string())])),
+                Err(error) => Some(error.to_string()),
+            }
+        } else {
+            Some(tr("windows.tool_not_installed").to_owned())
         };
+        if *name == "Python" { python_ok = error.is_none(); }
         if let Some(error) = error {
             missing.insert(*package);
             log(tf("windows.missing", &[("name", (*name).into()), ("error", error)]));
@@ -68,4 +110,24 @@ pub fn check(log: &Log) -> Result<()> {
     log(tr("windows.install").into());
     log(format!("pacman -S --needed {}", missing.into_iter().collect::<Vec<_>>().join(" ")));
     Err(tr("text.some_dependencies_are_missing_or_unusable_see_the_report").into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn dependency_probe_reports_exit_status() {
+        let mut cmd = Command::new("cmd.exe");
+        cmd.args(["/C", "exit", "7"]);
+        assert_eq!(probe_status(&mut cmd, Duration::from_secs(5)).unwrap().code(), Some(7));
+    }
+    #[test]
+    fn dependency_probe_terminates_an_unresponsive_process() {
+        let mut cmd = Command::new("powershell.exe");
+        cmd.args(["-NoProfile", "-NonInteractive", "-Command", "Start-Sleep -Seconds 30"]);
+        let started = Instant::now();
+        let error = probe_status(&mut cmd, Duration::from_millis(200)).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::TimedOut);
+        assert!(started.elapsed() < Duration::from_secs(10));
+    }
 }
