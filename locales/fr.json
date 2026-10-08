@@ -59,7 +59,7 @@
     "text.carry_up_to_9_999_rupees": "Bourse de 9 999 rubis",
     "text.changing_the_language_does_not_create_translated_assets_extract": "Changer la langue ne crée pas les ressources traduites. Leur extraction depuis une ROM correspondante reste nécessaire.",
     "text.channels": "Canaux",
-    "text.check_dependencies": "Vérification des dépendances",
+    "text.check_dependencies": "Vérifier les dépendances",
     "text.choose_a_file": "Choisir un fichier…",
     "text.clear": "Effacer",
     "text.clear_display": "Effacer l'affichage",

@@ -6,6 +6,7 @@
 mod windows;
 use crate::i18n::{tr, tf};
 mod core;
+mod single_instance;
 mod i18n;
 mod platform;
 mod dependencies;
@@ -25,7 +26,10 @@ fn start() -> core::Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.is_empty() {
         #[cfg(feature = "gui")]
-        { return ui::start().map_err(|e| e.to_string().into()); }
+        {
+            let Some(instance) = single_instance::acquire()? else { return Ok(()); };
+            return ui::start(instance).map_err(|e| e.to_string().into());
+        }
         #[cfg(not(feature = "gui"))]
         { help(); return Ok(()); }
     }
