@@ -11,6 +11,7 @@ use std::{
 };
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub const ROM_HASH: &str = "66871d66be19ad2c34c927d6b14cd8eb6fc3181965b6e517cb361f7316009cfb";
+pub const DEFAULT_RENDERER: &str = "OpenGL";
 pub type Log = Arc<dyn Fn(String) + Send + Sync>;
 #[derive(Clone)]
 pub struct Launcher {
@@ -122,6 +123,11 @@ impl Launcher {
         let staged = temporary.path().join("package");
         fs::create_dir(&staged)?;
         let version = crate::download::game(&staged, log)?;
+        // New installations use OpenGL; the installer preserves existing user settings.
+        let ini_path = staged.join("zelda3.ini");
+        let mut ini = crate::ini::Ini::parse(&fs::read_to_string(&ini_path)?);
+        ini.set("Graphics", "OutputMethod", DEFAULT_RENDERER);
+        fs::write(&ini_path, ini.text())?;
         let resources = staged.join(".resources");
         // Preserve both current and older source-based localized resources on migration.
         let previous = self.repo().join(".resources");
@@ -196,6 +202,15 @@ impl Launcher {
         let bin = self.repo().join(crate::platform::GAME_BINARY);
         if !bin.is_file() || !self.repo().join("zelda3_assets.dat").is_file() {
             return Err(tr("download.install_first").into());
+        }
+        // A missing renderer setting follows the launcher's default, not the game's SDL fallback.
+        let ini_path = self.repo().join("zelda3.ini");
+        if ini_path.is_file() {
+            let mut ini = crate::ini::Ini::parse(&fs::read_to_string(&ini_path)?);
+            if ini.get("Graphics", "OutputMethod").is_none() {
+                ini.set("Graphics", "OutputMethod", DEFAULT_RENDERER);
+                save_ini(&ini_path, &ini.text())?;
+            }
         }
         let mut command = crate::platform::host_command(
             bin.to_str()
