@@ -29,7 +29,7 @@ $env:MSYS2_ROOT = 'D:\outils\msys64'
 .\target\release\z3-launcher.exe
 ```
 
-Le bouton **Vérifier** teste les outils dans cet environnement et affiche les paquets manquants avec une commande `pacman` à lancer dans UCRT64. Il ne les installe pas automatiquement. Le launcher appelle Git, Python et Make via le Bash de MSYS2, transmet les arguments séparément, et construit le jeu avec `CC=gcc`, `OS=Windows_NT` et `TARGET_EXEC=zelda3.exe`. Il lance ensuite le jeu nativement en ajoutant `ucrt64\bin` au PATH de son processus pour les éventuelles DLL du compilateur. Conserver MSYS2 installé ; cette version ne crée pas de paquet autonome du jeu avec ses DLL.
+Le bouton **Vérification des dépendances** teste les outils dans cet environnement et affiche les paquets manquants avec une commande `pacman` à lancer dans UCRT64. Chaque test est limité à cinq secondes. Si des dépendances manquent, le bouton **Installer les dépendances** apparaît : après confirmation des paquets, le launcher met MSYS2 entièrement à jour, installe les paquets UCRT64 nécessaires et relance la vérification. Si MSYS2 est absent, son installateur officiel est téléchargé depuis les releases GitHub de MSYS2 et sa somme SHA-256 est vérifiée avant exécution. Le dossier de destination est `C:\msys64`, ou `MSYS2_ROOT` si cette variable est définie. Un dossier existant mais incomplet ne sera jamais écrasé : réparez-le ou choisissez un autre emplacement. Les opérations sont affichées dans le journal ; attendez leur fin avant de fermer le launcher. Après une interruption ou un échec, relancez la vérification avant de réessayer. Le launcher appelle Git, Python et Make via le Bash de MSYS2, transmet les arguments séparément, et construit le jeu avec `CC=gcc`, `OS=Windows_NT` et `TARGET_EXEC=zelda3.exe`. Il lance ensuite le jeu nativement en ajoutant `ucrt64\bin` au PATH de son processus pour les éventuelles DLL du compilateur. Conserver MSYS2 installé ; cette version ne crée pas de paquet autonome du jeu avec ses DLL.
 
 ## Fichiers et mode portable
 
@@ -42,3 +42,7 @@ Sélectionner une ROM US compatible pour installer le jeu ; sélectionner ensuit
 ## Validation restante
 
 Les traductions ont été contrôlées et le code adapté par plateforme. Aucun compilateur Rust ni environnement Windows n'était disponible lors de la préparation : la compilation MSVC, la compilation du jeu, les chemins avec espaces/accents, le glisser-déposer et les manettes doivent encore être validés sur Windows. Aucune ROM ou ressource du jeu n'est incluse.
+
+## Installation des dépendances sous Linux
+
+Dans l’onglet Général, **Vérification des dépendances** affiche les paquets manquants. **Installer les dépendances** demande confirmation puis utilise apt (Debian/Ubuntu et dérivées), pacman (Arch et dérivées), dnf (Fedora) ou zypper (openSUSE). L’authentification administrateur est gérée par le bureau via `pkexec` : aucun mot de passe n’est collecté par le launcher. Si `pkexec` ou son agent d’authentification est absent, utilisez la commande affichée dans le journal. Les distributions non reconnues et les variantes immuables restent en installation manuelle. Les gestionnaires utilisent leurs dépôts et leur vérification habituelle des paquets. Aucun paquet n’est supprimé automatiquement.
