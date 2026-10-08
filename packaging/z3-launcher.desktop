@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Z3-Launcher
+Comment=Configure and launch the Zelda 3 port
+Exec=z3-launcher
+Icon=z3-launcher
+Terminal=false
+Categories=Game;

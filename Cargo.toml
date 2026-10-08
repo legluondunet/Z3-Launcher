@@ -1,0 +1,30 @@
+[package]
+name = "z3-launcher"
+version = "0.11.16"
+edition = "2021"
+rust-version = "1.85"
+license = "GPL-3.0-or-later"
+authors = ["legluondunet (https://github.com/legluondunet)"]
+repository = "https://github.com/legluondunet/Z3-Launcher"
+description = "Linux and Windows desktop interface for snesrev/zelda3"
+
+[features]
+default = ["gui"]
+gui = ["dep:eframe", "dep:rfd", "dep:sdl2", "dep:image"]
+
+[dependencies]
+image = { version = "=0.25.5", optional = true, default-features = false, features = ["png"] }
+eframe = { version = "=0.31.1", optional = true, default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
+
+rfd = { version = "=0.15.4", optional = true, default-features = false, features = ["xdg-portal", "async-std"] }
+
+sdl2 = { version = "=0.37.0", optional = true }
+
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(windows)'.dependencies]
+sha2 = "0.10"
+dunce = "1"
+sdl2 = { version = "=0.37.0", optional = true, features = ["bundled", "static-link"] }

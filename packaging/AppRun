@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+appdir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+export Z3_APPIMAGE_ENV=1
+# Keep all XDG paths in the portable HOME even if the desktop exported others.
+if [[ -n ${APPIMAGE:-} && -d ${APPIMAGE}.home ]]; then
+  export HOME="${APPIMAGE}.home"
+  export XDG_DATA_HOME="$HOME/.local/share"
+  export XDG_CONFIG_HOME="$HOME/.config"
+  export XDG_CACHE_HOME="$HOME/.cache"
+  export XDG_STATE_HOME="$HOME/.local/state"
+fi
+if [[ ${LD_LIBRARY_PATH+x} ]]; then
+  export Z3_HOST_LIBRARY_PATH="$LD_LIBRARY_PATH"
+else
+  unset Z3_HOST_LIBRARY_PATH
+fi
+export LD_LIBRARY_PATH="$appdir/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+exec "$appdir/usr/bin/z3-launcher" "$@"
