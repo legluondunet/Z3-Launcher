@@ -142,7 +142,7 @@ impl eframe::App for App {
                 ui.spacing_mut().button_padding.x = 8.0;
                 let width = ((ui.available_width() - ui.spacing().item_spacing.x * (labels.len() - 1) as f32) / labels.len() as f32).max(1.0);
                 let mut font = egui::TextStyle::Button.resolve(ui.style());
-                font.size = 12.0;
+                font.size = 14.0;
                 // Give every tab the same height, including when a translation wraps.
                 let height = labels.iter().map(|label| {
                     ui.painter().layout((*label).to_owned(), font.clone(), theme::PARCHMENT,
@@ -151,7 +151,7 @@ impl eframe::App for App {
                 }).fold(ui.spacing().interact_size.y, f32::max);
                 for (index, label) in labels.iter().enumerate() {
                     let active=self.tab == index;
-                    let button=egui::Button::new(egui::RichText::new(*label).size(12.0)
+                    let button=egui::Button::new(egui::RichText::new(*label).size(14.0)
                         .color(if active { theme::FOREST } else { theme::PARCHMENT }))
                         .fill(if active { theme::GOLD } else { theme::FOREST })
                         .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
@@ -168,6 +168,8 @@ impl eframe::App for App {
                 }
             });
             ui.separator();
+            ui.scope(|ui| {
+                for font in ui.style_mut().text_styles.values_mut() { font.size -= 2.0; }
             if self.tab == 7 {
                 self.options.show_ini(ui, busy);
             } else if self.tab > 0 {
@@ -279,6 +281,7 @@ impl eframe::App for App {
                     if ui.button(tr("text.clear_display")).clicked() { self.lines.clear(); }
                 });
             }
+            });
         });
         if !busy { self.options.autosave(&mut self.status); }
         if let Some((code, root)) = self.options.take_language_request() { self.import_game_language(code, root, ctx); }
