@@ -7,6 +7,7 @@ use crate::theme;
 use std::{fs, path::PathBuf, sync::{mpsc::{self, Receiver}, Arc}, thread};
 enum Event { DependenciesDone(std::result::Result<Option<crate::core::DependencyPlan>, String>), Line(String), Done(std::result::Result<(), String>), LanguageDone(String, std::result::Result<(), String>) }
 struct App {
+    instance: Option<crate::single_instance::Guard>,
     root: String, rom: String, lines: Vec<String>, rx: Option<Receiver<Event>>,
     // Session-only state: every application startup begins with dependency verification.
     dependency_plan: Option<crate::core::DependencyPlan>, confirm_dependencies: bool, installing_dependencies: bool,
@@ -17,7 +18,7 @@ impl Default for App {
         let root = if crate::platform::is_portable() {
             crate::default_root().to_string_lossy().into_owned()
         } else { fs::read_to_string(preferences()).unwrap_or_else(|_| crate::default_root().to_string_lossy().into_owned()) };
-        Self { root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, dependency_plan: None, confirm_dependencies: false, installing_dependencies: false, importing_language: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
+        Self { instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, dependency_plan: None, confirm_dependencies: false, installing_dependencies: false, importing_language: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
     }
 }
 fn preferences() -> PathBuf { crate::platform::config_dir().join("workspace.txt") }
@@ -77,6 +78,10 @@ impl App {
 }
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
+        if self.instance.as_ref().is_some_and(|instance| instance.take_activation()) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+        }
         if self.importing_language || self.installing_dependencies {
             if ctx.input(|i| i.viewport().close_requested()) {
                 ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
@@ -331,11 +336,12 @@ impl eframe::App for App {
         if self.status != displayed_status { ctx.request_repaint(); }
     }
 }
-pub fn start() -> eframe::Result<()> {
+pub fn start(instance: crate::single_instance::Guard) -> eframe::Result<()> {
     let options = eframe::NativeOptions { viewport: egui::ViewportBuilder::default().with_inner_size([1060.0, 840.0]).with_min_inner_size([760.0, 660.0]).with_icon(theme::window_icon()).with_app_id("z3-launcher"), ..Default::default() };
-    eframe::run_native("Z3-Launcher", options, Box::new(|cc| {
+    eframe::run_native("Z3-Launcher", options, Box::new(move |cc| {
         theme::apply(&cc.egui_ctx);
-        let mut app=App::default(); app.background=theme::background(&cc.egui_ctx);
+        instance.watch_activation(&cc.egui_ctx)?;
+        let mut app=App::default(); app.instance=Some(instance); app.background=theme::background(&cc.egui_ctx);
         Ok(Box::new(app))
     }))
 }
