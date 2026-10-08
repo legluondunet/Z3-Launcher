@@ -344,6 +344,7 @@
     "install.windows_plan": "Emplacement MSYS2 : {path}\nMSYS2 sera entièrement mis à jour avant l’installation des paquets manquants.",
     "install.msys_bootstrap": "MSYS2 est absent. Son installateur officiel sera téléchargé et vérifié avec sa somme SHA-256 avant installation.",
     "install.msys_existing": "Le dossier MSYS2 existe déjà mais est incomplet. Réparez-le ou choisissez un autre MSYS2_ROOT ; il ne sera pas écrasé.",
-    "install.bootstrap_progress": "Téléchargement et installation de MSYS2 officiel dans {path}…"
+    "install.bootstrap_progress": "Téléchargement et installation de MSYS2 officiel dans {path}…",
+    "instance.already_running": "Z3-Launcher est déjà ouvert. Utilisez la fenêtre déjà en cours d’exécution."
   }
 }
