@@ -8,6 +8,7 @@ use std::{fs, path::PathBuf, sync::{mpsc::{self, Receiver}, Arc}, thread};
 enum Event { DependenciesDone(std::result::Result<Option<crate::core::DependencyPlan>, String>), Line(String), Done(std::result::Result<(), String>), LanguageDone(String, std::result::Result<(), String>) }
 struct App {
     root: String, rom: String, lines: Vec<String>, rx: Option<Receiver<Event>>,
+    // Session-only state: every application startup begins with dependency verification.
     dependency_plan: Option<crate::core::DependencyPlan>, confirm_dependencies: bool, installing_dependencies: bool,
     importing_language: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize,
 }
@@ -239,14 +240,19 @@ impl eframe::App for App {
                     }
                 });
                 ui.horizontal_wrapped(|ui| {
-                    for (label, action) in [(tr("text.check_dependencies"), "check"), (tr("text.install_and_build"), "setup"), (tr("text.launch_game"), "run")] {
+                    let install_pending = self.dependency_plan.is_some();
+                    let dependency_label = tr(if install_pending { "install.button" } else { "text.check_dependencies" });
+                    for (label, action) in [(dependency_label, "check"), (tr("text.install_and_build"), "setup"), (tr("text.launch_game"), "run")] {
                         let button = if action == "run" {
                             egui::Button::new(egui::RichText::new(label).color(theme::FOREST).strong()).fill(theme::GOLD)
                         } else { egui::Button::new(label) };
-                        if ui.add(button).on_hover_text(tr(&format!("help.launcher.{action}"))).clicked() { self.dispatch(action, ctx); }
-                    }
-                    if self.dependency_plan.is_some() && ui.button(tr("install.button")).on_hover_text(tr("install.help")).clicked() {
-                        self.confirm_dependencies=true;
+                        let help = if action == "check" && install_pending {
+                            tr("install.help")
+                        } else { tr(&format!("help.launcher.{action}")) };
+                        if ui.add(button).on_hover_text(help).clicked() {
+                            if action == "check" && install_pending { self.confirm_dependencies=true; }
+                            else { self.dispatch(action, ctx); }
+                        }
                     }
                 });
             });
