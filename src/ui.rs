@@ -129,16 +129,28 @@ impl eframe::App for App {
             }
             theme::header(ui);
             ui.add_space(8.0); ui.separator();
-            ui.horizontal_wrapped(|ui| {
+            ui.horizontal(|ui| {
                 let previous = self.tab;
-                for (index, label) in [tr("text.general"), tr("text.gameplay"), tr("text.display"), tr("text.sound_msu"), tr("text.keyboard"), tr("text.gamepad"), tr("text.shortcuts"), tr("text.ini_tab")].iter().enumerate() {
+                let labels = [tr("text.general"), tr("text.gameplay"), tr("text.display"), tr("text.sound_msu"), tr("text.keyboard"), tr("text.gamepad"), tr("text.shortcuts"), tr("text.ini_tab")];
+                ui.spacing_mut().item_spacing.x = 6.0;
+                ui.spacing_mut().button_padding.x = 8.0;
+                let width = ((ui.available_width() - ui.spacing().item_spacing.x * (labels.len() - 1) as f32) / labels.len() as f32).max(1.0);
+                let mut font = egui::TextStyle::Button.resolve(ui.style());
+                font.size = 12.0;
+                // Give every tab the same height, including when a translation wraps.
+                let height = labels.iter().map(|label| {
+                    ui.painter().layout((*label).to_owned(), font.clone(), theme::PARCHMENT,
+                        (width - 2.0 * ui.spacing().button_padding.x).max(1.0)).size().y
+                        + 2.0 * ui.spacing().button_padding.y
+                }).fold(ui.spacing().interact_size.y, f32::max);
+                for (index, label) in labels.iter().enumerate() {
                     let active=self.tab == index;
-                    let button=egui::Button::new(egui::RichText::new(*label).size(11.0)
+                    let button=egui::Button::new(egui::RichText::new(*label).size(12.0)
                         .color(if active { theme::FOREST } else { theme::PARCHMENT }))
                         .fill(if active { theme::GOLD } else { theme::FOREST })
                         .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
-                        .corner_radius(egui::CornerRadius::same(8));
-                    if ui.add(button).clicked() { self.tab=index; }
+                        .corner_radius(egui::CornerRadius::same(8)).wrap();
+                    if ui.add_sized([width, height], button).clicked() { self.tab=index; }
                 }
                 if self.tab != previous {
                     if previous == 7 && !self.options.leave_ini(&mut self.status) {
