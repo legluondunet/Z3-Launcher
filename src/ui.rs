@@ -267,7 +267,7 @@ impl eframe::App for App {
     }
 }
 pub fn start() -> eframe::Result<()> {
-    let options = eframe::NativeOptions { viewport: egui::ViewportBuilder::default().with_inner_size([1060.0, 840.0]).with_min_inner_size([760.0, 660.0]), ..Default::default() };
+    let options = eframe::NativeOptions { viewport: egui::ViewportBuilder::default().with_inner_size([1060.0, 840.0]).with_min_inner_size([760.0, 660.0]).with_icon(theme::window_icon()).with_app_id("z3-launcher"), ..Default::default() };
     eframe::run_native("Z3-Launcher", options, Box::new(|cc| {
         theme::apply(&cc.egui_ctx);
         let mut app=App::default(); app.background=theme::background(&cc.egui_ctx);

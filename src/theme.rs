@@ -3,6 +3,7 @@
 use eframe::egui::{self, Color32, FontFamily, FontId, RichText, Stroke};
 pub const GOLD: Color32 = Color32::from_rgb(213, 179, 94);
 pub const FOREST: Color32 = Color32::from_rgb(8, 33, 21);
+const EMBLEM_TRIANGLES: [(f32, f32); 3] = [(23.0, 2.0), (12.0, 22.0), (34.0, 22.0)];
 pub const PARCHMENT: Color32 = Color32::from_rgb(238, 230, 203);
 
 pub fn apply(ctx: &egui::Context) {
@@ -51,7 +52,7 @@ pub fn header(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         let (rect, _) = ui.allocate_exact_size(egui::vec2(46.0, 46.0), egui::Sense::hover());
         let point = |x: f32, y: f32| egui::pos2(rect.left()+x, rect.top()+y);
-        for (x,y) in [(23.0,2.0),(12.0,22.0),(34.0,22.0)] {
+        for (x,y) in EMBLEM_TRIANGLES {
             ui.painter().add(egui::Shape::convex_polygon(vec![point(x,y),point(x-11.0,y+20.0),point(x+11.0,y+20.0)], GOLD, Stroke::NONE));
         }
         ui.vertical(|ui| {
@@ -59,4 +60,32 @@ pub fn header(ui: &mut egui::Ui) {
             ui.small(format!("{} · v{}", std::env::consts::OS, env!("CARGO_PKG_VERSION")));
         });
     });
+}
+
+/// Transparent native window icon using the same gold and geometry as the header.
+/// Supersampling keeps triangle edges smooth at taskbar and title-bar sizes.
+pub fn window_icon() -> egui::IconData {
+    let size = 64_u32;
+    let mut rgba = Vec::with_capacity((size * size * 4) as usize);
+    let color = GOLD.to_array();
+    for y in 0..size {
+        for x in 0..size {
+            let mut coverage = 0_u32;
+            for sy in 0..4 {
+                for sx in 0..4 {
+                    let px = (x as f32 + (sx as f32 + 0.5) / 4.0) * 46.0 / size as f32;
+                    let py = (y as f32 + (sy as f32 + 0.5) / 4.0) * 46.0 / size as f32;
+                    if EMBLEM_TRIANGLES.iter().any(|&(cx, top)| {
+                        let height = py - top;
+                        (0.0..=20.0).contains(&height)
+                            && (px - cx).abs() <= 11.0 * height / 20.0
+                    }) {
+                        coverage += 1;
+                    }
+                }
+            }
+            rgba.extend_from_slice(&[color[0], color[1], color[2], (coverage * 255 / 16) as u8]);
+        }
+    }
+    egui::IconData { rgba, width: size, height: size }
 }
