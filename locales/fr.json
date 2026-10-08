@@ -328,6 +328,7 @@
     "download.install_first": "Téléchargez et installez d’abord le jeu.",
     "download.shader_warning": "Jeu installé ; échec du téléchargement des shaders : {error}",
     "download.wait_close": "Une opération est en cours. Attendez avant de fermer le launcher.",
-    "help.launcher.update": "Télécharge le dernier jeu et régénère les ressources. Conserve les réglages, les sauvegardes et les langues importées."
+    "help.launcher.update": "Télécharge le dernier jeu et régénère les ressources. Conserve les réglages, les sauvegardes et les langues importées.",
+    "text.controls": "Contrôles"
   }
 }

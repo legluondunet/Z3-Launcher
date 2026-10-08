@@ -126,7 +126,7 @@ impl Options {
     }
     pub fn cancel_capture(&mut self) { self.capture = None; }
     pub fn select_page(&mut self, page: usize) {
-        self.page = page.min(5); self.capture = None;
+        self.page = page.min(4); self.capture = None;
     }
     pub fn autosave(&mut self, status: &mut String) {
         if self.raw_active || !self.dirty { return; }
@@ -228,22 +228,17 @@ impl Options {
                     0=>game(ui,doc,&mut self.dirty,&mut self.language_request),
                     1=>graphics(ui,doc,&mut self.dirty),
                     2=>sound(ui,doc,&mut self.dirty),
-                    3|4=>{
-                        let pad=self.page==4; let section=if pad {"GamepadMap"} else {"KeyMap"}; let default=if pad {PAD_DEFAULT} else {KEY_DEFAULT};
-                        if pad {
-                            ui.label(tr("text.sdl_names_a_b_x_y_refer_to_logical"));
-                            if self.pad.is_none() { match Pad::new() {Ok(p)=>self.pad=Some(p),Err(e)=>self.pad_error=e} }
-                            if let Some(p)=&self.pad { for c in &p.controllers {ui.label(tf("mapping.gamepad", &[("name", c.name())]));} if p.controllers.is_empty() {ui.label(tr("text.no_sdl_gamepad_detected_manual_selection_is_available"));} }
-                            if !self.pad_error.is_empty() {ui.label(tf("mapping.unavailable", &[("error", self.pad_error.clone())]));}
-                        } else { ui.label(tr("text.ctrl_alt_and_shift_combinations_are_supported_enter_standalone"));
-                            ui.horizontal(|ui| { for (label,keys) in [("QWERTY",KEY_DEFAULT),("AZERTY","Up, Down, Left, Right, Right Shift, Return, x, w, s, q, c, v"),("QWERTZ","Up, Down, Left, Right, Right Shift, Return, x, y, s, a, c, v")] { if ui.button(label).on_hover_text(tr("help.action.preset")).clicked() {doc.set(section,"Controls",keys);self.dirty=true;} } });
-                        }
-                        if pad && ui.button(tr("text.restore_default_gamepad_bindings")).on_hover_text(tr("help.action.restore_pad")).clicked() { doc.set(section,"Controls",PAD_DEFAULT); self.dirty=true; }
-                        if ui.button(tr("text.assign_all_controls")).on_hover_text(tr("help.action.assign_all")).clicked() { requested=Some((Target {section:section.into(),key:"Controls".into(),index:0,count:12,default:default.into()},true)); }
-                        for (i,label) in control_labels().iter().enumerate() {
-                            let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
-                            binding_row(ui,doc,&mut self.dirty,label,&t,pad,&mut requested);
-                        }
+                    3=>{
+                        stacked_settings(ui, |ui| {
+                            for pad in [false, true] {
+                                let title=tr(if pad { "text.gamepad" } else { "text.keyboard" });
+                                settings_section(ui, title, |ui| {
+                                    ui.push_id(if pad { "GamepadMap" } else { "KeyMap" }, |ui| {
+                                        controls_bindings(ui,doc,&mut self.dirty,pad,&mut self.pad,&mut self.pad_error,&mut requested);
+                                    });
+                                });
+                            }
+                        });
                     },
                     _=>shortcuts(ui,doc,&mut self.dirty,&mut requested),
                 }
@@ -258,6 +253,24 @@ impl Options {
             if let Some(id) = ctx.memory(|m| m.focused()) { ctx.memory_mut(|m| m.surrender_focus(id)); }
             self.capture=Some(Capture {target,sequential,since:Instant::now()});ctx.request_repaint();
         }
+    }
+}
+fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bool,
+    pad_state: &mut Option<Pad>, pad_error: &mut String, requested: &mut Option<(Target,bool)>) {
+    let section=if pad {"GamepadMap"} else {"KeyMap"}; let default=if pad {PAD_DEFAULT} else {KEY_DEFAULT};
+    if pad {
+        ui.label(tr("text.sdl_names_a_b_x_y_refer_to_logical"));
+        if pad_state.is_none() { match Pad::new() {Ok(p)=>*pad_state=Some(p),Err(e)=>*pad_error=e} }
+        if let Some(p)=pad_state.as_ref() { for c in &p.controllers {ui.label(tf("mapping.gamepad", &[("name", c.name())]));} if p.controllers.is_empty() {ui.label(tr("text.no_sdl_gamepad_detected_manual_selection_is_available"));} }
+        if !pad_error.is_empty() {ui.label(tf("mapping.unavailable", &[("error", pad_error.clone())]));}
+    } else { ui.label(tr("text.ctrl_alt_and_shift_combinations_are_supported_enter_standalone"));
+        ui.horizontal(|ui| { for (label,keys) in [("QWERTY",KEY_DEFAULT),("AZERTY","Up, Down, Left, Right, Right Shift, Return, x, w, s, q, c, v"),("QWERTZ","Up, Down, Left, Right, Right Shift, Return, x, y, s, a, c, v")] { if ui.button(label).on_hover_text(tr("help.action.preset")).clicked() {doc.set(section,"Controls",keys);*dirty=true;} } });
+    }
+    if pad && ui.button(tr("text.restore_default_gamepad_bindings")).on_hover_text(tr("help.action.restore_pad")).clicked() { doc.set(section,"Controls",PAD_DEFAULT); *dirty=true; }
+    if ui.button(tr("text.assign_all_controls")).on_hover_text(tr("help.action.assign_all")).clicked() { *requested=Some((Target {section:section.into(),key:"Controls".into(),index:0,count:12,default:default.into()},true)); }
+    for (i,label) in control_labels().iter().enumerate() {
+        let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
+        binding_row(ui,doc,dirty,label,&t,pad,requested);
     }
 }
 fn set_binding(doc:&mut Ini,target:&Target,value:&str) {

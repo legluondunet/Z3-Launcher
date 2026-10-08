@@ -328,6 +328,7 @@
     "download.install_first": "Lade zuerst das Spiel herunter und installiere es.",
     "download.shader_warning": "Spiel installiert; Shader-Download fehlgeschlagen: {error}",
     "download.wait_close": "Ein Vorgang läuft. Warte, bevor du den Launcher schließt.",
-    "help.launcher.update": "Lädt das neueste Spiel herunter und erstellt die Ressourcen neu. Einstellungen, Spielstände und importierte Sprachen bleiben erhalten."
+    "help.launcher.update": "Lädt das neueste Spiel herunter und erstellt die Ressourcen neu. Einstellungen, Spielstände und importierte Sprachen bleiben erhalten.",
+    "text.controls": "Steuerung"
   }
 }

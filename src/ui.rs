@@ -104,7 +104,7 @@ impl eframe::App for App {
                 if path.is_file() && (extension.eq_ignore_ascii_case("sfc") || extension.eq_ignore_ascii_case("smc")) {
                     if let Some(path) = path.to_str() {
                         self.rom = path.to_owned();
-                        if self.tab != 7 || self.options.leave_ini(&mut self.status) {
+                        if self.tab != 6 || self.options.leave_ini(&mut self.status) {
                             self.tab = 0; self.options.cancel_capture();
                             self.status = tr("download.rom_selected").into();
                         }
@@ -137,7 +137,7 @@ impl eframe::App for App {
             ui.add_space(8.0); ui.separator();
             ui.horizontal(|ui| {
                 let previous = self.tab;
-                let labels = [tr("text.general"), tr("text.gameplay"), tr("text.display"), tr("text.sound_msu"), tr("text.keyboard"), tr("text.gamepad"), tr("text.shortcuts"), tr("text.ini_tab")];
+                let labels = [tr("text.general"), tr("text.gameplay"), tr("text.display"), tr("text.sound_msu"), tr("text.controls"), tr("text.shortcuts"), tr("text.ini_tab")];
                 ui.spacing_mut().item_spacing.x = 6.0;
                 ui.spacing_mut().button_padding.x = 8.0;
                 let width = ((ui.available_width() - ui.spacing().item_spacing.x * (labels.len() - 1) as f32) / labels.len() as f32).max(1.0);
@@ -159,9 +159,9 @@ impl eframe::App for App {
                     if ui.add_sized([width, height], button).clicked() { self.tab=index; }
                 }
                 if self.tab != previous {
-                    if previous == 7 && !self.options.leave_ini(&mut self.status) {
+                    if previous == 6 && !self.options.leave_ini(&mut self.status) {
                         self.tab=previous;
-                    } else if self.tab == 7 {
+                    } else if self.tab == 6 {
                         if busy || !self.options.enter_ini(&self.root, &mut self.status) { self.tab=previous; }
                     } else if self.tab > 0 { self.options.select_page(self.tab - 1); }
                     else { self.options.cancel_capture(); }
@@ -170,7 +170,7 @@ impl eframe::App for App {
             ui.separator();
             ui.scope(|ui| {
                 for font in ui.style_mut().text_styles.values_mut() { font.size -= 2.0; }
-            if self.tab == 7 {
+            if self.tab == 6 {
                 self.options.show_ini(ui, busy);
             } else if self.tab > 0 {
                 self.options.show(ui, ctx, &self.root, busy, &mut self.status);

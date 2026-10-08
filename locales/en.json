@@ -328,6 +328,7 @@
     "download.install_first": "Download and install the game first.",
     "download.shader_warning": "Game installed; shader download failed: {error}",
     "download.wait_close": "An operation is running. Wait before closing the launcher.",
-    "help.launcher.update": "Download the latest game and regenerate resources. Preserves settings, saves and imported languages."
+    "help.launcher.update": "Download the latest game and regenerate resources. Preserves settings, saves and imported languages.",
+    "text.controls": "Controls"
   }
 }
