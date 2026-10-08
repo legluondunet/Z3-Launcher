@@ -5,20 +5,18 @@ use crate::core::Launcher;
 use eframe::egui;
 use crate::theme;
 use std::{fs, path::PathBuf, sync::{mpsc::{self, Receiver}, Arc}, thread};
-enum Event { DependenciesDone(std::result::Result<Option<crate::core::DependencyPlan>, String>), Line(String), Done(std::result::Result<(), String>), LanguageDone(String, std::result::Result<(), String>) }
+enum Event { Line(String), Done(std::result::Result<(), String>), LanguageDone(String, std::result::Result<(), String>) }
 struct App {
     instance: Option<crate::single_instance::Guard>,
     root: String, rom: String, lines: Vec<String>, rx: Option<Receiver<Event>>,
-    // Session-only state: every application startup begins with dependency verification.
-    dependency_plan: Option<crate::core::DependencyPlan>, confirm_dependencies: bool, installing_dependencies: bool,
-    importing_language: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize,
+    protect_operation: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize,
 }
 impl Default for App {
     fn default() -> Self {
         let root = if crate::platform::is_portable() {
             crate::default_root().to_string_lossy().into_owned()
         } else { fs::read_to_string(preferences()).unwrap_or_else(|_| crate::default_root().to_string_lossy().into_owned()) };
-        Self { instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, dependency_plan: None, confirm_dependencies: false, installing_dependencies: false, importing_language: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
+        Self { instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
     }
 }
 fn preferences() -> PathBuf { crate::platform::config_dir().join("workspace.txt") }
@@ -30,7 +28,7 @@ impl App {
         let Some(rom) = rfd::FileDialog::new().set_title(title).add_filter(tr("text.snes_rom_sfc_smc"), &["sfc", "smc", "SFC", "SMC"]).pick_file() else {
             self.status = tr("game_language.cancelled").into(); return;
         };
-        let (tx, rx) = mpsc::channel(); self.rx = Some(rx); self.importing_language = true;
+        let (tx, rx) = mpsc::channel(); self.rx = Some(rx); self.protect_operation = true;
         self.status = tf("game_language.importing", &[("language", code.clone())]);
         let ctx = ctx.clone();
         thread::spawn(move || {
@@ -52,24 +50,11 @@ impl App {
         let prefs = preferences();
         if let Some(parent) = prefs.parent() { if let Err(e) = fs::create_dir_all(parent).and_then(|_| fs::write(&prefs, &self.root)) { self.status = e.to_string(); return; } }
         let rom = if self.rom.is_empty() { None } else { Some(PathBuf::from(&self.rom)) };
-        let (tx, rx) = mpsc::channel(); self.rx = Some(rx); self.status = tf("status.running", &[("action", action.to_owned())]);
-        let plan=self.dependency_plan.clone();
-        if action == "check" { self.dependency_plan=None; }
-        self.installing_dependencies=action == "install-dependencies";
+        let (tx, rx) = mpsc::channel(); self.rx = Some(rx); self.protect_operation = action != "run"; self.status = tf("status.running", &[("action", action.to_owned())]);
         let ctx = ctx.clone();
         thread::spawn(move || {
             let t = tx.clone(); let c = ctx.clone();
             let log=launcher.log(Arc::new(move |line| { let _=t.send(Event::Line(line)); c.request_repaint(); }));
-            if action == "check" || action == "install-dependencies" {
-                let result=log.and_then(|log| {
-                    if action == "install-dependencies" {
-                        let plan=plan.as_ref().ok_or(tr("install.unavailable"))?;
-                        launcher.install_dependencies(plan, &log)?;
-                    }
-                    launcher.dependency_plan(&log)
-                }).map_err(|e| e.to_string());
-                let _=tx.send(Event::DependenciesDone(result)); ctx.request_repaint(); return;
-            }
             let result = log
                 .and_then(|log| launcher.action(action, rom.as_deref(), &log)).map_err(|e| e.to_string());
             let _ = tx.send(Event::Done(result)); ctx.request_repaint();
@@ -82,39 +67,29 @@ impl eframe::App for App {
             ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
             ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
         }
-        if self.importing_language || self.installing_dependencies {
+        if self.protect_operation {
             if ctx.input(|i| i.viewport().close_requested()) {
                 ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
-                self.status = tr(if self.installing_dependencies { "install.wait_close" } else { "game_language.wait_before_close" }).into();
+                self.status = tr("download.wait_close").into();
             }
         } else { self.options.close_guard(ctx, &mut self.status); }
         let mut done = None;
         let mut imported = None;
-        let mut dependencies=None;
         if let Some(rx) = &self.rx {
             for event in rx.try_iter() { match event {
                 Event::Line(line) => { self.lines.push(line); if self.lines.len() > 2000 { self.lines.remove(0); } },
-                Event::DependenciesDone(result) => dependencies=Some(result),
                 Event::Done(result) => done = Some(result),
                 Event::LanguageDone(code, result) => { imported = Some(code); done = Some(result); },
             } }
         }
         if let Some(result) = done {
-            self.rx = None; self.importing_language = false;
+            self.rx = None; self.protect_operation = false;
             self.status = match result {
                 Ok(()) => if let Some(code) = imported {
                     self.options.apply_game_language(&code);
                     tr("settings.language_imported").into()
                 } else { tr("text.done").into() },
                 Err(e) => tf("status.error", &[("error", e.to_string())]),
-            };
-        }
-        if let Some(result)=dependencies {
-            self.rx=None; self.installing_dependencies=false;
-            self.status=match result {
-                Ok(plan) => { let ready=plan.is_none(); self.dependency_plan=plan;
-                    tr(if ready { "install.all_available" } else { "install.missing_ready" }).into() },
-                Err(error) => tf("status.error", &[("error", error)]),
             };
         }
         let busy = self.rx.is_some();
@@ -131,7 +106,7 @@ impl eframe::App for App {
                         self.rom = path.to_owned();
                         if self.tab != 7 || self.options.leave_ini(&mut self.status) {
                             self.tab = 0; self.options.cancel_capture();
-                            self.status = tr("text.rom_selected_click_install_and_build_to_use_it").into();
+                            self.status = tr("download.rom_selected").into();
                         }
                     } else {
                         self.status = tr("text.the_rom_path_must_be_utf_8").into();
@@ -234,7 +209,7 @@ impl eframe::App for App {
                             if path.is_file() && (extension.eq_ignore_ascii_case("sfc") || extension.eq_ignore_ascii_case("smc")) {
                                 if let Some(path) = path.to_str() {
                                     self.rom = path.to_owned();
-                                    self.status = tr("text.rom_selected_click_install_and_build_to_use_it").into();
+                                    self.status = tr("download.rom_selected").into();
                                 } else {
                                     self.status = tr("text.the_rom_path_must_be_utf_8").into();
                                 }
@@ -245,18 +220,12 @@ impl eframe::App for App {
                     }
                 });
                 ui.horizontal_wrapped(|ui| {
-                    let install_pending = self.dependency_plan.is_some();
-                    let dependency_label = tr(if install_pending { "install.button" } else { "text.check_dependencies" });
-                    for (label, action) in [(dependency_label, "check"), (tr("text.install_and_build"), "setup"), (tr("text.launch_game"), "run")] {
+                    for (label, action) in [(tr("download.install_button"), "setup"), (tr("download.update_button"), "update"), (tr("text.launch_game"), "run")] {
                         let button = if action == "run" {
                             egui::Button::new(egui::RichText::new(label).color(theme::FOREST).strong()).fill(theme::GOLD)
                         } else { egui::Button::new(label) };
-                        let help = if action == "check" && install_pending {
-                            tr("install.help")
-                        } else { tr(&format!("help.launcher.{action}")) };
-                        if ui.add(button).on_hover_text(help).clicked() {
-                            if action == "check" && install_pending { self.confirm_dependencies=true; }
-                            else { self.dispatch(action, ctx); }
+                        if ui.add(button).on_hover_text(tr(&format!("help.launcher.{action}"))).clicked() {
+                            self.dispatch(action, ctx);
                         }
                     }
                 });
@@ -311,25 +280,6 @@ impl eframe::App for App {
                 });
             }
         });
-        if self.confirm_dependencies {
-            let plan=self.dependency_plan.clone();
-            egui::Window::new(tr("install.confirm_title")).collapsible(false).resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO).show(ctx, |ui| {
-                    if let Some(plan)=plan {
-                        ui.set_max_width(580.0);
-                        ui.label(&plan.description);
-                        ui.label(tr("install.packages"));
-                        ui.monospace(plan.packages.join("\n"));
-                        ui.label(tr("install.confirm_notice"));
-                        ui.horizontal(|ui| {
-                            if ui.add_enabled(!busy, egui::Button::new(tr("install.confirm"))).clicked() {
-                                self.confirm_dependencies=false; self.dispatch("install-dependencies", ctx);
-                            }
-                            if ui.button(tr("install.cancel")).clicked() { self.confirm_dependencies=false; }
-                        });
-                    } else { self.confirm_dependencies=false; }
-                });
-        }
         if !busy { self.options.autosave(&mut self.status); }
         if let Some((code, root)) = self.options.take_language_request() { self.import_game_language(code, root, ctx); }
         // Status changes made by widgets are reflected in the footer on the next frame.

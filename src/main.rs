@@ -9,7 +9,7 @@ mod core;
 mod single_instance;
 mod i18n;
 mod platform;
-mod dependencies;
+mod download;
 mod ini;
 #[cfg(feature = "gui")]
 mod ui;
