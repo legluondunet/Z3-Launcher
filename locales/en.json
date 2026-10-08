@@ -59,7 +59,7 @@
     "text.carry_up_to_9_999_rupees": "Carry up to 9,999 rupees",
     "text.changing_the_language_does_not_create_translated_assets_extract": "Changing the language does not create translated assets. Extract them from a matching ROM first.",
     "text.channels": "Channels",
-    "text.check_dependencies": "Check dependencies",
+    "text.check_dependencies": "Dependency verification",
     "text.choose_a_file": "Choose a file…",
     "text.clear": "Clear",
     "text.clear_display": "Clear display",
@@ -322,6 +322,11 @@
     "shaders.requires_opengl": "Choose OpenGL or OpenGL ES as the renderer to configure shaders.",
     "text.ini_tab": "INI",
     "settings.ini_hint": "Changes are saved automatically when you leave this tab. The launcher settings are then refreshed.",
-    "settings.ini_saved": "INI file saved; launcher settings updated."
+    "settings.ini_saved": "INI file saved; launcher settings updated.",
+    "windows.probing": "Checking: {name}…",
+    "windows.probe_timeout": "The tool did not respond within 5 seconds.",
+    "windows.probe_failed": "The tool failed ({status}).",
+    "windows.tool_not_installed": "Tool not found in the MSYS2 UCRT64 installation.",
+    "windows.python_unavailable": "UCRT64 Python is missing or unusable; module check skipped."
   }
 }
