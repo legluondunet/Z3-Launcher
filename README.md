@@ -185,14 +185,14 @@ Références paquets :
 ## Version 0.7 : langues de l'interface
 
 General / Général contient le choix Interface language / Langue de l'interface.
-English est le défaut, quelle que soit la langue du système. Français est fourni.
+English est le défaut, quelle que soit la langue du système. Français, Italiano, Español et Deutsch sont fournis.
 Le changement est immédiat et mémorisé dans language.txt du répertoire de
 configuration. Le choix est indépendant de la langue du jeu et de zelda3.ini.
 Le sélecteur est désactivé pendant les opérations pour conserver la cohérence
 linguistique des nouveaux messages du journal.
 
-Les 200 textes du launcher sont extraits dans locales/en.json et locales/fr.json.
-Les catalogues anglais/français sont embarqués ; ils restent disponibles sans
+Les 341 messages du launcher sont extraits dans les fichiers JSON de locales/.
+Les cinq catalogues sont embarqués ; ils restent disponibles sans
 fichiers externes. Les fichiers externes sont chargés au démarrage : locales/
 du répertoire courant, puis locales/ à côté du binaire, puis le dossier utilisateur
 ~/.config/Z3-Launcher/locales (ou son équivalent XDG). Une traduction absente

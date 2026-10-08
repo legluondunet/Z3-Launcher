@@ -1,6 +1,8 @@
 # Translating Z3-Launcher
 
-No Rust changes or recompilation are needed to add a language.
+English, French, Italian (Italiano), Spanish (Español) and German (Deutsch) are embedded in the executable. They remain available without external locale files. All currently contain 341 messages, including help and installation dialogs.
+
+No Rust changes or recompilation are needed to add another language. External JSON files can also override a bundled language for corrections.
 
 1. Copy locales/en.json to locales/es.json (replace es with your language code).
 2. In language, set code to es and name to the native name, for example Español.

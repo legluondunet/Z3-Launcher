@@ -41,8 +41,11 @@ fn catalog() -> &'static Catalog {
         let baseline=english.messages.clone();let mut locales=BTreeMap::new();let mut warnings=Vec::new();
         install(&mut locales,english,&baseline).expect("Invalid embedded English catalog");
         let english = locales["en"].messages.clone();
-        let french:Translation=serde_json::from_str(include_str!("../locales/fr.json")).expect("Embedded French catalog is invalid");
-        install(&mut locales,french,&baseline).expect("Invalid embedded French catalog");
+        for source in [include_str!("../locales/fr.json"), include_str!("../locales/it.json"),
+            include_str!("../locales/es.json"), include_str!("../locales/de.json")] {
+            let translation:Translation=serde_json::from_str(source).expect("Invalid embedded translation catalog");
+            install(&mut locales,translation,&baseline).expect("Invalid embedded translation");
+        }
         // First loaded directory has lowest priority. No need for a recompile.
         let mut directories=Vec::new();
         if let Ok(cwd)=std::env::current_dir() {directories.push(cwd.join("locales"));}
