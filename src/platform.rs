@@ -47,7 +47,7 @@ pub fn config_dir() -> PathBuf {
     portable_dir().map(|root|root.join("config")).unwrap_or_else(||std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).unwrap_or_else(|| home().join(".config")).join("Z3-Launcher"))
 }
 #[cfg(not(windows))]
-pub const GAME_BINARY: &str = "zelda3";
+pub const GAME_BINARY: &str = "zelda3.AppImage";
 #[cfg(windows)]
 pub const GAME_BINARY: &str = "zelda3.exe";
 #[cfg(test)]
@@ -87,7 +87,7 @@ pub fn canonicalize(path: impl AsRef<Path>) -> std::io::Result<PathBuf> {
     { std::fs::canonicalize(path) }
 }
 
-/// Keep packaged GUI libraries out of system Python, Git, compilers and the game.
+/// Keep packaged GUI libraries out of the game and standalone resource extractor.
 pub fn host_command(program: &str) -> std::process::Command {
     let mut command = std::process::Command::new(program);
     #[cfg(windows)]

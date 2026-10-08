@@ -63,9 +63,9 @@ complete catalogs; --allow-missing allows incremental translation work.
 ## Scope
 
 Catalogs cover tabs, buttons, setting labels, shortcut names, launcher-generated
-errors, CLI help and dependency reports. INI keys, SDL button/key names, commands,
+errors and CLI help. INI keys, SDL button/key names, commands,
 paths and file extensions are deliberately not translated. Native dialogs use
-the desktop's own language. Output from Git, Python, make, the operating system,
+the desktop's own language. Output from the resource extractor, the operating system,
 SDL and the game is not translated by the launcher. Existing log entries are not
 rewritten after switching language.
 

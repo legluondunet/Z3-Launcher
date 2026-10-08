@@ -2,7 +2,7 @@
 name = "z3-launcher"
 version = "0.11.16"
 edition = "2021"
-rust-version = "1.85"
+rust-version = "1.88"
 license = "GPL-3.0-or-later"
 authors = ["legluondunet (https://github.com/legluondunet)"]
 repository = "https://github.com/legluondunet/Z3-Launcher"
@@ -24,7 +24,11 @@ sdl2 = { version = "=0.37.0", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-[target.'cfg(windows)'.dependencies]
 sha2 = "0.10"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+zip = { version = "2.4", default-features = false, features = ["deflate"] }
+tempfile = "3"
+
+[target.'cfg(windows)'.dependencies]
 dunce = "1"
 sdl2 = { version = "=0.37.0", optional = true, features = ["bundled", "static-link"] }
