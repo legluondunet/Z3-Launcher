@@ -4,9 +4,12 @@
 use std::{path::{Path, PathBuf}, process::{Command, Stdio, ExitStatus}, time::{Duration, Instant}, io};
 use crate::{core::{Log, Result}, i18n::{tr, tf}};
 
+pub fn installation_root() -> PathBuf {
+    std::env::var_os("MSYS2_ROOT").map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(r"C:\msys64"))
+}
 fn msys_root() -> Result<PathBuf> {
-    let root = std::env::var_os("MSYS2_ROOT").map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\msys64"));
+    let root = installation_root();
     if root.join("usr/bin/bash.exe").is_file() { Ok(root) }
     else { Err(tr("windows.msys_missing").into()) }
 }
@@ -57,7 +60,7 @@ fn probe_status(command: &mut Command, timeout: Duration) -> io::Result<ExitStat
     }
 }
 
-pub fn check(log: &Log) -> Result<()> {
+pub fn missing_packages(log: &Log) -> Result<Vec<String>> {
     log(tr("windows.check").into());
     let root = match msys_root() {
         Ok(root) => root,
@@ -106,15 +109,43 @@ pub fn check(log: &Log) -> Result<()> {
             log(tf("windows.missing", &[("name", (*name).into()), ("error", error)]));
         } else { log(tf("windows.ok", &[("name", (*name).into())])); }
     }
-    if missing.is_empty() { return Ok(()); }
+    if missing.is_empty() { return Ok(Vec::new()); }
     log(tr("windows.install").into());
-    log(format!("pacman -S --needed {}", missing.into_iter().collect::<Vec<_>>().join(" ")));
-    Err(tr("text.some_dependencies_are_missing_or_unusable_see_the_report").into())
+    let packages=missing.into_iter().map(str::to_owned).collect::<Vec<_>>();
+    log(format!("pacman -S --needed {}", packages.join(" ")));
+    Ok(packages)
+}
+
+pub fn check(log: &Log) -> Result<()> {
+    if missing_packages(log)?.is_empty() { Ok(()) }
+    else { Err(tr("text.some_dependencies_are_missing_or_unusable_see_the_report").into()) }
+}
+pub fn install_plan(log: &Log) -> Result<Option<crate::core::DependencyPlan>> {
+    let bootstrap=msys_root().is_err();
+    let packages=if bootstrap {
+        log(tr("windows.msys_missing").into());
+        vec!["git", "make", "mingw-w64-ucrt-x86_64-gcc", "mingw-w64-ucrt-x86_64-binutils",
+            "mingw-w64-ucrt-x86_64-python", "mingw-w64-ucrt-x86_64-python-pillow",
+            "mingw-w64-ucrt-x86_64-python-yaml", "mingw-w64-ucrt-x86_64-SDL2"]
+            .into_iter().map(str::to_owned).collect()
+    } else { missing_packages(log)? };
+    if packages.is_empty() { return Ok(None); }
+    let mut description=tf("install.windows_plan", &[("path", installation_root().display().to_string())]);
+    if bootstrap { description.push_str("\n"); description.push_str(tr("install.msys_bootstrap")); }
+    Ok(Some(crate::core::DependencyPlan { description, packages,
+        family:crate::dependencies::Family::Unknown, bootstrap_msys:bootstrap }))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn msys_installer_script_has_valid_powershell_syntax() {
+        let mut cmd=Command::new("powershell.exe");
+        cmd.args(["-NoProfile", "-NonInteractive", "-Command", "$ErrorActionPreference='Stop'; [void][scriptblock]::Create($env:Z3_TEST_INSTALL_SCRIPT)"])
+            .env("Z3_TEST_INSTALL_SCRIPT", include_str!("../tools/install-msys2.ps1"));
+        assert!(probe_status(&mut cmd, Duration::from_secs(10)).unwrap().success());
+    }
     #[test]
     fn dependency_probe_reports_exit_status() {
         let mut cmd = Command::new("cmd.exe");
@@ -131,3 +162,4 @@ mod tests {
         assert!(started.elapsed() < Duration::from_secs(10));
     }
 }
+
