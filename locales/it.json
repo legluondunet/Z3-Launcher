@@ -329,6 +329,8 @@
     "download.shader_warning": "Gioco installato; download degli shader non riuscito: {error}",
     "download.wait_close": "Operazione in corso. Attendi prima di chiudere il launcher.",
     "help.launcher.update": "Scarica l’ultimo gioco e rigenera le risorse. Conserva impostazioni, salvataggi e lingue importate.",
-    "text.controls": "Controlli"
+    "text.controls": "Controlli",
+    "updates.game": "Aggiornamento Zelda3 disponibile ({version})",
+    "updates.launcher": "Aggiornamento del launcher disponibile ({version})"
   }
 }

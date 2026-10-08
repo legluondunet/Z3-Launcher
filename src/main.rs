@@ -10,6 +10,7 @@ mod single_instance;
 mod i18n;
 mod platform;
 mod download;
+mod updates;
 mod ini;
 #[cfg(feature = "gui")]
 mod ui;

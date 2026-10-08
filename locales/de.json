@@ -329,6 +329,8 @@
     "download.shader_warning": "Spiel installiert; Shader-Download fehlgeschlagen: {error}",
     "download.wait_close": "Ein Vorgang läuft. Warte, bevor du den Launcher schließt.",
     "help.launcher.update": "Lädt das neueste Spiel herunter und erstellt die Ressourcen neu. Einstellungen, Spielstände und importierte Sprachen bleiben erhalten.",
-    "text.controls": "Steuerung"
+    "text.controls": "Steuerung",
+    "updates.game": "Zelda3-Update verfügbar ({version})",
+    "updates.launcher": "Launcher-Update verfügbar ({version})"
   }
 }

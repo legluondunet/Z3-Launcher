@@ -268,10 +268,12 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     }
     if pad && ui.button(tr("text.restore_default_gamepad_bindings")).on_hover_text(tr("help.action.restore_pad")).clicked() { doc.set(section,"Controls",PAD_DEFAULT); *dirty=true; }
     if ui.button(tr("text.assign_all_controls")).on_hover_text(tr("help.action.assign_all")).clicked() { *requested=Some((Target {section:section.into(),key:"Controls".into(),index:0,count:12,default:default.into()},true)); }
+    ui.columns(2, |columns| {
     for (i,label) in control_labels().iter().enumerate() {
         let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
-        binding_row(ui,doc,dirty,label,&t,pad,requested);
+        binding_row(&mut columns[i / 6],doc,dirty,label,&t,pad,requested);
     }
+    });
 }
 fn set_binding(doc:&mut Ini,target:&Target,value:&str) {
     let mut values:Vec<String>=doc.value(&target.section,&target.key,&target.default).split(',').map(|s|s.trim().to_owned()).collect();
@@ -284,12 +286,12 @@ fn help(section: &str, key: &str) -> &'static str {
 }
 fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Target,pad:bool,request:&mut Option<(Target,bool)>) {
     let raw=doc.value(&t.section,&t.key,&t.default); let mut value=raw.split(',').nth(t.index).unwrap_or("").trim().to_owned();
-    ui.push_id((&t.section,&t.key,t.index),|ui| {ui.horizontal(|ui| {
-        ui.add_sized([170.0,22.0],egui::Label::new(label)).on_hover_text(help(&t.section, &t.key));
+    ui.push_id((&t.section,&t.key,t.index),|ui| {ui.horizontal_wrapped(|ui| {
+        ui.add_sized([ui.available_width().min(130.0),22.0],egui::Label::new(label)).on_hover_text(help(&t.section, &t.key));
         if pad {
             let old=value.clone();egui::ComboBox::from_id_salt("button").selected_text(if value.is_empty(){tr("text.unassigned")}else{&value}).show_ui(ui,|ui|{ui.selectable_value(&mut value,String::new(),tr("text.unassigned"));for button in PAD_KEYS {ui.selectable_value(&mut value,button.into(),button);} }).response.on_hover_text(help(&t.section, &t.key));
             if old!=value {set_binding(doc,t,&value);*dirty=true;}
-        } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(150.0)).on_hover_text(help(&t.section, &t.key)).changed() && !value.contains(',') && !value.contains('\n') {set_binding(doc,t,&value);*dirty=true;}
+        } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(ui.available_width().min(120.0))).on_hover_text(help(&t.section, &t.key)).changed() && !value.contains(',') && !value.contains('\n') {set_binding(doc,t,&value);*dirty=true;}
         if ui.button(tr("text.capture")).on_hover_text(tr("help.action.capture")).clicked() {*request=Some((t.clone(),false));}
         if ui.button(tr("text.clear")).on_hover_text(tr("help.action.clear")).clicked() {set_binding(doc,t,"");*dirty=true;}
     });});
@@ -401,6 +403,8 @@ fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String
 fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
     stacked_settings(ui, |ui| {
         settings_section(ui, tr("text.display"), |ui| {
+            ui.columns(2, |columns| {
+            columns[0].vertical(|ui| {
             let raw=doc.value("General","ExtendedAspectRatio","4:3");let parts:Vec<&str>=raw.split(',').map(str::trim).collect();
             let mut ratio=parts.iter().find(|p|p.contains(':')).copied().unwrap_or("4:3").to_owned();
             let mut extended=parts.contains(&"extend_y");let mut unchanged=parts.contains(&"unchanged_sprites");let mut nofix=parts.contains(&"no_visual_fixes");
@@ -408,13 +412,21 @@ fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             egui::ComboBox::from_id_salt("ratio").selected_text(&ratio).show_ui(ui,|ui|{for r in ["4:3","16:9","16:10","18:9"] {ui.selectable_value(&mut ratio,r.into(),r);} }).response.on_hover_text(tr("help.aspect.ratio"));
             ui.checkbox(&mut extended,tr("text.extend_height_to_240_lines")).on_hover_text(tr("help.aspect.extend"));ui.checkbox(&mut unchanged,tr("text.preserve_original_sprite_behavior")).on_hover_text(tr("help.aspect.sprites"));ui.checkbox(&mut nofix,tr("text.disable_visual_fixes")).on_hover_text(tr("help.aspect.fixes"));
             if old!=(ratio.clone(),extended,unchanged,nofix) {let mut p=Vec::new();if extended {p.push("extend_y".to_owned());}p.push(ratio);if unchanged {p.push("unchanged_sprites".into());}if nofix {p.push("no_visual_fixes".into());}doc.set("General","ExtendedAspectRatio",&p.join(", "));*dirty=true;}
+            });
+            columns[1].vertical(|ui| {
             text(ui,doc,dirty,"Graphics","WindowSize",tr("text.window_size_auto_or_widthxheight"),"Auto");
             choice(ui,doc,dirty,"Graphics","Fullscreen",tr("text.fullscreen_mode"),"0",&[("0",tr("text.windowed")),("1",tr("text.borderless_fullscreen")),("2",tr("text.exclusive_fullscreen"))]);
             choice(ui,doc,dirty,"Graphics","WindowScale",tr("text.window_scale"),"3",&[("1","100 %"),("2","200 %"),("3","300 %"),("4","400 %"),("5","500 %"),("6","600 %")]);
             choice(ui,doc,dirty,"Graphics","OutputMethod",tr("text.renderer"),crate::core::DEFAULT_RENDERER,&[("SDL","SDL"),("SDL-Software",tr("text.sdl_software")),("OpenGL","OpenGL"),("OpenGL ES","OpenGL ES")]);
+            });
+            });
         });
         settings_section(ui, tr("text.renderer"), |ui| {
+            ui.columns(2, |columns| {
+            columns[0].vertical(|ui| {
             for (key,label,default) in [("NewRenderer",tr("text.optimized_snes_ppu"),true),("EnhancedMode7",tr("text.high_resolution_world_map_mode_7"),true),("IgnoreAspectRatio",tr("text.stretch_image"),false),("NoSpriteLimits",tr("text.remove_sprite_limits"),true),("LinearFiltering",tr("text.linear_filtering"),false),("DimFlashes",tr("text.reduce_flashing"),false)] {flag(ui,doc,dirty,"Graphics",key,label,default);}
+            });
+            columns[1].vertical(|ui| {
             file(ui,doc,dirty,"LinkGraphics",tr("text.link_sprite_zspr"),&["zspr"]);
             let renderer=doc.value("Graphics","OutputMethod",crate::core::DEFAULT_RENDERER);
             let shaders_enabled=renderer.eq_ignore_ascii_case("OpenGL") || renderer.eq_ignore_ascii_case("OpenGL ES");
@@ -422,6 +434,8 @@ fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
                 file(ui,doc,dirty,"Shader",tr("text.opengl_shader_glsl_glslp"),&["glsl","glslp","GLSL","GLSLP"]);
             });
             if !shaders_enabled { shader_controls.response.on_hover_text(tr("shaders.requires_opengl")); }
+            });
+            });
         });
     });
 }
@@ -459,14 +473,18 @@ fn shortcuts(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<(
     stacked_settings(ui, |ui| {
     ui.label(tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field"));
     for section in ["KeyMap","GamepadMap"] {settings_section(ui, if section=="KeyMap" {tr("text.keyboard_shortcuts")} else {tr("text.gamepad_shortcuts")},|ui| {
-        for (key,label,default) in [("Reset",tr("text.reset_game"),"Ctrl+r"),("Pause",tr("mapping.pause"),"Shift+p"),("PauseDimmed",tr("text.pause_and_dim"),"p"),("Fullscreen",tr("text.fullscreen"),"Alt+Return"),("WindowBigger",tr("text.increase_window_size"),"Ctrl+Up"),("WindowSmaller",tr("text.decrease_window_size"),"Ctrl+Down"),("VolumeUp",tr("text.volume_up"),"Shift+="),("VolumeDown",tr("text.volume_down"),"Shift+-"),("CheatLife",tr("text.restore_health_and_magic"),"w"),("CheatKeys",tr("text.give_one_key"),"o"),("CheatWalkThroughWalls",tr("text.walk_through_walls"),"Ctrl+e"),("Turbo",tr("mapping.turbo"),"Tab"),("ReplayTurbo",tr("text.replay_speed"),"t"),("StopReplay",tr("text.stop_replay"),"l"),("ClearKeyLog",tr("text.clear_key_log"),"k"),("ToggleRenderer",tr("text.toggle_ppu"),""),("DisplayPerf",tr("text.show_performance"),"")] {
+        ui.columns(2, |columns| {
+        for (index,(key,label,default)) in [("Reset",tr("text.reset_game"),"Ctrl+r"),("Pause",tr("mapping.pause"),"Shift+p"),("PauseDimmed",tr("text.pause_and_dim"),"p"),("Fullscreen",tr("text.fullscreen"),"Alt+Return"),("WindowBigger",tr("text.increase_window_size"),"Ctrl+Up"),("WindowSmaller",tr("text.decrease_window_size"),"Ctrl+Down"),("VolumeUp",tr("text.volume_up"),"Shift+="),("VolumeDown",tr("text.volume_down"),"Shift+-"),("CheatLife",tr("text.restore_health_and_magic"),"w"),("CheatKeys",tr("text.give_one_key"),"o"),("CheatWalkThroughWalls",tr("text.walk_through_walls"),"Ctrl+e"),("Turbo",tr("mapping.turbo"),"Tab"),("ReplayTurbo",tr("text.replay_speed"),"t"),("StopReplay",tr("text.stop_replay"),"l"),("ClearKeyLog",tr("text.clear_key_log"),"k"),("ToggleRenderer",tr("text.toggle_ppu"),""),("DisplayPerf",tr("text.show_performance"),"")].into_iter().enumerate() {
             let t=Target {section:section.into(),key:key.into(),index:0,count:1,default:if section=="KeyMap" {default.into()}else{String::new()}};
-            binding_row(ui,doc,dirty,label,&t,section=="GamepadMap",request);
+            binding_row(&mut columns[index / 9],doc,dirty,label,&t,section=="GamepadMap",request);
         }
+        });
         for (key,label,prefix) in [("Load",tr("text.load"),""),("Save",tr("text.save_state"),"Shift+"),("Replay",tr("mapping.replay"),"Ctrl+")] {
             ui.separator();ui.label(label);
             let default=if section=="KeyMap" {(1..=10).map(|i|format!("{prefix}F{i}")).collect::<Vec<_>>().join(", ")}else{",".repeat(9)};
-            for index in 0..10 {let t=Target {section:section.into(),key:key.into(),index,count:10,default:default.clone()};binding_row(ui,doc,dirty,&tf("mapping.slot", &[("slot", (index+1).to_string())]),&t,section=="GamepadMap",request);}
+            ui.columns(2, |columns| {
+            for index in 0..10 {let t=Target {section:section.into(),key:key.into(),index,count:10,default:default.clone()};binding_row(&mut columns[index / 5],doc,dirty,&tf("mapping.slot", &[("slot", (index+1).to_string())]),&t,section=="GamepadMap",request);}
+            });
         }
     });}
     });

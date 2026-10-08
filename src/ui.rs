@@ -8,6 +8,7 @@ use std::{fs, path::PathBuf, sync::{mpsc::{self, Receiver}, Arc}, thread};
 enum Event { Line(String), Done(std::result::Result<(), String>), LanguageDone(String, std::result::Result<(), String>) }
 struct App {
     instance: Option<crate::single_instance::Guard>,
+    updates_started: bool, updates_rx: Option<Receiver<crate::updates::Updates>>, updates: crate::updates::Updates,
     root: String, rom: String, lines: Vec<String>, rx: Option<Receiver<Event>>,
     protect_operation: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize,
 }
@@ -16,7 +17,7 @@ impl Default for App {
         let root = if crate::platform::is_portable() {
             crate::default_root().to_string_lossy().into_owned()
         } else { fs::read_to_string(preferences()).unwrap_or_else(|_| crate::default_root().to_string_lossy().into_owned()) };
-        Self { instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
+        Self { updates_started: false, updates_rx: None, updates: crate::updates::Updates::default(), instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
     }
 }
 fn preferences() -> PathBuf { crate::platform::config_dir().join("workspace.txt") }
@@ -63,6 +64,15 @@ impl App {
 }
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
+        if !self.updates_started {
+            self.updates_started=true;
+            let (tx,rx)=mpsc::channel(); self.updates_rx=Some(rx);
+            let ctx=ctx.clone();
+            thread::spawn(move || { let _=tx.send(crate::updates::check()); ctx.request_repaint(); });
+        }
+        if let Some(updates)=self.updates_rx.as_ref().and_then(|rx| rx.try_recv().ok()) {
+            self.updates=updates; self.updates_rx=None;
+        }
         if self.instance.as_ref().is_some_and(|instance| instance.take_activation()) {
             ctx.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
             ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
@@ -127,6 +137,17 @@ impl eframe::App for App {
                     if busy { ui.spinner(); }
                     ui.add(egui::Label::new(egui::RichText::new(&displayed_status).size(13.0)).wrap());
                 });
+                if let Some(version)=&self.updates.launcher {
+                    ui.hyperlink_to(tf("updates.launcher", &[("version", version.clone())]),
+                        "https://github.com/legluondunet/Z3-Launcher/releases/latest");
+                }
+                if let Some(version)=&self.updates.game {
+                    let installed=fs::read_to_string(PathBuf::from(&self.root).join("zelda3/.release-version")).ok();
+                    if self.updates.game_available(installed.as_deref()) {
+                        ui.hyperlink_to(tf("updates.game", &[("version", version.clone())]),
+                            "https://github.com/legluondunet/zelda3/releases/latest");
+                    }
+                }
             });
         egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::FOREST).inner_margin(24)).show(ctx, |ui| {
             if let Some(background) = &self.background {
