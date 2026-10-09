@@ -342,7 +342,7 @@ fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) ->
         let left_width = columns[0].available_width();
         columns[0].set_max_width((left_width - gap * 0.5).max(80.0));
         let right_start = columns[1].cursor().min;
-        columns[1].set_cursor(egui::pos2(right_start.x + gap * 0.5, right_start.y));
+        columns[1].set_cursor(egui::Rect::from_min_size(egui::pos2(right_start.x + gap * 0.5, right_start.y), egui::Vec2::ZERO));
         let result = contents(columns);
         let left = columns[0].min_rect();
         let right = columns[1].min_rect();
