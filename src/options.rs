@@ -186,7 +186,6 @@ impl Options {
                 }
             }
         }
-        ui.label(tr("text.settings_will_take_effect_the_next_time_you_launch"));
         ui.horizontal(|ui| {
             if self.dirty {
                 ui.colored_label(egui::Color32::YELLOW, tr("settings.auto_pending"));
@@ -295,6 +294,41 @@ fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Targe
         if ui.add_sized([78.0, 28.0], egui::Button::new(tr("text.capture"))).on_hover_text(tr("help.action.capture")).clicked() {*request=Some((t.clone(),false));}
         if ui.add_sized([66.0, 28.0], egui::Button::new(tr("text.clear"))).on_hover_text(tr("help.action.clear")).clicked() {set_binding(doc,t,"");*dirty=true;}
     });});
+}
+// Shortcut rows keep labels separate from inputs, so long translations cannot
+// push the capture/clear buttons into the next column.
+fn shortcut_row(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, label: &str,
+    target: &Target, pad: bool, request: &mut Option<(Target, bool)>) {
+    ui.push_id((&target.section, &target.key, target.index), |ui| {
+        ui.label(label).on_hover_text(help(&target.section, &target.key));
+        let raw = doc.value(&target.section, &target.key, &target.default);
+        let mut value = raw.split(',').nth(target.index).unwrap_or("").trim().to_owned();
+        ui.horizontal(|ui| {
+            if pad {
+                let previous = value.clone();
+                egui::ComboBox::from_id_salt("shortcut-button").width(108.0)
+                    .selected_text(if value.is_empty() { tr("text.unassigned") } else { &value })
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut value, String::new(), tr("text.unassigned"));
+                        for button in PAD_KEYS { ui.selectable_value(&mut value, button.into(), button); }
+                    });
+                if previous != value { set_binding(doc, target, &value); *dirty = true; }
+            } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(108.0))
+                .on_hover_text(help(&target.section, &target.key)).changed()
+                && !value.contains(',') && !value.contains('\\n') {
+                set_binding(doc, target, &value); *dirty = true;
+            }
+            if ui.add_sized([78.0, 28.0], egui::Button::new(tr("text.capture")))
+                .on_hover_text(tr("help.action.capture")).clicked() {
+                *request = Some((target.clone(), false));
+            }
+            if ui.add_sized([66.0, 28.0], egui::Button::new(tr("text.clear")))
+                .on_hover_text(tr("help.action.clear")).clicked() {
+                set_binding(doc, target, ""); *dirty = true;
+            }
+        });
+        ui.add_space(5.0);
+    });
 }
 fn flag(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,section:&str,key:&str,label:&str,default:bool) {
     let raw=doc.value(section,key,if default {"1"}else{"0"}); let mut value=raw=="1"||raw.eq_ignore_ascii_case("true");
@@ -492,7 +526,14 @@ fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             if ui.add(egui::Slider::new(&mut volume,0..=100).text(tr("text.msu_volume"))).on_hover_text(help("Sound","MSUVolume")).changed() {doc.set("Sound","MSUVolume",&format!("{volume}%"));*dirty=true;}
             });
             });
-            text(ui,doc,dirty,"Sound","MSUPath",tr("text.music_track_path_prefix"),"msu/alttp_msu-");
+            ui.horizontal(|ui| {
+                ui.label(tr("text.music_track_path_prefix"));
+                let mut value = doc.value("Sound", "MSUPath", "msu/alttp_msu-");
+                if ui.add(egui::TextEdit::singleline(&mut value).desired_width(210.0))
+                    .on_hover_text(help("Sound", "MSUPath")).changed() {
+                    doc.set("Sound", "MSUPath", &value); *dirty = true;
+                }
+            });
         });
     });
 }
@@ -503,14 +544,14 @@ fn shortcuts(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<(
         split_columns(ui, |columns| {
         for (index,(key,label,default)) in [("Reset",tr("text.reset_game"),"Ctrl+r"),("Pause",tr("mapping.pause"),"Shift+p"),("PauseDimmed",tr("text.pause_and_dim"),"p"),("Fullscreen",tr("text.fullscreen"),"Alt+Return"),("WindowBigger",tr("text.increase_window_size"),"Ctrl+Up"),("WindowSmaller",tr("text.decrease_window_size"),"Ctrl+Down"),("VolumeUp",tr("text.volume_up"),"Shift+="),("VolumeDown",tr("text.volume_down"),"Shift+-"),("CheatLife",tr("text.restore_health_and_magic"),"w"),("CheatKeys",tr("text.give_one_key"),"o"),("CheatWalkThroughWalls",tr("text.walk_through_walls"),"Ctrl+e"),("Turbo",tr("mapping.turbo"),"Tab"),("ReplayTurbo",tr("text.replay_speed"),"t"),("StopReplay",tr("text.stop_replay"),"l"),("ClearKeyLog",tr("text.clear_key_log"),"k"),("ToggleRenderer",tr("text.toggle_ppu"),""),("DisplayPerf",tr("text.show_performance"),"")].into_iter().enumerate() {
             let t=Target {section:section.into(),key:key.into(),index:0,count:1,default:if section=="KeyMap" {default.into()}else{String::new()}};
-            binding_row(&mut columns[index / 9],doc,dirty,label,&t,section=="GamepadMap",request);
+            shortcut_row(&mut columns[index / 9],doc,dirty,label,&t,section=="GamepadMap",request);
         }
         });
         for (key,label,prefix) in [("Load",tr("text.load"),""),("Save",tr("text.save_state"),"Shift+"),("Replay",tr("mapping.replay"),"Ctrl+")] {
             ui.separator();ui.label(label);
             let default=if section=="KeyMap" {(1..=10).map(|i|format!("{prefix}F{i}")).collect::<Vec<_>>().join(", ")}else{",".repeat(9)};
             split_columns(ui, |columns| {
-            for index in 0..10 {let t=Target {section:section.into(),key:key.into(),index,count:10,default:default.clone()};binding_row(&mut columns[index / 5],doc,dirty,&tf("mapping.slot", &[("slot", (index+1).to_string())]),&t,section=="GamepadMap",request);}
+            for index in 0..10 {let t=Target {section:section.into(),key:key.into(),index,count:10,default:default.clone()};shortcut_row(&mut columns[index / 5],doc,dirty,&tf("mapping.slot", &[("slot", (index+1).to_string())]),&t,section=="GamepadMap",request);}
             });
         }
     });}
