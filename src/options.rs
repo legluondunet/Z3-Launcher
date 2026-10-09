@@ -314,7 +314,7 @@ fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Targe
                     if old!=value {set_binding(doc,t,&value);*dirty=true;}
                 } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(112.0))
                     .on_hover_text(help(&t.section, &t.key)).changed()
-                    && !value.contains(',') && !value.contains('\\n') {
+                    && !value.contains(',') && !value.contains('\n') {
                     set_binding(doc,t,&value);*dirty=true;
                 }
             });
