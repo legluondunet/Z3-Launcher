@@ -110,7 +110,7 @@ impl Options {
         if !self.save_raw(status) { return false; }
         self.raw_active=false; true
     }
-    pub fn show_ini(&mut self, ui: &mut egui::Ui, busy: bool) {
+    pub fn show_ini(&mut self, ui: &mut egui::Ui, busy: bool, status: &mut String) {
         stacked_settings(ui, |ui| {
             settings_frame(ui, |ui| {
                 if let Some(path)=&self.path {
@@ -125,6 +125,7 @@ impl Options {
                             .id_salt("ini-editor").font(egui::TextStyle::Monospace)
                             .code_editor().desired_width(f32::INFINITY).desired_rows(23)).changed() {
                             self.raw_dirty=self.raw_text != self.disk_text;
+                            *status = if self.raw_dirty { tr("settings.ini_unsaved").into() } else { String::new() };
                         }
                     });
                 });
