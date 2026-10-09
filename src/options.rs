@@ -332,9 +332,9 @@ fn shader_path_allowed(value: &str) -> bool {
 
 fn settings_frame(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
     let width=(ui.available_width() - 24.0).max(0.0);
-    egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(3, 16, 10, 110))
+    egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 222))
         .stroke(egui::Stroke::new(1.0_f32, crate::theme::GOLD))
-        .corner_radius(egui::CornerRadius::same(8)).inner_margin(12)
+        .corner_radius(egui::CornerRadius::same(10)).inner_margin(16)
         .show(ui, |ui| {
             ui.set_min_width(width);
             contents(ui);
@@ -347,9 +347,9 @@ fn settings_section(ui: &mut egui::Ui, title: &str, contents: impl FnOnce(&mut e
         contents(ui);
     });
 }
-// Keep both stacked sections centered at 85% of the tab's available width.
+// Use nearly the full tab width, matching the approved forest mockup.
 fn stacked_settings(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
-    let width = ui.available_width() * 0.85;
+    let width = ui.available_width() * 0.97;
     let margin = (ui.available_width() - width) * 0.5;
     ui.horizontal(|ui| {
         ui.add_space(margin);
