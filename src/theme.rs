@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 legluondunet — https://github.com/legluondunet
 use eframe::egui::{self, Color32, FontFamily, FontId, RichText, Stroke};
-pub const GOLD: Color32 = Color32::from_rgb(213, 179, 94);
-pub const FOREST: Color32 = Color32::from_rgb(8, 33, 21);
+pub const GOLD: Color32 = Color32::from_rgb(232, 189, 83);
+pub const FOREST: Color32 = Color32::from_rgb(8, 43, 29);
 const EMBLEM_TRIANGLES: [(f32, f32); 3] = [(23.0, 2.0), (12.0, 22.0), (34.0, 22.0)];
-pub const PARCHMENT: Color32 = Color32::from_rgb(238, 230, 203);
+pub const PARCHMENT: Color32 = Color32::from_rgb(246, 237, 209);
 
 pub fn apply(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
@@ -13,8 +13,8 @@ pub fn apply(ctx: &egui::Context) {
     ctx.set_fonts(fonts);
     let mut style = (*ctx.style()).clone();
     style.visuals = egui::Visuals::dark();
-    style.visuals.panel_fill = FOREST;
-    style.visuals.window_fill = Color32::from_rgb(15, 39, 28);
+    style.visuals.panel_fill = Color32::from_rgba_unmultiplied(8, 43, 29, 215);
+    style.visuals.window_fill = Color32::from_rgb(9, 47, 31);
     style.visuals.extreme_bg_color = Color32::from_rgb(6, 23, 15);
     style.visuals.faint_bg_color = Color32::from_rgb(20, 45, 29);
     style.visuals.override_text_color = Some(PARCHMENT);
@@ -24,14 +24,14 @@ pub fn apply(ctx: &egui::Context) {
     style.visuals.widgets.noninteractive.bg_stroke = Stroke::new(0.7_f32, Color32::from_rgb(115, 100, 55));
     for widget in [&mut style.visuals.widgets.inactive, &mut style.visuals.widgets.hovered, &mut style.visuals.widgets.active] {
         widget.corner_radius = egui::CornerRadius::same(4);
-        widget.bg_fill = Color32::from_rgb(17, 43, 29);
+        widget.bg_fill = Color32::from_rgb(9, 48, 32);
         widget.weak_bg_fill = widget.bg_fill;
         widget.bg_stroke = Stroke::new(1.0_f32, GOLD);
         widget.fg_stroke = Stroke::new(1.0_f32, PARCHMENT);
     }
-    style.visuals.widgets.hovered.bg_fill = Color32::from_rgb(35, 61, 37);
+    style.visuals.widgets.hovered.bg_fill = Color32::from_rgb(24, 75, 45);
     style.visuals.widgets.hovered.bg_stroke = Stroke::new(1.5_f32, GOLD);
-    style.visuals.widgets.active.bg_fill = Color32::from_rgb(69, 71, 39);
+    style.visuals.widgets.active.bg_fill = GOLD;
     style.spacing.item_spacing = egui::vec2(12.0, 10.0);
     style.spacing.button_padding = egui::vec2(16.0, 8.0);
     style.spacing.interact_size.y = 32.0;
