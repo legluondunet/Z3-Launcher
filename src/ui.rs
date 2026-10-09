@@ -287,7 +287,7 @@ impl eframe::App for App {
                         let previous = egui::text_edit::TextEditState::load(ctx, id)
                             .and_then(|state| state.cursor.char_range());
                         let mut output = egui::TextEdit::multiline(&mut buffer).id(id)
-                            .font(egui::TextStyle::Monospace).desired_width(f32::INFINITY)
+                            .font(egui::TextStyle::Monospace).text_color(theme::INPUT_TEXT).desired_width(f32::INFINITY)
                             .frame(false).desired_rows(1).show(ui);
                         // egui 0.31 starts text selection on any mouse button press.
                         // Restore the existing range when a secondary click opens the copy menu.
