@@ -192,7 +192,7 @@ impl eframe::App for App {
             ui.scope(|ui| {
                 // Keep the normal text sizes for readability over the illustrated background.
             if self.tab == 6 {
-                self.options.show_ini(ui, busy);
+                self.options.show_ini(ui, busy, &mut self.status);
             } else if self.tab > 0 {
                 self.options.show(ui, ctx, &self.root, busy, &mut self.status);
             } else {
