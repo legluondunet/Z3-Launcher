@@ -155,7 +155,7 @@ impl eframe::App for App {
                     egui::Rect::from_min_max(egui::pos2(0.0,0.0),egui::pos2(1.0,1.0)),egui::Color32::WHITE);
             }
             theme::header(ui);
-            ui.add_space(14.0);
+            ui.add_space(20.0);
             ui.horizontal(|ui| {
                 let previous = self.tab;
                 let labels = [tr("text.general"), tr("text.gameplay"), tr("text.display"), tr("text.sound_msu"), tr("text.controls"), tr("text.shortcuts"), tr("text.ini_tab")];
@@ -169,7 +169,7 @@ impl eframe::App for App {
                     ui.painter().layout((*label).to_owned(), font.clone(), theme::PARCHMENT,
                         (width - 2.0 * ui.spacing().button_padding.x).max(1.0)).size().y
                         + 2.0 * ui.spacing().button_padding.y
-                }).fold(ui.spacing().interact_size.y, f32::max);
+                }).fold(40.0_f32, f32::max);
                 for (index, label) in labels.iter().enumerate() {
                     let active=self.tab == index;
                     let button=egui::Button::new(egui::RichText::new(*label).size(14.0)
@@ -188,7 +188,7 @@ impl eframe::App for App {
                     else { self.options.cancel_capture(); }
                 }
             });
-            ui.add_space(16.0);
+            ui.add_space(10.0);
             ui.scope(|ui| {
                 for font in ui.style_mut().text_styles.values_mut() { font.size -= 2.0; }
             if self.tab == 6 {
