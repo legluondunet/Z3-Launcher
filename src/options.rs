@@ -316,7 +316,7 @@ fn shortcut_row(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, label: &str,
                 if previous != value { set_binding(doc, target, &value); *dirty = true; }
             } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(108.0))
                 .on_hover_text(help(&target.section, &target.key)).changed()
-                && !value.contains(',') && !value.contains('\\n') {
+                && !value.contains(',') && !value.contains('\n') {
                 set_binding(doc, target, &value); *dirty = true;
             }
             if ui.add_sized([78.0, 28.0], egui::Button::new(tr("text.capture")))
