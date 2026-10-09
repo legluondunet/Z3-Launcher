@@ -222,7 +222,7 @@ impl Options {
         }
         let mut requested=None;
         ui.add_enabled_ui(!busy, |ui| {
-            egui::ScrollArea::vertical().id_salt("options-scroll").show(ui, |ui| {
+            egui::ScrollArea::vertical().id_salt(("options-scroll", self.page)).show(ui, |ui| {
                 let doc=self.doc.as_mut().unwrap();
                 match self.page {
                     0=>game(ui,doc,&mut self.dirty,&mut self.language_request),
@@ -338,7 +338,9 @@ fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) ->
         // on the left without relying on private egui cursor APIs.
         let left_width = columns[0].available_width();
         columns[0].set_max_width((left_width - 24.0).max(80.0));
-        let center = (columns[0].max_rect().right() + columns[1].max_rect().left()) * 0.5;
+        // Center between the reserved right edge of left content and the start of right content.
+        let left_content_edge = columns[0].max_rect().right() - 24.0;
+        let center = (left_content_edge + columns[1].max_rect().left()) * 0.5;
         let result = contents(columns);
         let left = columns[0].min_rect();
         let right = columns[1].min_rect();
@@ -366,7 +368,9 @@ fn settings_frame(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
 fn settings_section(ui: &mut egui::Ui, title: &str, contents: impl FnOnce(&mut egui::Ui)) {
     settings_frame(ui, |ui| {
         ui.label(egui::RichText::new(title).size(18.0).strong().color(crate::theme::GOLD));
+        ui.add_space(4.0);
         ui.separator();
+        ui.add_space(8.0);
         contents(ui);
     });
 }
