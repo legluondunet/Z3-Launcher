@@ -88,6 +88,7 @@ impl Options {
         }
         self.raw_text=self.disk_text.clone(); self.raw_active=true;
         self.raw_dirty=false; self.capture=None;
+        *status = tr("settings.ini_hint").into();
         true
     }
     fn save_raw(&mut self, status: &mut String) -> bool {
@@ -110,7 +111,6 @@ impl Options {
         self.raw_active=false; true
     }
     pub fn show_ini(&mut self, ui: &mut egui::Ui, busy: bool) {
-        ui.label(tr("settings.ini_hint"));
         if let Some(path)=&self.path {
             ui.small(tf("settings.file", &[("path", path.display().to_string())]));
         }
