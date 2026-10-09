@@ -332,6 +332,7 @@
     "help.launcher.update": "Lädt das neueste Spiel herunter und erstellt die Ressourcen neu. Einstellungen, Spielstände und importierte Sprachen bleiben erhalten.",
     "text.controls": "Steuerung",
     "updates.game": "Zelda3-Update verfügbar ({version})",
-    "updates.launcher": "Launcher-Update verfügbar ({version})"
+    "updates.launcher": "Launcher-Update verfügbar ({version})",
+    "settings.auto_saved_next_launch": "Die Einstellung wurde automatisch gespeichert und wird beim nächsten Spielstart angewendet."
   }
 }
