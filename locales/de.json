@@ -7,6 +7,7 @@
     "cli.help": "Z3-Launcher\nsetup | update | run | status\n--dir DIRECTORY --rom US_ROM\nz3-launcher setup --rom /path/zelda3.sfc",
     "cli.unknown_argument": "Unbekanntes Argument: {argument}",
     "cli.unknown_command": "Unbekannter Befehl: {action}",
+    "settings.ini_unsaved": "Nicht gespeicherte Änderungen",
     "general.interface_language": "Sprache der Oberfläche",
     "general.translations_hint": "Externe Übersetzungen werden beim Start geladen.",
     "language.save_failed": "Die Spracheinstellung konnte nicht gespeichert werden: {error}",
