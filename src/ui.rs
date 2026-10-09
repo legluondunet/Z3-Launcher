@@ -190,7 +190,7 @@ impl eframe::App for App {
             });
             ui.add_space(10.0);
             ui.scope(|ui| {
-                for font in ui.style_mut().text_styles.values_mut() { font.size -= 2.0; }
+                // Keep the normal text sizes for readability over the illustrated background.
             if self.tab == 6 {
                 self.options.show_ini(ui, busy);
             } else if self.tab > 0 {
@@ -259,7 +259,8 @@ impl eframe::App for App {
                 // Keep room for the two buttons; the journal takes the remaining height.
                 let footer_height=ui.spacing().interact_size.y.max(
                     ui.text_style_height(&egui::TextStyle::Button) + 2.0 * ui.spacing().button_padding.y);
-                let journal_height=(ui.available_height() - footer_height - ui.spacing().item_spacing.y).max(32.0);
+                let available_journal=(ui.available_height() - footer_height - ui.spacing().item_spacing.y).max(32.0);
+                let journal_height=if self.lines.is_empty() { available_journal.min(130.0) } else { available_journal };
                 egui::Frame::new().fill(ui.visuals().extreme_bg_color)
                     .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
                     .corner_radius(egui::CornerRadius::same(4)).inner_margin(4)
