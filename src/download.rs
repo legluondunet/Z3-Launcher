@@ -100,6 +100,13 @@ pub fn game(destination: &Path, log: &Log) -> Result<String> {
     let checksums = bytes(&client, &sums.browser_download_url)?;
     verify(&package, std::str::from_utf8(&checksums)?, name)?;
     unpack(&package, destination, false)?;
+    validate_package(destination)?;
+    executable(&destination.join(crate::platform::GAME_BINARY))?;
+    executable(&destination.join(extractor_name()))?;
+    // PyInstaller shared libraries also need executable mode; upload-artifact drops modes.
+    Ok(release.tag_name)
+}
+fn validate_package(destination: &Path) -> Result<()> {
     // A release may only replace the executable, DLLs, extractor and package notices.
     // Reject unexpected top-level entries before touching an existing installation.
     for entry in fs::read_dir(destination)? {
@@ -109,6 +116,10 @@ pub fn game(destination: &Path, log: &Log) -> Result<String> {
             || name == "extractor"
             || name == "zelda3.ini"
             || name == "LICENSE.txt"
+            || name == "LICENSE.upstream.txt"
+            || name == "COPYING"
+            || name == "VERSION"
+            || name == "BUILD-INFO.txt"
             || name == "README.txt"
             || name == "APPIMAGE-README.txt"
             || (cfg!(windows) && name.ends_with(".dll"));
@@ -121,10 +132,7 @@ pub fn game(destination: &Path, log: &Log) -> Result<String> {
             return Err(tf("download.missing_file", &[("name", required.into())]).into());
         }
     }
-    executable(&destination.join(crate::platform::GAME_BINARY))?;
-    executable(&destination.join(extractor_name()))?;
-    // PyInstaller shared libraries also need executable mode; upload-artifact drops modes.
-    Ok(release.tag_name)
+    Ok(())
 }
 pub fn extractor_name() -> &'static str {
     if cfg!(windows) {
@@ -297,6 +305,19 @@ pub fn install(staged: &Path, destination: &Path, backup: &Path) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn release_notices_are_accepted_but_unexpected_files_are_rejected() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::create_dir(dir.path().join("extractor")).unwrap();
+        for name in [crate::platform::GAME_BINARY, extractor_name(), "zelda3.ini",
+            "LICENSE.txt", "LICENSE.upstream.txt", "COPYING", "VERSION", "BUILD-INFO.txt",
+            "README.txt", "APPIMAGE-README.txt"] {
+            fs::write(dir.path().join(name), "test").unwrap();
+        }
+        assert!(validate_package(dir.path()).is_ok());
+        fs::write(dir.path().join("zelda3_assets.dat"), "unexpected").unwrap();
+        assert!(validate_package(dir.path()).is_err());
+    }
     #[test]
     fn checksum_and_paths_are_validated() {
         assert!(verify(
