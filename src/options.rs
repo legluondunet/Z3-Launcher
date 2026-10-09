@@ -268,7 +268,7 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     }
     if pad && ui.button(tr("text.restore_default_gamepad_bindings")).on_hover_text(tr("help.action.restore_pad")).clicked() { doc.set(section,"Controls",PAD_DEFAULT); *dirty=true; }
     if ui.button(tr("text.assign_all_controls")).on_hover_text(tr("help.action.assign_all")).clicked() { *requested=Some((Target {section:section.into(),key:"Controls".into(),index:0,count:12,default:default.into()},true)); }
-    ui.columns(2, |columns| {
+    split_columns(ui, |columns| {
     for (i,label) in control_labels().iter().enumerate() {
         let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
         binding_row(&mut columns[i / 6],doc,dirty,label,&t,pad,requested);
@@ -330,9 +330,27 @@ fn shader_path_allowed(value: &str) -> bool {
         .is_some_and(|ext|ext.eq_ignore_ascii_case("glsl") || ext.eq_ignore_ascii_case("glslp"))
 }
 
+// Two-column layout with the vertical gold divider from the approved mockup.
+fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) -> R) -> R {
+    ui.columns(2, |columns| {
+        let result = contents(columns);
+        let left = columns[0].min_rect();
+        let right = columns[1].min_rect();
+        let x = (left.right() + right.left()) * 0.5;
+        let top = left.top().min(right.top());
+        let bottom = left.bottom().max(right.bottom());
+        if bottom > top {
+            ui.painter().line_segment(
+                [egui::pos2(x, top), egui::pos2(x, bottom)],
+                egui::Stroke::new(1.0, crate::theme::GOLD),
+            );
+        }
+        result
+    })
+}
 fn settings_frame(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
     let width=(ui.available_width() - 24.0).max(0.0);
-    egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 222))
+    egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 170))
         .stroke(egui::Stroke::new(1.0_f32, crate::theme::GOLD))
         .corner_radius(egui::CornerRadius::same(10)).inner_margin(16)
         .show(ui, |ui| {
@@ -362,7 +380,7 @@ fn stacked_settings(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
 fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String>) {
     stacked_settings(ui, |ui| {
         settings_section(ui, tr("text.general"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
                 columns[0].vertical(|ui| {
             for (key,label) in [("Autosave",tr("text.automatically_save_state_on_exit")),("DisplayPerfInTitle",tr("text.show_fps_in_the_window_title")),("DisableFrameDelay",tr("text.disable_frame_delay"))] {flag(ui,doc,dirty,"General",key,label,false);}
                 });
@@ -386,7 +404,7 @@ fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String
             });
         });
         settings_section(ui, tr("text.gameplay_enhancements"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             for (index, (key,label)) in [
                 ("ItemSwitchLR",tr("text.advanced_item_selection_with_l_r")),("ItemSwitchLRLimit",tr("text.limit_cycling_to_the_first_four_items")),
                 ("TurnWhileDashing",tr("text.allow_turning_while_dashing")),("MirrorToDarkworld",tr("text.allow_mirror_travel_to_the_dark_world")),
@@ -403,7 +421,7 @@ fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String
 fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
     stacked_settings(ui, |ui| {
         settings_section(ui, tr("text.general"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             columns[0].vertical(|ui| {
             let raw=doc.value("General","ExtendedAspectRatio","4:3");let parts:Vec<&str>=raw.split(',').map(str::trim).collect();
             let mut ratio=parts.iter().find(|p|p.contains(':')).copied().unwrap_or("4:3").to_owned();
@@ -422,7 +440,7 @@ fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             });
         });
         settings_section(ui, tr("text.renderer"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             columns[0].vertical(|ui| {
             for (key,label,default) in [("NewRenderer",tr("text.optimized_snes_ppu"),true),("EnhancedMode7",tr("text.high_resolution_world_map_mode_7"),true),("IgnoreAspectRatio",tr("text.stretch_image"),false),("NoSpriteLimits",tr("text.remove_sprite_limits"),true),("LinearFiltering",tr("text.linear_filtering"),false),("DimFlashes",tr("text.reduce_flashing"),false)] {flag(ui,doc,dirty,"Graphics",key,label,default);}
             });
@@ -442,7 +460,7 @@ fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
 fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
     stacked_settings(ui, |ui| {
         settings_section(ui, tr("text.sound"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             columns[0].vertical(|ui| {
             flag(ui,doc,dirty,"Sound","EnableAudio",tr("text.enable_audio"),true);
             choice(ui,doc,dirty,"Sound","AudioChannels",tr("text.channels"),"2",&[("1","Mono"),("2",tr("text.stereo"))]);
@@ -454,7 +472,7 @@ fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             });
         });
         settings_section(ui, tr("text.msu_music"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             columns[0].vertical(|ui| {
             choice(ui,doc,dirty,"Sound","EnableMSU",tr("text.format"),"false",&[("false",tr("text.disabled")),("true","MSU PCM"),("deluxe","MSU Deluxe PCM"),("opuz","OPUZ"),("deluxe-opuz","OPUZ Deluxe")]);
             ui.small(tr("text.pcm_requires_44100_hz_opuz_requires_48000_hz_music"));
@@ -473,7 +491,7 @@ fn shortcuts(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<(
     stacked_settings(ui, |ui| {
     ui.label(tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field"));
     for section in ["KeyMap","GamepadMap"] {settings_section(ui, if section=="KeyMap" {tr("text.keyboard_shortcuts")} else {tr("text.gamepad_shortcuts")},|ui| {
-        ui.columns(2, |columns| {
+        split_columns(ui, |columns| {
         for (index,(key,label,default)) in [("Reset",tr("text.reset_game"),"Ctrl+r"),("Pause",tr("mapping.pause"),"Shift+p"),("PauseDimmed",tr("text.pause_and_dim"),"p"),("Fullscreen",tr("text.fullscreen"),"Alt+Return"),("WindowBigger",tr("text.increase_window_size"),"Ctrl+Up"),("WindowSmaller",tr("text.decrease_window_size"),"Ctrl+Down"),("VolumeUp",tr("text.volume_up"),"Shift+="),("VolumeDown",tr("text.volume_down"),"Shift+-"),("CheatLife",tr("text.restore_health_and_magic"),"w"),("CheatKeys",tr("text.give_one_key"),"o"),("CheatWalkThroughWalls",tr("text.walk_through_walls"),"Ctrl+e"),("Turbo",tr("mapping.turbo"),"Tab"),("ReplayTurbo",tr("text.replay_speed"),"t"),("StopReplay",tr("text.stop_replay"),"l"),("ClearKeyLog",tr("text.clear_key_log"),"k"),("ToggleRenderer",tr("text.toggle_ppu"),""),("DisplayPerf",tr("text.show_performance"),"")].into_iter().enumerate() {
             let t=Target {section:section.into(),key:key.into(),index:0,count:1,default:if section=="KeyMap" {default.into()}else{String::new()}};
             binding_row(&mut columns[index / 9],doc,dirty,label,&t,section=="GamepadMap",request);
@@ -482,7 +500,7 @@ fn shortcuts(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<(
         for (key,label,prefix) in [("Load",tr("text.load"),""),("Save",tr("text.save_state"),"Shift+"),("Replay",tr("mapping.replay"),"Ctrl+")] {
             ui.separator();ui.label(label);
             let default=if section=="KeyMap" {(1..=10).map(|i|format!("{prefix}F{i}")).collect::<Vec<_>>().join(", ")}else{",".repeat(9)};
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             for index in 0..10 {let t=Target {section:section.into(),key:key.into(),index,count:10,default:default.clone()};binding_row(&mut columns[index / 5],doc,dirty,&tf("mapping.slot", &[("slot", (index+1).to_string())]),&t,section=="GamepadMap",request);}
             });
         }
