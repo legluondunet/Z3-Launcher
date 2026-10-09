@@ -196,6 +196,12 @@ impl eframe::App for App {
             } else if self.tab > 0 {
                 self.options.show(ui, ctx, &self.root, busy, &mut self.status);
             } else {
+            egui::Frame::new()
+                .fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 215))
+                .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
+                .corner_radius(egui::CornerRadius::same(10))
+                .inner_margin(egui::Margin::symmetric(16, 16)).show(ui, |ui| {
+                ui.set_width(ui.available_width());
             ui.add_enabled_ui(!busy, |ui| {
                 let previous = crate::i18n::current();
                 let mut selected = previous.clone();
@@ -253,8 +259,14 @@ impl eframe::App for App {
                     }
                 });
             });
+            });
                 ui.add_space(12.0);
-                ui.separator();
+                egui::Frame::new()
+                .fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 215))
+                .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
+                .corner_radius(egui::CornerRadius::same(10))
+                .inner_margin(egui::Margin::symmetric(16, 16)).show(ui, |ui| {
+                ui.set_width(ui.available_width());
                 ui.small(tr("text.full_log_launcher_log_in_the_working_directory"));
                 // Keep room for the two buttons; the journal takes the remaining height.
                 let footer_height=ui.spacing().interact_size.y.max(
@@ -301,6 +313,7 @@ impl eframe::App for App {
                 ui.horizontal(|ui| {
                     if ui.button(tr("text.copy_log")).clicked() { ctx.copy_text(self.lines.join("\n")); }
                     if ui.button(tr("text.clear_display")).clicked() { self.lines.clear(); }
+                });
                 });
             }
             });
