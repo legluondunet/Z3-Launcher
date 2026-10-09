@@ -287,7 +287,9 @@ fn help(section: &str, key: &str) -> &'static str {
 fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Target,pad:bool,request:&mut Option<(Target,bool)>) {
     let raw=doc.value(&t.section,&t.key,&t.default); let mut value=raw.split(',').nth(t.index).unwrap_or("").trim().to_owned();
     ui.push_id((&t.section,&t.key,t.index),|ui| {ui.horizontal(|ui| {
-        ui.add_sized([82.0,28.0],egui::Label::new(label)).on_hover_text(help(&t.section, &t.key));
+        ui.allocate_ui_with_layout(egui::vec2(82.0, 28.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.label(label).on_hover_text(help(&t.section, &t.key));
+        });
         if pad {
             let old=value.clone();egui::ComboBox::from_id_salt("button").width(112.0).selected_text(if value.is_empty(){tr("text.unassigned")}else{&value}).show_ui(ui,|ui|{ui.selectable_value(&mut value,String::new(),tr("text.unassigned"));for button in PAD_KEYS {ui.selectable_value(&mut value,button.into(),button);} }).response.on_hover_text(help(&t.section, &t.key));
             if old!=value {set_binding(doc,t,&value);*dirty=true;}
@@ -391,12 +393,13 @@ fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) ->
     })
 }
 fn settings_frame(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
-    let width=(ui.available_width() - 24.0).max(0.0);
+    // Account for the frame's 16 px margins on both sides.
+    let width=(ui.available_width() - 32.0).max(0.0);
     egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 215))
         .stroke(egui::Stroke::new(1.0_f32, crate::theme::GOLD))
         .corner_radius(egui::CornerRadius::same(10)).inner_margin(egui::Margin::symmetric(16, 20))
         .show(ui, |ui| {
-            ui.set_min_width(width);
+            ui.set_width(width);
             contents(ui);
         });
 }
@@ -520,13 +523,7 @@ fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             columns[0].vertical(|ui| {
             choice(ui,doc,dirty,"Sound","EnableMSU",tr("text.format"),"false",&[("false",tr("text.disabled")),("true","MSU PCM"),("deluxe","MSU Deluxe PCM"),("opuz","OPUZ"),("deluxe-opuz","OPUZ Deluxe")]);
             ui.small(tr("text.pcm_requires_44100_hz_opuz_requires_48000_hz_music"));
-            });
-            columns[1].vertical(|ui| {
-            flag(ui,doc,dirty,"Sound","ResumeMSU",tr("text.resume_music_from_its_previous_position"),true);
-            let mut volume=doc.value("Sound","MSUVolume","100%").trim_end_matches('%').parse::<u32>().unwrap_or(100);
-            if ui.add(egui::Slider::new(&mut volume,0..=100).text(tr("text.msu_volume"))).on_hover_text(help("Sound","MSUVolume")).changed() {doc.set("Sound","MSUVolume",&format!("{volume}%"));*dirty=true;}
-            });
-            });
+            ui.add_space(8.0);
             ui.horizontal(|ui| {
                 ui.label(tr("text.music_track_path_prefix"));
                 let mut value = doc.value("Sound", "MSUPath", "msu/alttp_msu-");
@@ -535,6 +532,14 @@ fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
                     doc.set("Sound", "MSUPath", &value); *dirty = true;
                 }
             });
+            });
+            columns[1].vertical(|ui| {
+            flag(ui,doc,dirty,"Sound","ResumeMSU",tr("text.resume_music_from_its_previous_position"),true);
+            let mut volume=doc.value("Sound","MSUVolume","100%").trim_end_matches('%').parse::<u32>().unwrap_or(100);
+            if ui.add(egui::Slider::new(&mut volume,0..=100).text(tr("text.msu_volume"))).on_hover_text(help("Sound","MSUVolume")).changed() {doc.set("Sound","MSUVolume",&format!("{volume}%"));*dirty=true;}
+            });
+            });
+
         });
     });
 }
