@@ -332,6 +332,7 @@
     "help.launcher.update": "Télécharge le dernier jeu et régénère les ressources. Conserve les réglages, les sauvegardes et les langues importées.",
     "text.controls": "Contrôles",
     "updates.game": "Zelda3 : nouvelle version disponible ({version})",
-    "updates.launcher": "Launcher : nouvelle version disponible ({version})"
+    "updates.launcher": "Launcher : nouvelle version disponible ({version})",
+    "settings.auto_saved_next_launch": "Le réglage a été automatiquement sauvegardé et sera appliqué au prochain lancement du jeu."
   }
 }
