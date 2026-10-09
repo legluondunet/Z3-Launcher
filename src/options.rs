@@ -111,25 +111,58 @@ impl Options {
         self.raw_active=false; true
     }
     pub fn show_ini(&mut self, ui: &mut egui::Ui, busy: bool, status: &mut String) {
-        stacked_settings(ui, |ui| {
-            settings_frame(ui, |ui| {
-                if let Some(path)=&self.path {
-                    ui.small(tf("settings.file", &[("path", path.display().to_string())]));
-                }
-                ui.add_space(6.0);
-                ui.label(tr("settings.ini_hint"));
-                ui.add_space(10.0);
-                ui.add_enabled_ui(!busy, |ui| {
-                    egui::ScrollArea::both().id_salt("ini-scroll").show(ui, |ui| {
-                        if ui.add(egui::TextEdit::multiline(&mut self.raw_text)
-                            .id_salt("ini-editor").font(egui::TextStyle::Monospace)
-                            .code_editor().desired_width(f32::INFINITY).desired_rows(23)).changed() {
-                            self.raw_dirty=self.raw_text != self.disk_text;
-                            *status = if self.raw_dirty { tr("settings.ini_unsaved").into() } else { String::new() };
-                        }
-                    });
-                });
-            });
+        // The INI editor needs the entire remaining tab height, unlike compact settings sections.
+        let available_height = ui.available_height();
+        let width = ui.available_width() * 0.97;
+        let margin = (ui.available_width() - width) * 0.5;
+        ui.horizontal(|ui| {
+            ui.add_space(margin);
+            ui.allocate_ui_with_layout(
+                egui::vec2(width, available_height),
+                egui::Layout::top_down(egui::Align::Min),
+                |ui| {
+                    ui.set_width(width);
+                    egui::Frame::new()
+                        .fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 215))
+                        .stroke(egui::Stroke::new(1.0_f32, crate::theme::GOLD))
+                        .corner_radius(egui::CornerRadius::same(10))
+                        .inner_margin(egui::Margin::symmetric(16, 20))
+                        .show(ui, |ui| {
+                            ui.set_width((width - 32.0).max(0.0));
+                            ui.set_min_height((available_height - 40.0).max(0.0));
+                            if let Some(path) = &self.path {
+                                ui.small(tf("settings.file", &[("path", path.display().to_string())]));
+                            }
+                            ui.add_space(6.0);
+                            ui.label(tr("settings.ini_hint"));
+                            ui.add_space(10.0);
+                            let editor_height = ui.available_height().max(100.0);
+                            ui.add_enabled_ui(!busy, |ui| {
+                                egui::ScrollArea::both()
+                                    .id_salt("ini-scroll")
+                                    .auto_shrink([false, false])
+                                    .max_height(editor_height)
+                                    .show(ui, |ui| {
+                                        if ui.add_sized(
+                                            [ui.available_width(), editor_height],
+                                            egui::TextEdit::multiline(&mut self.raw_text)
+                                                .id_salt("ini-editor")
+                                                .font(egui::TextStyle::Monospace)
+                                                .code_editor()
+                                                .desired_width(f32::INFINITY),
+                                        ).changed() {
+                                            self.raw_dirty = self.raw_text != self.disk_text;
+                                            *status = if self.raw_dirty {
+                                                tr("settings.ini_unsaved").into()
+                                            } else {
+                                                String::new()
+                                            };
+                                        }
+                                    });
+                            });
+                        });
+                },
+            );
         });
     }
     pub fn cancel_capture(&mut self) { self.capture = None; }
