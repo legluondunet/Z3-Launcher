@@ -334,15 +334,11 @@ fn shader_path_allowed(value: &str) -> bool {
 // Center the separator in a reserved gutter, without covering either column.
 fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) -> R) -> R {
     ui.columns(2, |columns| {
-        let gap = 32.0;
-        let left_edge = columns[0].max_rect().right();
-        let right_edge = columns[1].max_rect().left();
-        let center = (left_edge + right_edge) * 0.5;
-        // Constrain both content columns, leaving 16 px on each side of the line.
+        // The divider is centered in the normal column gap. Leave clearance
+        // on the left without relying on private egui cursor APIs.
         let left_width = columns[0].available_width();
-        columns[0].set_max_width((left_width - gap * 0.5).max(80.0));
-        let right_start = columns[1].cursor().min;
-        columns[1].set_cursor(egui::Rect::from_min_size(egui::pos2(right_start.x + gap * 0.5, right_start.y), egui::Vec2::ZERO));
+        columns[0].set_max_width((left_width - 24.0).max(80.0));
+        let center = (columns[0].max_rect().right() + columns[1].max_rect().left()) * 0.5;
         let result = contents(columns);
         let left = columns[0].min_rect();
         let right = columns[1].min_rect();
@@ -351,7 +347,7 @@ fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) ->
         if bottom > top {
             columns[0].painter().line_segment(
                 [egui::pos2(center, top), egui::pos2(center, bottom)],
-                egui::Stroke::new(1.0, crate::theme::GOLD),
+                egui::Stroke::new(1.0_f32, crate::theme::GOLD),
             );
         }
         result
