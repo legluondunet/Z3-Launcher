@@ -320,12 +320,11 @@ impl eframe::App for App {
         });
         let settings_changed = !busy && (1..=5).contains(&self.tab) && self.options.has_changes();
         if !busy { self.options.autosave(&mut self.status); }
-        // Preserve the existing save confirmation, then add the restart notice.
-        // Never append it to an error or a pending-save message.
+        // Show one clear message after a successful automatic save.
+        // Keep validation and disk errors unchanged.
         if settings_changed && !self.options.has_changes()
             && self.status == tr("settings.auto_saved") {
-            self.status = format!("{} · {}", self.status,
-                tr("text.settings_will_take_effect_the_next_time_you_launch"));
+            self.status = "Le réglage a été automatiquement sauvegardé et sera appliqué au prochain lancement du jeu.".into();
         }
         if let Some((code, root)) = self.options.take_language_request() { self.import_game_language(code, root, ctx); }
         // Status changes made by widgets are reflected in the footer on the next frame.
