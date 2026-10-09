@@ -340,7 +340,7 @@ fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) ->
         let top = left.top().min(right.top());
         let bottom = left.bottom().max(right.bottom());
         if bottom > top {
-            ui.painter().line_segment(
+            columns[0].painter().line_segment(
                 [egui::pos2(x, top), egui::pos2(x, bottom)],
                 egui::Stroke::new(1.0, crate::theme::GOLD),
             );
