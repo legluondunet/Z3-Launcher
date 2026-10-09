@@ -332,6 +332,7 @@
     "help.launcher.update": "Download the latest game and regenerate resources. Preserves settings, saves and imported languages.",
     "text.controls": "Controls",
     "updates.game": "Zelda3 update available ({version})",
-    "updates.launcher": "Launcher update available ({version})"
+    "updates.launcher": "Launcher update available ({version})",
+    "settings.auto_saved_next_launch": "The setting was automatically saved and will take effect the next time you launch the game."
   }
 }
