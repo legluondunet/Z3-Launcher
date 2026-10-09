@@ -332,6 +332,7 @@
     "help.launcher.update": "Scarica l’ultimo gioco e rigenera le risorse. Conserva impostazioni, salvataggi e lingue importate.",
     "text.controls": "Controlli",
     "updates.game": "Aggiornamento Zelda3 disponibile ({version})",
-    "updates.launcher": "Aggiornamento del launcher disponibile ({version})"
+    "updates.launcher": "Aggiornamento del launcher disponibile ({version})",
+    "settings.auto_saved_next_launch": "L'impostazione è stata salvata automaticamente e verrà applicata al prossimo avvio del gioco."
   }
 }
