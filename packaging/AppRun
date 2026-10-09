@@ -15,5 +15,23 @@ if [[ ${LD_LIBRARY_PATH+x} ]]; then
 else
   unset Z3_HOST_LIBRARY_PATH
 fi
+# Match the host's keyboard/Compose data with its own xkbcommon library.
+# Keep the bundled library as fallback when the host has none in its loader cache.
+host_xkb=""
+for loader_cache in ldconfig /sbin/ldconfig /usr/sbin/ldconfig; do
+  if command -v "$loader_cache" >/dev/null 2>&1; then
+    host_xkb="$("$loader_cache" -p 2>/dev/null | awk '/libxkbcommon[.]so[.]0.*x86-64/ && !path {path=$NF} END {print path}')" || host_xkb=""
+    break
+  fi
+done
+if [[ -n $host_xkb && -f $host_xkb ]]; then
+  if [[ ${LD_PRELOAD+x} ]]; then
+    export Z3_HOST_LD_PRELOAD="$LD_PRELOAD"
+  else
+    unset Z3_HOST_LD_PRELOAD
+  fi
+  export Z3_XKB_PRELOAD=1
+  export LD_PRELOAD="$host_xkb${LD_PRELOAD:+:$LD_PRELOAD}"
+fi
 export LD_LIBRARY_PATH="$appdir/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 exec "$appdir/usr/bin/z3-launcher" "$@"
