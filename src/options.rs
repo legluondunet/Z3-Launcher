@@ -333,10 +333,13 @@ fn shader_path_allowed(value: &str) -> bool {
 // Two-column layout with the vertical gold divider from the approved mockup.
 fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) -> R) -> R {
     ui.columns(2, |columns| {
+        // Leave breathing room between left-column controls and the divider.
+        let left_width = columns[0].available_width();
+        columns[0].set_max_width((left_width - 24.0).max(80.0));
         let result = contents(columns);
         let left = columns[0].min_rect();
         let right = columns[1].min_rect();
-        let x = (left.right() + right.left()) * 0.5;
+        let x = (columns[0].max_rect().right() + columns[1].max_rect().left()) * 0.5;
         let top = left.top().min(right.top());
         let bottom = left.bottom().max(right.bottom());
         if bottom > top {
@@ -350,7 +353,7 @@ fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) ->
 }
 fn settings_frame(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
     let width=(ui.available_width() - 24.0).max(0.0);
-    egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 170))
+    egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 195))
         .stroke(egui::Stroke::new(1.0_f32, crate::theme::GOLD))
         .corner_radius(egui::CornerRadius::same(10)).inner_margin(16)
         .show(ui, |ui| {
