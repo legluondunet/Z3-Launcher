@@ -402,7 +402,7 @@ fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String
 }
 fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
     stacked_settings(ui, |ui| {
-        settings_section(ui, tr("text.display"), |ui| {
+        settings_section(ui, tr("text.general"), |ui| {
             ui.columns(2, |columns| {
             columns[0].vertical(|ui| {
             let raw=doc.value("General","ExtendedAspectRatio","4:3");let parts:Vec<&str>=raw.split(',').map(str::trim).collect();
