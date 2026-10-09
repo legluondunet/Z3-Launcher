@@ -131,7 +131,7 @@ impl eframe::App for App {
         // Reserve the footer before laying out the central panel.
         let displayed_status=self.status.clone();
         egui::TopBottomPanel::bottom("status-bar").resizable(false)
-            .frame(egui::Frame::new().fill(theme::FOREST).inner_margin(egui::Margin::symmetric(16, 8)))
+            .frame(egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(7, 39, 26, 235)).stroke(egui::Stroke::new(1.0, theme::GOLD)).inner_margin(egui::Margin::symmetric(16, 8)))
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     if busy { ui.spinner(); }
@@ -155,11 +155,11 @@ impl eframe::App for App {
                     egui::Rect::from_min_max(egui::pos2(0.0,0.0),egui::pos2(1.0,1.0)),egui::Color32::WHITE);
             }
             theme::header(ui);
-            ui.add_space(8.0); ui.separator();
+            ui.add_space(14.0);
             ui.horizontal(|ui| {
                 let previous = self.tab;
                 let labels = [tr("text.general"), tr("text.gameplay"), tr("text.display"), tr("text.sound_msu"), tr("text.controls"), tr("text.shortcuts"), tr("text.ini_tab")];
-                ui.spacing_mut().item_spacing.x = 6.0;
+                ui.spacing_mut().item_spacing.x = 0.0;
                 ui.spacing_mut().button_padding.x = 8.0;
                 let width = ((ui.available_width() - ui.spacing().item_spacing.x * (labels.len() - 1) as f32) / labels.len() as f32).max(1.0);
                 let mut font = egui::TextStyle::Button.resolve(ui.style());
@@ -174,9 +174,9 @@ impl eframe::App for App {
                     let active=self.tab == index;
                     let button=egui::Button::new(egui::RichText::new(*label).size(14.0)
                         .color(if active { theme::FOREST } else { theme::PARCHMENT }))
-                        .fill(if active { theme::GOLD } else { theme::FOREST })
+                        .fill(if active { theme::GOLD } else { egui::Color32::from_rgba_unmultiplied(5, 43, 29, 230) })
                         .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
-                        .corner_radius(egui::CornerRadius::same(8)).wrap();
+                        .corner_radius(egui::CornerRadius::same(3)).wrap();
                     if ui.add_sized([width, height], button).clicked() { self.tab=index; }
                 }
                 if self.tab != previous {
@@ -188,7 +188,7 @@ impl eframe::App for App {
                     else { self.options.cancel_capture(); }
                 }
             });
-            ui.separator();
+            ui.add_space(16.0);
             ui.scope(|ui| {
                 for font in ui.style_mut().text_styles.values_mut() { font.size -= 2.0; }
             if self.tab == 6 {
