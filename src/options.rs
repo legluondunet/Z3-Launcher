@@ -88,7 +88,7 @@ impl Options {
         }
         self.raw_text=self.disk_text.clone(); self.raw_active=true;
         self.raw_dirty=false; self.capture=None;
-        *status = tr("settings.ini_hint").into();
+        status.clear();
         true
     }
     fn save_raw(&mut self, status: &mut String) -> bool {
@@ -111,16 +111,23 @@ impl Options {
         self.raw_active=false; true
     }
     pub fn show_ini(&mut self, ui: &mut egui::Ui, busy: bool) {
-        if let Some(path)=&self.path {
-            ui.small(tf("settings.file", &[("path", path.display().to_string())]));
-        }
-        ui.add_enabled_ui(!busy, |ui| {
-            egui::ScrollArea::both().id_salt("ini-scroll").show(ui, |ui| {
-                if ui.add(egui::TextEdit::multiline(&mut self.raw_text)
-                    .id_salt("ini-editor").font(egui::TextStyle::Monospace)
-                    .code_editor().desired_width(f32::INFINITY).desired_rows(26)).changed() {
-                    self.raw_dirty=self.raw_text != self.disk_text;
+        stacked_settings(ui, |ui| {
+            settings_frame(ui, |ui| {
+                if let Some(path)=&self.path {
+                    ui.small(tf("settings.file", &[("path", path.display().to_string())]));
                 }
+                ui.add_space(6.0);
+                ui.label(tr("settings.ini_hint"));
+                ui.add_space(10.0);
+                ui.add_enabled_ui(!busy, |ui| {
+                    egui::ScrollArea::both().id_salt("ini-scroll").show(ui, |ui| {
+                        if ui.add(egui::TextEdit::multiline(&mut self.raw_text)
+                            .id_salt("ini-editor").font(egui::TextStyle::Monospace)
+                            .code_editor().desired_width(f32::INFINITY).desired_rows(23)).changed() {
+                            self.raw_dirty=self.raw_text != self.disk_text;
+                        }
+                    });
+                });
             });
         });
     }
