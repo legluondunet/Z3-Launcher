@@ -5,6 +5,7 @@ pub const GOLD: Color32 = Color32::from_rgb(232, 189, 83);
 pub const FOREST: Color32 = Color32::from_rgb(8, 43, 29);
 const EMBLEM_TRIANGLES: [(f32, f32); 3] = [(23.0, 2.0), (12.0, 22.0), (34.0, 22.0)];
 pub const PARCHMENT: Color32 = Color32::from_rgb(246, 237, 209);
+pub const INPUT_TEXT: Color32 = Color32::from_rgb(245, 245, 232);
 
 pub fn apply(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
@@ -15,9 +16,10 @@ pub fn apply(ctx: &egui::Context) {
     style.visuals = egui::Visuals::dark();
     style.visuals.panel_fill = Color32::from_rgba_unmultiplied(8, 43, 29, 215);
     style.visuals.window_fill = Color32::from_rgb(9, 47, 31);
-    style.visuals.extreme_bg_color = Color32::from_rgb(6, 23, 15);
+    // A translucent forest-green background shared by text fields and the journal.
+    style.visuals.extreme_bg_color = Color32::from_rgba_unmultiplied(5, 27, 18, 235);
     style.visuals.faint_bg_color = Color32::from_rgb(20, 45, 29);
-    style.visuals.override_text_color = Some(PARCHMENT);
+    style.visuals.override_text_color = Some(INPUT_TEXT);
     style.visuals.selection.bg_fill = Color32::from_rgb(76, 68, 35);
     style.visuals.selection.stroke = Stroke::new(1.0_f32, GOLD);
     style.visuals.window_stroke = Stroke::new(1.0_f32, GOLD);
