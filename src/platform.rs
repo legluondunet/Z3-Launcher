@@ -96,7 +96,13 @@ pub fn host_command(program: &str) -> std::process::Command {
         if let Some(path) = std::env::var_os("Z3_HOST_LIBRARY_PATH") {
             command.env("LD_LIBRARY_PATH", path);
         } else { command.env_remove("LD_LIBRARY_PATH"); }
-        command.env_remove("Z3_APPIMAGE_ENV").env_remove("Z3_HOST_LIBRARY_PATH");
+        if std::env::var_os("Z3_XKB_PRELOAD").is_some() {
+            if let Some(preload) = std::env::var_os("Z3_HOST_LD_PRELOAD") {
+                command.env("LD_PRELOAD", preload);
+            } else { command.env_remove("LD_PRELOAD"); }
+        }
+        command.env_remove("Z3_APPIMAGE_ENV").env_remove("Z3_HOST_LIBRARY_PATH")
+            .env_remove("Z3_XKB_PRELOAD").env_remove("Z3_HOST_LD_PRELOAD");
     }
     command
 }
