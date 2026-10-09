@@ -285,21 +285,46 @@ fn help(section: &str, key: &str) -> &'static str {
     tr(&format!("help.{section}.{key}"))
 }
 fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Target,pad:bool,request:&mut Option<(Target,bool)>) {
-    let raw=doc.value(&t.section,&t.key,&t.default); let mut value=raw.split(',').nth(t.index).unwrap_or("").trim().to_owned();
-    ui.push_id((&t.section,&t.key,t.index),|ui| {ui.horizontal(|ui| {
-        ui.allocate_ui_with_layout(egui::vec2(82.0, 28.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.label(label).on_hover_text(help(&t.section, &t.key));
+    let raw=doc.value(&t.section,&t.key,&t.default);
+    let mut value=raw.split(',').nth(t.index).unwrap_or("").trim().to_owned();
+    ui.push_id((&t.section,&t.key,t.index),|ui| {
+        // Fixed-width cells prevent SDL button names from shifting adjacent controls.
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 8.0;
+            ui.allocate_ui_with_layout(egui::vec2(86.0, 28.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(label).on_hover_text(help(&t.section, &t.key));
+            });
+            ui.allocate_ui_with_layout(egui::vec2(126.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                if pad {
+                    let old=value.clone();
+                    egui::ComboBox::from_id_salt("button").width(112.0)
+                        .selected_text(if value.is_empty(){tr("text.unassigned")}else{&value})
+                        .show_ui(ui,|ui|{
+                            ui.selectable_value(&mut value,String::new(),tr("text.unassigned"));
+                            for button in PAD_KEYS {ui.selectable_value(&mut value,button.into(),button);}
+                        }).response.on_hover_text(help(&t.section, &t.key));
+                    if old!=value {set_binding(doc,t,&value);*dirty=true;}
+                } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(112.0))
+                    .on_hover_text(help(&t.section, &t.key)).changed()
+                    && !value.contains(',') && !value.contains('\\n') {
+                    set_binding(doc,t,&value);*dirty=true;
+                }
+            });
+            ui.allocate_ui_with_layout(egui::vec2(88.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                if ui.add_sized([88.0, 28.0], egui::Button::new(tr("text.capture")))
+                    .on_hover_text(tr("help.action.capture")).clicked() {
+                    *request=Some((t.clone(),false));
+                }
+            });
+            ui.allocate_ui_with_layout(egui::vec2(76.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                if ui.add_sized([76.0, 28.0], egui::Button::new(tr("text.clear")))
+                    .on_hover_text(tr("help.action.clear")).clicked() {
+                    set_binding(doc,t,"");*dirty=true;
+                }
+            });
         });
-        ui.allocate_ui_with_layout(egui::vec2(112.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
-        ui.spacing_mut().item_spacing.x = 0.0;
-        if pad {
-            let old=value.clone();egui::ComboBox::from_id_salt("button").width(86.0).selected_text(if value.is_empty(){tr("text.unassigned")}else{&value}).show_ui(ui,|ui|{ui.selectable_value(&mut value,String::new(),tr("text.unassigned"));for button in PAD_KEYS {ui.selectable_value(&mut value,button.into(),button);} }).response.on_hover_text(help(&t.section, &t.key));
-            if old!=value {set_binding(doc,t,&value);*dirty=true;}
-        } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(112.0)).on_hover_text(help(&t.section, &t.key)).changed() && !value.contains(',') && !value.contains('\n') {set_binding(doc,t,&value);*dirty=true;}
-        });
-        if ui.add_sized([78.0, 28.0], egui::Button::new(tr("text.capture"))).on_hover_text(tr("help.action.capture")).clicked() {*request=Some((t.clone(),false));}
-        if ui.add_sized([66.0, 28.0], egui::Button::new(tr("text.clear"))).on_hover_text(tr("help.action.clear")).clicked() {set_binding(doc,t,"");*dirty=true;}
-    }); ui.add_space(4.0); });
+        ui.add_space(4.0);
+    });
 }
 // Shortcut rows keep labels separate from inputs, so long translations cannot
 // push the capture/clear buttons into the next column.
