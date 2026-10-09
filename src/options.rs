@@ -267,6 +267,7 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     }
     if pad && ui.button(tr("text.restore_default_gamepad_bindings")).on_hover_text(tr("help.action.restore_pad")).clicked() { doc.set(section,"Controls",PAD_DEFAULT); *dirty=true; }
     if ui.button(tr("text.assign_all_controls")).on_hover_text(tr("help.action.assign_all")).clicked() { *requested=Some((Target {section:section.into(),key:"Controls".into(),index:0,count:12,default:default.into()},true)); }
+    ui.add_space(10.0);
     split_columns(ui, |columns| {
     for (i,label) in control_labels().iter().enumerate() {
         let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
@@ -293,7 +294,7 @@ fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Targe
         } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(112.0)).on_hover_text(help(&t.section, &t.key)).changed() && !value.contains(',') && !value.contains('\n') {set_binding(doc,t,&value);*dirty=true;}
         if ui.add_sized([78.0, 28.0], egui::Button::new(tr("text.capture"))).on_hover_text(tr("help.action.capture")).clicked() {*request=Some((t.clone(),false));}
         if ui.add_sized([66.0, 28.0], egui::Button::new(tr("text.clear"))).on_hover_text(tr("help.action.clear")).clicked() {set_binding(doc,t,"");*dirty=true;}
-    });});
+    }); ui.add_space(4.0); });
 }
 // Shortcut rows keep labels separate from inputs, so long translations cannot
 // push the capture/clear buttons into the next column.
