@@ -6,20 +6,113 @@ All notable Z3-Launcher changes, from the original source import to the latest d
 
 This history covers the original C#/WinForms source supplied for the port, the archived Rust development notes, and every Git commit reachable from `feature/validated-forest-ui` through [efbad1a](https://github.com/legluondunet/Z3-Launcher/commit/efbad1a83f12694c79ba1ebacef9028040cb358d).
 
-The milestone numbers below follow the project's proposed progression. They organize development history; they do **not** imply that matching release tags or binaries were published:
+The original preparation-build numbering is preserved below. The later proposed 0.1.0 / 0.2.0 / 0.3.0 / 1.0.0 milestone scheme is not used.
 
-| Milestone | Meaning |
-| --- | --- |
-| 0.1.0 | Original launcher import, Rust rewrite, native Linux/Windows support and AppImage packaging |
-| 0.2.0 | Interface localization, completed with five bundled languages |
-| 0.3.0 | Prebuilt game downloads replace dependency installation and local game compilation |
-| 1.0.0 — Unreleased | Complete forest-interface redesign and release preparation |
+The first expanded source import on GitHub, [b83ca1b](https://github.com/legluondunet/Z3-Launcher/commit/b83ca1b9d192fd83ba444230c7f6ffdb47642706), already declared **0.11.16** in `Cargo.toml`. That package version is still unchanged at the covered revision. GitHub changes are therefore recorded under 0.11.16, with commit references rather than invented version increments. No GitHub releases or tag refs were found when checked on 2026-10-10. Workflow artifacts are development builds, not published releases.
 
-Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are retained in the legacy history below. Some milestones overlap: features were refined across several development stages. This document does not rewrite old Git tags, alter Cargo's version, or publish a release.
+This documentation change does not alter Cargo's version, create tags or publish a release.
 
-## 0.1.0 — Source import and Rust foundation
+## Version history
 
-### Original project and rewrite
+These preparation-build numbers come from the archived development notes. They are retained as originally recorded; missing numbers are not assigned invented changes.
+
+### 0.1
+
+- Rust/Linux prototype; user-confirmed build and US-ROM resource extraction
+
+### 0.4
+
+- Expanded settings/input implementation and source tests; execution was not verified in the preparation environment
+
+### 0.6
+
+- Distribution-aware dependency reports and package suggestions; interim Windows/macOS changes were reverted at this stage
+
+### 0.7
+
+- English/French catalogs, immediate language switching, external overrides and validation; fixed module-comment placement
+
+### 0.8
+
+- Restored game-language ROM import, validation, resource regeneration and rollback
+
+### 0.9
+
+- Portable marker, fixed portable workspace and portable preferences
+
+### 0.11.3
+
+- Direct main tabs and automatic saving
+
+### 0.11.4
+
+- Selectable log; source update and full rebuild while preserving imported resources
+
+### 0.11.5
+
+- Simplified visible actions; temporary expansion of the shader filter
+
+### 0.11.6
+
+- Main-action naming and contextual help
+
+### 0.11.7
+
+- External INI editor and persistent GLSL shader library; removed unsupported Slang presets
+
+### 0.11.8
+
+- Renderer-dependent shader controls
+
+### 0.11.9
+
+- Embedded forest/gold theme and font
+
+### 0.11.10
+
+- Explicit float stroke types
+
+### 0.11.11
+
+- Integrated INI editor and invalid-draft preservation
+
+### 0.11.12
+
+- Revised log layout, tab styling and persistent status bar
+
+### 0.11.13
+
+- More compact settings and framed gameplay sections
+
+### 0.11.15
+
+- GPL-3.0-or-later attribution and Z3-Launcher identity
+
+### 0.11.16
+
+- Updated data/configuration paths and portable folder naming
+
+#### GitHub development — 0.11.16 retained
+
+- Imported the source archive and expanded Rust project on 2026-10-08.
+- Added and corrected GitHub Actions packaging, Windows console behavior and native icons.
+- Improved dependency handling and single-instance behavior.
+- Completed five interface languages.
+- Replaced game compilation with release downloads and local ROM asset extraction.
+- Updated typography, frames, controls, OpenGL defaults and startup update notices.
+- Fixed legitimate archive entries being rejected and Escape/Alt AppImage crashes.
+- Applied the validated forest interface and corrected layout, compilation, autosave and translation issues.
+- Updated the English README through 2026-10-09.
+
+The complete commit-by-commit record below lists every GitHub change. All of these changes retained package version 0.11.16; no 0.11.17 or 1.0.0 is claimed here.
+
+## Detailed change inventory
+
+The following thematic inventory expands the version history above. It spans multiple preparation builds and GitHub revisions, so its headings do not assign additional version numbers.
+
+### Source import and Rust foundation
+
+#### Original project and rewrite
 
 - Started from **Zelda 3 Launcher**, the C#/WinForms Windows application by Anthony Johns (RadzPrower), originally licensed under MIT.
 - Used the original installation, configuration and input-mapping workflow as the reference for the Rust implementation.
@@ -30,7 +123,7 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Verified the supported headerless US ROM by SHA-256 before extraction.
 - Ran installation/build operations in background threads and streamed process output to the interface and `launcher.log`.
 
-### Original source-based installation workflow
+#### Original source-based installation workflow
 
 - Added recursive Git checkout, submodule synchronization, resource extraction and Make-based game compilation.
 - Updated existing checkouts with `git pull --ff-only` rather than destructive resets.
@@ -41,9 +134,9 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Added Windows MSYS2/UCRT64 tool discovery, bounded dependency probes, an official bootstrap installer and confirmed dependency installation.
 - Fixed MSYS2 installer waiting and made system tools available to package installation hooks.
 - Changed the dependency button from verification to confirmed installation when dependencies were missing.
-- These game-build and dependency-installation features were subsequently removed in milestone 0.3.0.
+- These game-build and dependency-installation features were subsequently removed during development on GitHub.
 
-### Configuration and controls
+#### Configuration and controls
 
 - Recreated gameplay, display, renderer, audio, MSU/OPUZ, keyboard, controller and shortcut settings.
 - Preserved INI comments, unknown keys, sections and line endings during edits.
@@ -57,7 +150,7 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Kept the US ROM as the game base, retained previously imported languages and rolled back failed imports.
 - Added ZSPR sprite selection and shader selection.
 
-### Platform, packaging and project identity
+#### Platform, packaging and project identity
 
 - Added portable mode through a `portable.txt` file next to the executable.
 - Added AppImage `.home` support, redirecting HOME and XDG directories to the matching portable folder.
@@ -72,7 +165,7 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Applied GPL-3.0-or-later to the Rust fork, attributed it to legluondunet, and preserved the original MIT notice and DejaVu license.
 - Added platform, translation, licensing and build documentation.
 
-## 0.2.0 — Multilingual interface
+### Multilingual interface
 
 - Added an interface-language selector, initially English and French.
 - Applied language changes immediately and persisted the choice independently of the game's language and INI file.
@@ -86,9 +179,9 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Added and corrected translations for INI unsaved changes and successful automatic saves during the subsequent interface redesign.
 - Left external program output in its original language and retained earlier log entries when changing the interface language.
 
-## 0.3.0 — Prebuilt game installation and updates
+### Prebuilt game installation and updates
 
-### Installation architecture
+#### Installation architecture
 
 - Replaced local source checkout, dependency installation and C compilation with downloads from **legluondunet/zelda3** public GitHub releases.
 - Selected the supported x86_64 package for Linux or Windows.
@@ -100,7 +193,7 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Recorded the installed release tag in `.release-version`.
 - Simplified the CLI to installation, update, run and status actions.
 
-### Download and update protection
+#### Download and update protection
 
 - Verified release packages against their published `SHA256SUMS`.
 - Limited downloaded and expanded archive sizes.
@@ -112,7 +205,7 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Protected long installation/import operations from accidental window closure.
 - Kept public downloads independent of a GitHub account or token.
 
-### Rendering, shaders and update notifications
+#### Rendering, shaders and update notifications
 
 - Made **OpenGL** the default renderer for new installations and missing renderer settings, while preserving existing explicit choices.
 - Restricted shaders to compatible `.glsl` and `.glslp` files; rejected unsupported `.slangp` presets after an earlier experimental filter had admitted them.
@@ -123,16 +216,16 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Compared the game release against the installed tag and checked package compatibility; compared launcher versions numerically.
 - Handled missing releases and network failures without preventing startup.
 
-### Compatibility fixes
+#### Compatibility fixes
 
 - Accepted `LICENSE.upstream.txt`, `COPYING`, `VERSION` and `BUILD-INFO.txt` in the updated game packages. Previously these legitimate files triggered the misleading unsafe-archive error.
 - Preferred the host's x86_64 `libxkbcommon.so.0` when launching an AppImage to address Escape/Alt closures observed with the bundled library.
 - Retained the bundled keyboard library as fallback and preserved existing preloads.
 - Restored the original `LD_PRELOAD` for child programs, alongside the existing `LD_LIBRARY_PATH` restoration.
 
-## 1.0.0 — Unreleased — Forest interface redesign
+### Forest interface redesign
 
-### Theme and navigation
+#### Theme and navigation
 
 - Introduced a forest-green and gold theme with parchment-colored DejaVu Serif text and an embedded background.
 - Adopted the validated forest artwork and refined the palette to match the approved mockup.
@@ -144,7 +237,7 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Renamed the first Graphics frame to **General**.
 - Adjusted tab indices and preserved validation when leaving the INI editor.
 
-### Frames, forms and layout
+#### Frames, forms and layout
 
 - Stacked Game and Audio frames vertically and centered them at 85% width, with two-column contents.
 - Applied matching frames to Graphics, Controls and Shortcuts.
@@ -158,7 +251,7 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Made shortcut/input rows adapt to available space and corrected row spacing.
 - Improved form readability, field contrast and translucent input backgrounds.
 
-### Log, status bar and INI editor
+#### Log, status bar and INI editor
 
 - Made the log selectable and read-only, with Ctrl+C and context-menu copy for either the selection or the full log.
 - Preserved selection on right-click; retained copy/clear actions.
@@ -172,7 +265,7 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Added unsaved-change feedback in the status bar and moved editing guidance there.
 - Framed the INI editor, placed the save explanation below the configuration path and expanded the frame to fill the available tab height.
 
-### Implementation fixes and documentation
+#### Implementation fixes and documentation
 
 - Explicitly typed gold-border stroke widths to avoid newer compiler warnings.
 - Fixed conflicting egui borrows while drawing dividers.
@@ -182,34 +275,6 @@ Earlier preparation builds used numbers such as 0.6, 0.7 and 0.11.16. These are 
 - Rewrote the GitHub README in English for the current installer/updater/configuration workflow, platform support, ROM requirements, portable mode, licensing and developer instructions.
 - Added the forest artwork to the README. At the covered revision it is identified as artwork; a full application screenshot is still pending.
 - Kept final release publication separate from these development changes.
-
-## Legacy preparation builds
-
-The archived pre-import README records the following original development labels. These are historical labels, not additional releases created by this changelog.
-
-| Original label | Recorded change |
-| --- | --- |
-| 0.1 | Rust/Linux prototype; user-confirmed build and US-ROM resource extraction |
-| 0.4 | Expanded settings/input implementation and source tests; execution was not verified in the preparation environment |
-| 0.6 | Distribution-aware dependency reports and package suggestions; interim Windows/macOS changes were reverted at this stage |
-| 0.7 | English/French catalogs, immediate language switching, external overrides and validation; fixed module-comment placement |
-| 0.8 | Restored game-language ROM import, validation, resource regeneration and rollback |
-| 0.9 | Portable marker, fixed portable workspace and portable preferences |
-| 0.11.3 | Direct main tabs and automatic saving |
-| 0.11.4 | Selectable log; source update and full rebuild while preserving imported resources |
-| 0.11.5 | Simplified visible actions; temporary expansion of the shader filter |
-| 0.11.6 | Main-action naming and contextual help |
-| 0.11.7 | External INI editor and persistent GLSL shader library; removed unsupported Slang presets |
-| 0.11.8 | Renderer-dependent shader controls |
-| 0.11.9 | Embedded forest/gold theme and font |
-| 0.11.10 | Explicit float stroke types |
-| 0.11.11 | Integrated INI editor and invalid-draft preservation |
-| 0.11.12 | Revised log layout, tab styling and persistent status bar |
-| 0.11.13 | More compact settings and framed gameplay sections |
-| 0.11.15 | GPL-3.0-or-later attribution and Z3-Launcher identity |
-| 0.11.16 | Updated data/configuration paths and portable folder naming |
-
-The archived notes use 0.11.4 and 0.11.15 for more than one change. Labels absent from those notes are not assigned invented changes.
 
 ## Complete Git chronology
 
