@@ -29,6 +29,8 @@ modules:
       - install -Dm755 target/release/z3-launcher /app/bin/z3-launcher
       - install -Dm644 packaging/z3-launcher.svg /app/share/icons/hicolor/scalable/apps/io.github.legluondunet.Z3Launcher.svg
       - install -Dm644 packaging/flatpak/io.github.legluondunet.Z3Launcher.desktop /app/share/applications/io.github.legluondunet.Z3Launcher.desktop
+      - install -Dm644 packaging/flatpak/io.github.legluondunet.Z3Launcher.metainfo.xml /app/share/metainfo/io.github.legluondunet.Z3Launcher.metainfo.xml
+      - install -Dm644 CHANGELOG.md /app/share/doc/z3-launcher/CHANGELOG.md
       - install -Dm644 LICENSE /app/share/doc/z3-launcher/LICENSE
       - install -Dm644 LICENSING.md /app/share/doc/z3-launcher/LICENSING.md
       - mkdir -p /app/bin/locales
