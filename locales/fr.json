@@ -311,7 +311,7 @@
     "settings.external_invalid": "Le fichier INI modifié contient des réglages invalides : {error}",
     "shaders.requires_opengl": "Choisissez OpenGL ou OpenGL ES comme moteur de rendu pour configurer les shaders.",
     "text.ini_tab": "zelda3.ini",
-    "settings.ini_hint": "Les modifications sont enregistrées automatiquement lorsque vous quittez cet onglet. Les réglages du launcher sont alors actualisés.",
+    "settings.ini_hint": "Lorsque vous quittez cet onglet après avoir modifié zelda3.ini, une confirmation vous permet d'enregistrer ou d'abandonner vos modifications.",
     "settings.ini_saved": "Fichier INI enregistré ; réglages du launcher actualisés.",
     "download.install_button": "Télécharger et installer",
     "download.update_button": "Mettre à jour le jeu",
