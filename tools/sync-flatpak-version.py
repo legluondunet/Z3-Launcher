@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Keep AppStream's current release in sync with Cargo.toml (Python 3.11+)."""
+"""Keep AppStream's current release in sync with Cargo.toml (Python 3.10+)."""
 import argparse
 from pathlib import Path
-import tomllib
+import re
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,8 +13,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="Fail if AppStream version differs from Cargo.toml")
     args = parser.parse_args()
-    with CARGO.open("rb") as f:
-        version = tomllib.load(f)["package"]["version"]
+    cargo = CARGO.read_text(encoding="utf-8")
+    package = re.search(r"(?ms)^\\[package\\]\\s*$(.*?)(?=^\\[|\\Z)", cargo)
+    if package is None:
+        raise SystemExit("Missing [package] section in Cargo.toml")
+    match = re.search(r'(?m)^version\\s*=\\s*"([^"]+)"\\s*$', package.group(1))
+    if match is None:
+        raise SystemExit("Missing package version in Cargo.toml")
+    version = match.group(1)
     tree = ET.parse(META)
     release = tree.find("./releases/release")
     if release is None:
