@@ -4,6 +4,10 @@
     "name": "Italiano"
   },
   "messages": {
+    "settings.ini_confirm_title": "Modifiche a zelda3.ini",
+    "settings.ini_confirm_question": "Hai modificato il file di configurazione zelda3.ini. Vuoi conservare le modifiche?",
+    "settings.ini_keep_changes": "Sì, salva le modifiche",
+    "settings.ini_discard_changes": "No, annulla le modifiche",
     "cli.help": "Z3-Launcher\nsetup | update | run | status\n--dir DIRECTORY --rom US_ROM\nz3-launcher setup --rom /path/zelda3.sfc",
     "cli.unknown_argument": "Argomento sconosciuto: {argument}",
     "cli.unknown_command": "Comando sconosciuto: {action}",
