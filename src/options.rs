@@ -148,7 +148,18 @@ impl Options {
                                     .max_rect(rect.shrink(3.0))
                                     .layout(egui::Layout::top_down(egui::Align::Min)),
                             );
+                            // The text editor gets a solid dark background; the outer frame stays fixed.
+                            ui.painter().rect_filled(
+                                rect.shrink(1.0),
+                                egui::CornerRadius::same(3),
+                                egui::Color32::from_rgb(5, 27, 18),
+                            );
                             editor_ui.add_enabled_ui(!busy, |ui| {
+                                // Local scrollbar palette: do not change other tabs or buttons.
+                                let visuals = &mut ui.style_mut().visuals;
+                                visuals.widgets.inactive.bg_fill = crate::theme::GOLD;
+                                visuals.widgets.hovered.bg_fill = crate::theme::GOLD;
+                                visuals.widgets.active.bg_fill = crate::theme::GOLD;
                                 egui::ScrollArea::both()
                                     .id_salt("ini-scroll")
                                     .auto_shrink([false, false])
