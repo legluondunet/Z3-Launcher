@@ -136,8 +136,13 @@ impl Options {
                             ui.add_space(6.0);
                             ui.label(tr("settings.ini_hint"));
                             ui.add_space(10.0);
-                            let editor_height = ui.available_height().max(100.0);
+                            let editor_height = (ui.available_height() - 12.0).max(100.0);
                             ui.add_enabled_ui(!busy, |ui| {
+                                ui.style_mut().visuals.widgets.inactive.bg_fill = crate::theme::GOLD;
+                                egui::Frame::new()
+                                    .stroke(egui::Stroke::new(1.0, crate::theme::GOLD))
+                                    .inner_margin(egui::Margin::same(2))
+                                    .show(ui, |ui| {
                                 egui::ScrollArea::both()
                                     .id_salt("ini-scroll")
                                     .auto_shrink([false, false])
@@ -159,6 +164,7 @@ impl Options {
                                             };
                                         }
                                     });
+                                });
                             });
                         });
                 },
