@@ -135,6 +135,9 @@ impl Options {
                             }
                             ui.add_space(6.0);
                             ui.label(tr("settings.ini_hint"));
+                            if self.raw_dirty {
+                                ui.colored_label(crate::theme::GOLD, tr("settings.ini_unsaved"));
+                            }
                             ui.add_space(10.0);
                             // Reserve a fixed viewport and draw its border outside the scroll area.
                             let editor_height = (ui.available_height() - 12.0).max(100.0);
@@ -187,6 +190,10 @@ impl Options {
                                         }
                                     });
                             });
+                            // Explicit save shortcut while editing the INI file.
+                            if !busy && ui.input_mut(|i| i.consume_shortcut(&egui::KeyboardShortcut::new(egui::Modifiers::COMMAND, egui::Key::S))) {
+                                self.save_raw(status);
+                            }
                             // Paint after the content: scrolling cannot move or cover the border.
                             ui.painter().rect_stroke(
                                 rect,
