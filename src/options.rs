@@ -439,10 +439,10 @@ fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Targe
             ui.allocate_ui_with_layout(egui::vec2(108.0, 28.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.label(label).on_hover_text(help(&t.section, &t.key));
             });
-            ui.allocate_ui_with_layout(egui::vec2(126.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+            ui.allocate_ui_with_layout(egui::vec2(154.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
                 if pad {
                     let old=value.clone();
-                    egui::ComboBox::from_id_salt("button").width(112.0)
+                    egui::ComboBox::from_id_salt("button").width(140.0)
                         .selected_text(if value.is_empty(){tr("text.unassigned")}else{&value})
                         .show_ui(ui,|ui|{
                             ui.selectable_value(&mut value,String::new(),tr("text.unassigned"));
