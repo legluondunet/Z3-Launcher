@@ -415,9 +415,9 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     ui.add_space(10.0);
     // Three explicit columns: controls | gold separator | controls.
     // The middle column owns its width, so translated buttons cannot overlap the line.
+    let middle_width = 24.0;
+    let side_width = ((ui.available_width() - middle_width - 2.0 * ui.spacing().item_spacing.x) / 2.0).max(0.0);
     ui.columns(3, |columns| {
-        let middle_width = 24.0;
-        let side_width = ((ui.available_width() - middle_width - 2.0 * ui.spacing().item_spacing.x) / 2.0).max(0.0);
         columns[0].set_max_width(side_width);
         columns[1].set_max_width(middle_width);
         columns[2].set_max_width(side_width);
