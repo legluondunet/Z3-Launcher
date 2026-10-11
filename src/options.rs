@@ -363,7 +363,9 @@ impl Options {
         }
         let mut requested=None;
         ui.add_enabled_ui(!busy, |ui| {
-            egui::ScrollArea::vertical().id_salt(("options-scroll", self.page)).show(ui, |ui| {
+            ui.scope(|ui| {
+                crate::theme::gold_scrollbar(ui);
+                egui::ScrollArea::vertical().id_salt(("options-scroll", self.page)).show(ui, |ui| {
                 let doc=self.doc.as_mut().unwrap();
                 match self.page {
                     0=>game(ui,doc,&mut self.dirty,&mut self.language_request),
@@ -383,6 +385,7 @@ impl Options {
                     },
                     _=>shortcuts(ui,doc,&mut self.dirty,&mut requested),
                 }
+                });
             });
         });
         if let Some((target,sequential))=requested {
