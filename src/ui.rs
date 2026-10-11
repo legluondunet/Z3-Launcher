@@ -280,6 +280,7 @@ impl eframe::App for App {
                     .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
                     .corner_radius(egui::CornerRadius::same(4)).inner_margin(4)
                     .show(ui, |ui| {
+                    theme::gold_scrollbar(ui);
                     egui::ScrollArea::vertical().id_salt("journal-scroll").stick_to_bottom(true)
                         .max_height((journal_height - 8.0).max(24.0)).min_scrolled_height(0.0)
                         .auto_shrink([false, false]).show(ui, |ui| {
