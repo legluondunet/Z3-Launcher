@@ -61,6 +61,37 @@ fn button_name(button: Button) -> Option<&'static str> {
         Button::DPadLeft=>Some("DpadLeft"), Button::DPadRight=>Some("DpadRight"), _=>None
     }
 }
+// Syntax highlighting keeps the original text unchanged for cursor positions and saving.
+fn ini_layout(ui: &egui::Ui, text: &str, wrap_width: f32) -> std::sync::Arc<egui::Galley> {
+    use egui::text::{LayoutJob, TextFormat};
+    let mut job = LayoutJob::default();
+    let font = egui::TextStyle::Monospace.resolve(ui.style());
+    let normal = egui::Color32::from_rgb(230, 232, 211);
+    let section = crate::theme::GOLD;
+    let comment = egui::Color32::from_rgb(139, 174, 145);
+    let key = egui::Color32::from_rgb(133, 205, 219);
+    let value = egui::Color32::from_rgb(237, 220, 168);
+    let mut append = |fragment: &str, color| {
+        job.append(fragment, 0.0, TextFormat { font_id: font.clone(), color, ..Default::default() });
+    };
+    for line in text.split_inclusive('\n') {
+        let body = line.trim_end_matches('\n');
+        let trimmed = body.trim_start();
+        if trimmed.starts_with(';') || trimmed.starts_with('#') {
+            append(line, comment);
+        } else if trimmed.starts_with('[') && trimmed.contains(']') {
+            append(line, section);
+        } else if let Some(eq) = body.find('=') {
+            append(&body[..eq], key);
+            append("=", normal);
+            append(&line[eq + 1..], value);
+        } else {
+            append(line, normal);
+        }
+    }
+    job.wrap.max_width = wrap_width;
+    ui.fonts_mut(|fonts| fonts.layout_job(job))
+}
 pub struct Options {
     doc: Option<Ini>, path: Option<PathBuf>, dirty: bool, last_attempt: Option<String>, page: usize,
     capture: Option<Capture>, pad: Option<Pad>, pad_error: String, confirm_close: bool, raw_text: String, raw_active: bool, raw_dirty: bool, disk_text: String, language_request: Option<String>,
@@ -175,15 +206,29 @@ impl Options {
                                     .auto_shrink([false, false])
                                     .max_height(ui.available_height())
                                     .show(ui, |ui| {
-                                        if ui.add_sized(
-                                            [ui.available_width(), ui.available_height()],
-                                            egui::TextEdit::multiline(&mut self.raw_text)
-                                                .id_salt("ini-editor")
-                                                .font(egui::TextStyle::Monospace)
-                                                .code_editor()
-                                                .frame(false)
-                                                .desired_width(f32::INFINITY),
-                                        ).changed() {
+                                        let count = self.raw_text.lines().count().max(1);
+                                        let digits = count.to_string().len();
+                                        let numbers = (1..=count).map(|n| format!("{n:>digits$}")).collect::<Vec<_>>().join("\\n");
+                                        let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, width: f32| {
+                                            ini_layout(ui, text.as_str(), width)
+                                        };
+                                        let changed = ui.horizontal(|ui| {
+                                            ui.label(egui::RichText::new(numbers)
+                                                .monospace()
+                                                .color(egui::Color32::from_rgb(139, 174, 145)));
+                                            ui.separator();
+                                            ui.add_sized(
+                                                [ui.available_width(), ui.available_height()],
+                                                egui::TextEdit::multiline(&mut self.raw_text)
+                                                    .id_salt("ini-editor")
+                                                    .font(egui::TextStyle::Monospace)
+                                                    .code_editor()
+                                                    .layouter(&mut layouter)
+                                                    .frame(false)
+                                                    .desired_width(f32::INFINITY),
+                                            ).changed()
+                                        }).inner;
+                                        if changed {
                                             self.raw_dirty = self.raw_text != self.disk_text;
                                             *status = if self.raw_dirty {
                                                 tr("settings.ini_unsaved").into()
