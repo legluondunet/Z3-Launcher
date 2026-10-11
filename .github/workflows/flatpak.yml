@@ -21,14 +21,14 @@ jobs:
       - name: Install Flatpak tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder appstream-util
+          sudo apt-get install -y flatpak flatpak-builder
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 org.freedesktop.Sdk.Extension.rust-stable//24.08
       - name: Validate AppStream version
         run: python3 tools/sync-flatpak-version.py --check
       - name: Build Flatpak
         run: |
-          flatpak-builder --force-clean --default-branch=stable --repo=flatpak-repo flatpak-build packaging/flatpak/io.github.legluondunet.Z3Launcher.yml
+          flatpak-builder --force-clean --no-appstream --default-branch=stable --repo=flatpak-repo flatpak-build packaging/flatpak/io.github.legluondunet.Z3Launcher.yml
           flatpak build-bundle flatpak-repo Z3-Launcher-x86_64.flatpak io.github.legluondunet.Z3Launcher stable
       - uses: actions/upload-artifact@v4
         with:
