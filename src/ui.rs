@@ -135,7 +135,7 @@ impl eframe::App for App {
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     if busy { ui.spinner(); }
-                    ui.add(egui::Label::new(egui::RichText::new(&displayed_status).size(13.0)).wrap());
+                    ui.add(egui::Label::new(egui::RichText::new(&displayed_status).size(13.0).color(theme::GOLD)).wrap());
                 });
                 if let Some(version)=&self.updates.launcher {
                     ui.hyperlink_to(tf("updates.launcher", &[("version", version.clone())]),
