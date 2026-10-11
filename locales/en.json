@@ -311,7 +311,7 @@
     "settings.external_invalid": "The externally edited INI has invalid settings: {error}",
     "shaders.requires_opengl": "Choose OpenGL or OpenGL ES as the renderer to configure shaders.",
     "text.ini_tab": "zelda3.ini",
-    "settings.ini_hint": "Changes are saved automatically when you leave this tab. The launcher settings are then refreshed.",
+    "settings.ini_hint": "When you leave this tab after editing zelda3.ini, you can choose to save or discard your changes.",
     "settings.ini_saved": "INI file saved; launcher settings updated.",
     "download.install_button": "Download and install",
     "download.update_button": "Update game",
