@@ -129,6 +129,11 @@ impl eframe::App for App {
             }
         }
         // Reserve the footer before laying out the central panel.
+        // The INI editing hint is a tab-specific default, never a global status.
+        // Preserve errors, progress messages and other status notifications.
+        if self.tab != 6 && self.status == tr("settings.ini_hint") {
+            self.status.clear();
+        }
         let displayed_status=self.status.clone();
         egui::TopBottomPanel::bottom("status-bar").resizable(false)
             .frame(egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(7, 39, 26, 235)).stroke(egui::Stroke::new(1.0, theme::GOLD)).inner_margin(egui::Margin::symmetric(16, 8)))
