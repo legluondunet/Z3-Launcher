@@ -135,20 +135,9 @@ impl Options {
                             }
                             ui.add_space(6.0);
                             ui.label(tr("settings.ini_hint"));
-                            ui.horizontal(|ui| {
-                                if ui.add_enabled(
-                                    !busy && self.raw_dirty,
-                                    egui::Button::new(format!("{} (Ctrl+S)", tr("text.save"))),
-                                ).clicked() {
-                                    self.save_raw(status);
-                                }
-                                if self.raw_dirty {
-                                    ui.colored_label(crate::theme::GOLD, tr("settings.ini_unsaved"));
-                                }
-                            });
                             ui.add_space(6.0);
                             // Reserve a fixed viewport and draw its border outside the scroll area.
-                            let editor_height = (ui.available_height() - 12.0).max(100.0);
+                            let editor_height = (ui.available_height() - 52.0).max(100.0);
                             let editor_width = ui.available_width();
                             let (rect, _) = ui.allocate_exact_size(
                                 egui::vec2(editor_width, editor_height),
@@ -209,6 +198,19 @@ impl Options {
                                 egui::Stroke::new(1.0, crate::theme::GOLD),
                                 egui::StrokeKind::Inside,
                             );
+                            ui.add_space(6.0);
+                            ui.horizontal(|ui| {
+                                if ui.add_enabled(
+                                    !busy && self.raw_dirty,
+                                    egui::Button::new(format!("{} (Ctrl+S)", tr("text.save"))),
+                                ).clicked() {
+                                    self.save_raw(status);
+                                }
+                                if self.raw_dirty {
+                                    ui.colored_label(crate::theme::GOLD, tr("settings.ini_unsaved"));
+                                }
+                            });
+
                         });
                 },
             );
