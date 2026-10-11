@@ -413,11 +413,30 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     if pad && ui.button(tr("text.restore_default_gamepad_bindings")).on_hover_text(tr("help.action.restore_pad")).clicked() { doc.set(section,"Controls",PAD_DEFAULT); *dirty=true; }
     if ui.button(tr("text.assign_all_controls")).on_hover_text(tr("help.action.assign_all")).clicked() { *requested=Some((Target {section:section.into(),key:"Controls".into(),index:0,count:12,default:default.into()},true)); }
     ui.add_space(10.0);
-    split_columns(ui, |columns| {
-    for (i,label) in control_labels().iter().enumerate() {
-        let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
-        binding_row(&mut columns[i / 6],doc,dirty,label,&t,pad,requested);
-    }
+    // Three explicit columns: controls | gold separator | controls.
+    // The middle column owns its width, so translated buttons cannot overlap the line.
+    ui.columns(3, |columns| {
+        let middle_width = 24.0;
+        let side_width = ((ui.available_width() - middle_width - 2.0 * ui.spacing().item_spacing.x) / 2.0).max(0.0);
+        columns[0].set_max_width(side_width);
+        columns[1].set_max_width(middle_width);
+        columns[2].set_max_width(side_width);
+        for (i,label) in control_labels().iter().enumerate() {
+            let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
+            let column = if i < 6 { 0 } else { 2 };
+            binding_row(&mut columns[column],doc,dirty,label,&t,pad,requested);
+        }
+        let left = columns[0].min_rect();
+        let right = columns[2].min_rect();
+        let top = left.top().min(right.top());
+        let bottom = left.bottom().max(right.bottom());
+        if bottom > top {
+            let x = columns[1].max_rect().center().x;
+            columns[1].painter().line_segment(
+                [egui::pos2(x, top), egui::pos2(x, bottom)],
+                egui::Stroke::new(1.0, crate::theme::GOLD),
+            );
+        }
     });
 }
 fn set_binding(doc:&mut Ini,target:&Target,value:&str) {
