@@ -90,7 +90,7 @@ fn ini_layout(ui: &egui::Ui, text: &str, wrap_width: f32) -> std::sync::Arc<egui
         }
     }
     job.wrap.max_width = wrap_width;
-    ui.fonts_mut(|fonts| fonts.layout_job(job))
+    ui.fonts(|fonts| fonts.layout_job(job))
 }
 pub struct Options {
     doc: Option<Ini>, path: Option<PathBuf>, dirty: bool, last_attempt: Option<String>, page: usize,
@@ -209,8 +209,8 @@ impl Options {
                                         let count = self.raw_text.bytes().filter(|&b| b == 10).count() + 1;
                                         let digits = count.to_string().len();
                                         let numbers = (1..=count).map(|n| format!("{n:>digits$}")).collect::<Vec<_>>().join("\n");
-                                        let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, width: f32| {
-                                            ini_layout(ui, text.as_str(), width)
+                                        let mut layouter = |ui: &egui::Ui, text: &str, width: f32| {
+                                            ini_layout(ui, text, width)
                                         };
                                         let changed = ui.horizontal(|ui| {
                                             ui.label(egui::RichText::new(numbers)
