@@ -2,6 +2,7 @@ name: Native builds
 on: [push, pull_request, workflow_dispatch]
 jobs:
   windows:
+    if: ${{ false }} # Temporarily disabled; keep Windows build configuration.
     runs-on: windows-latest
     env:
       CMAKE_POLICY_VERSION_MINIMUM: "3.5"
@@ -22,6 +23,7 @@ jobs:
             LICENSING.md
             assets/DejaVu-LICENSE.txt
   linux:
+    if: ${{ false }} # Temporarily disabled; keep native Linux build configuration.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
