@@ -59,7 +59,7 @@ pub fn header(ui: &mut egui::Ui) {
         }
         ui.vertical(|ui| {
             ui.label(RichText::new("Z3-Launcher").heading().size(30.0).strong());
-            ui.small(format!("{} · v{}", std::env::consts::OS, env!("CARGO_PKG_VERSION")));
+            ui.small(format!("{} · v{} ({})", std::env::consts::OS, env!("CARGO_PKG_VERSION"), env!("Z3_BUILD_COMMIT")));
         });
     });
 }
