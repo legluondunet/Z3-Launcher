@@ -1,0 +1,32 @@
+name: Flatpak (experimental)
+on:
+  push:
+    branches:
+      - feature/validated-forest-ui
+    paths:
+      - 'src/**'
+      - 'locales/**'
+      - 'packaging/flatpak/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/flatpak.yml'
+  workflow_dispatch:
+jobs:
+  flatpak:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Flatpak tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08
+      - name: Build Flatpak
+        run: |
+          flatpak-builder --force-clean --repo=flatpak-repo flatpak-build packaging/flatpak/io.github.legluondunet.Z3Launcher.yml
+          flatpak build-bundle flatpak-repo Z3-Launcher-x86_64.flatpak io.github.legluondunet.Z3Launcher stable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z3-launcher-flatpak-x86_64-experimental
+          path: Z3-Launcher-x86_64.flatpak
