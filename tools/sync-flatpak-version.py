@@ -14,10 +14,10 @@ def main():
     parser.add_argument("--check", action="store_true", help="Fail if AppStream version differs from Cargo.toml")
     args = parser.parse_args()
     cargo = CARGO.read_text(encoding="utf-8")
-    package = re.search(r"(?ms)^\\[package\\]\\s*$(.*?)(?=^\\[|\\Z)", cargo)
+    package = re.search(r"(?ms)^\[package\]\s*$(.*?)(?=^\[|\Z)", cargo)
     if package is None:
         raise SystemExit("Missing [package] section in Cargo.toml")
-    match = re.search(r'(?m)^version\\s*=\\s*"([^"]+)"\\s*$', package.group(1))
+    match = re.search(r'(?m)^version\s*=\s*"([^"]+)"\s*$', package.group(1))
     if match is None:
         raise SystemExit("Missing package version in Cargo.toml")
     version = match.group(1)
