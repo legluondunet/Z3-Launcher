@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Z3-Launcher
+Comment=Install, configure and launch Zelda 3
+Exec=z3-launcher
+Icon=io.github.legluondunet.Z3Launcher
+Terminal=false
+Categories=Game;
