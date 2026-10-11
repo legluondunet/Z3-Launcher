@@ -209,13 +209,30 @@ impl Options {
                                         let count = self.raw_text.bytes().filter(|&b| b == 10).count() + 1;
                                         let digits = count.to_string().len();
                                         let numbers = (1..=count).map(|n| format!("{n:>digits$}")).collect::<Vec<_>>().join("\n");
+                                        // Use the same text layout engine, font and line spacing as the editor.
+                                        let mut number_layouter = |ui: &egui::Ui, text: &str, _width: f32| {
+                                            let mut job = egui::text::LayoutJob::simple(
+                                                text.to_owned(),
+                                                egui::TextStyle::Monospace.resolve(ui.style()),
+                                                egui::Color32::from_rgb(139, 174, 145),
+                                                f32::INFINITY,
+                                            );
+                                            job.wrap.max_width = f32::INFINITY;
+                                            ui.fonts(|fonts| fonts.layout_job(job))
+                                        };
                                         let mut layouter = |ui: &egui::Ui, text: &str, width: f32| {
                                             ini_layout(ui, text, width)
                                         };
                                         let changed = ui.horizontal(|ui| {
-                                            ui.label(egui::RichText::new(numbers)
-                                                .monospace()
-                                                .color(egui::Color32::from_rgb(139, 174, 145)));
+                                            let mut number_text = numbers.as_str();
+                                            ui.add(
+                                                egui::TextEdit::multiline(&mut number_text)
+                                                    .font(egui::TextStyle::Monospace)
+                                                    .layouter(&mut number_layouter)
+                                                    .frame(false)
+                                                    .desired_width((digits as f32 + 1.0) * 9.0)
+                                                    .interactive(false),
+                                            );
                                             ui.separator();
                                             ui.add_sized(
                                                 [ui.available_width(), ui.available_height()],
