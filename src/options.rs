@@ -206,9 +206,6 @@ impl Options {
                                 ).clicked() {
                                     self.save_raw(status);
                                 }
-                                if self.raw_dirty {
-                                    ui.colored_label(crate::theme::GOLD, tr("settings.ini_unsaved"));
-                                }
                             });
 
                         });
