@@ -136,26 +136,31 @@ impl Options {
                             ui.add_space(6.0);
                             ui.label(tr("settings.ini_hint"));
                             ui.add_space(10.0);
-                            let editor_height = (ui.available_height() - 18.0).max(100.0);
-                            ui.add_enabled_ui(!busy, |ui| {
-                                egui::Frame::new()
-                                    .stroke(egui::Stroke::new(1.0, crate::theme::GOLD))
-                                    .inner_margin(egui::Margin::same(2))
-                                    .show(ui, |ui| {
-                                // Limit the scroll viewport independently of the editor frame.
-                                // Keep the bottom gold border visible at every scroll position.
-                                ui.set_max_height(editor_height);
+                            // Reserve a fixed viewport and draw its border outside the scroll area.
+                            let editor_height = (ui.available_height() - 12.0).max(100.0);
+                            let editor_width = ui.available_width();
+                            let (rect, _) = ui.allocate_exact_size(
+                                egui::vec2(editor_width, editor_height),
+                                egui::Sense::hover(),
+                            );
+                            let mut editor_ui = ui.new_child(
+                                egui::UiBuilder::new()
+                                    .max_rect(rect.shrink(3.0))
+                                    .layout(egui::Layout::top_down(egui::Align::Min)),
+                            );
+                            editor_ui.add_enabled_ui(!busy, |ui| {
                                 egui::ScrollArea::both()
                                     .id_salt("ini-scroll")
                                     .auto_shrink([false, false])
-                                    .max_height((editor_height - 6.0).max(24.0))
+                                    .max_height(ui.available_height())
                                     .show(ui, |ui| {
                                         if ui.add_sized(
-                                            [ui.available_width(), editor_height],
+                                            [ui.available_width(), ui.available_height()],
                                             egui::TextEdit::multiline(&mut self.raw_text)
                                                 .id_salt("ini-editor")
                                                 .font(egui::TextStyle::Monospace)
                                                 .code_editor()
+                                                .frame(false)
                                                 .desired_width(f32::INFINITY),
                                         ).changed() {
                                             self.raw_dirty = self.raw_text != self.disk_text;
@@ -166,8 +171,14 @@ impl Options {
                                             };
                                         }
                                     });
-                                });
                             });
+                            // Paint after the content: scrolling cannot move or cover the border.
+                            ui.painter().rect_stroke(
+                                rect,
+                                egui::CornerRadius::same(3),
+                                egui::Stroke::new(1.0, crate::theme::GOLD),
+                                egui::StrokeKind::Inside,
+                            );
                         });
                 },
             );
