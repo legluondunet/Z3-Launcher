@@ -119,7 +119,7 @@ impl Options {
         }
         self.raw_text=self.disk_text.clone(); self.raw_active=true;
         self.raw_dirty=false; self.capture=None;
-        status.clear();
+        *status = tr("settings.ini_hint").into();
         true
     }
     fn save_raw(&mut self, status: &mut String) -> bool {
@@ -171,10 +171,8 @@ impl Options {
                                 ui.small(tf("settings.file", &[("path", path.display().to_string())]));
                             }
                             ui.add_space(6.0);
-                            ui.label(tr("settings.ini_hint"));
-                            ui.add_space(6.0);
                             // Reserve a fixed viewport and draw its border outside the scroll area.
-                            let editor_height = (ui.available_height() - 12.0).max(100.0);
+                            let editor_height = (ui.available_height() - 6.0).max(100.0);
                             let editor_width = ui.available_width();
                             let (rect, _) = ui.allocate_exact_size(
                                 egui::vec2(editor_width, editor_height),
@@ -250,7 +248,7 @@ impl Options {
                                             *status = if self.raw_dirty {
                                                 tr("settings.ini_unsaved").into()
                                             } else {
-                                                String::new()
+                                                tr("settings.ini_hint").into()
                                             };
                                         }
                                     });
