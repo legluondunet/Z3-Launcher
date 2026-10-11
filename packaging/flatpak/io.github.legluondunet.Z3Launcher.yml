@@ -2,6 +2,8 @@ app-id: io.github.legluondunet.Z3Launcher
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
 command: z3-launcher
 finish-args:
   - --share=network
@@ -17,6 +19,9 @@ modules:
   - name: z3-launcher
     buildsystem: simple
     build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/z3-launcher/.cargo
       build-args:
         - --share=network
     build-commands:
