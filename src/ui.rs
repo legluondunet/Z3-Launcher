@@ -10,14 +10,14 @@ struct App {
     instance: Option<crate::single_instance::Guard>,
     updates_started: bool, updates_rx: Option<Receiver<crate::updates::Updates>>, updates: crate::updates::Updates,
     root: String, rom: String, lines: Vec<String>, rx: Option<Receiver<Event>>,
-    protect_operation: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize,
+    protect_operation: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize, pending_ini_tab: Option<usize>,
 }
 impl Default for App {
     fn default() -> Self {
         let root = if crate::platform::is_portable() {
             crate::default_root().to_string_lossy().into_owned()
         } else { fs::read_to_string(preferences()).unwrap_or_else(|_| crate::default_root().to_string_lossy().into_owned()) };
-        Self { updates_started: false, updates_rx: None, updates: crate::updates::Updates::default(), instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
+        Self { updates_started: false, updates_rx: None, updates: crate::updates::Updates::default(), instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0, pending_ini_tab: None }
     }
 }
 fn preferences() -> PathBuf { crate::platform::config_dir().join("workspace.txt") }
@@ -149,6 +149,36 @@ impl eframe::App for App {
                     }
                 }
             });
+            if let Some(target) = self.pending_ini_tab {
+                egui::Window::new(tr("settings.ini_confirm_title"))
+                    .collapsible(false)
+                    .resizable(false)
+                    .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+                    .show(ctx, |ui| {
+                        ui.label(tr("settings.ini_confirm_question"));
+                        ui.horizontal(|ui| {
+                            if ui.button(tr("settings.ini_keep_changes")).clicked() {
+                                if self.options.leave_ini(&mut self.status) {
+                                    self.pending_ini_tab = None;
+                                    self.tab = target;
+                                    if target > 0 { self.options.select_page(target - 1); }
+                                    else { self.options.cancel_capture(); }
+                                }
+                            }
+                            if ui.button(tr("settings.ini_discard_changes")).clicked() {
+                                self.options.discard_ini();
+                                self.status.clear();
+                                self.pending_ini_tab = None;
+                                self.tab = target;
+                                if target > 0 { self.options.select_page(target - 1); }
+                                else { self.options.cancel_capture(); }
+                            }
+                            if ui.button(tr("text.continue")).clicked() {
+                                self.pending_ini_tab = None;
+                            }
+                        });
+                    });
+            }
         egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::FOREST).inner_margin(24)).show(ctx, |ui| {
             if let Some(background) = &self.background {
                 ui.painter().image(background.id(), ui.max_rect().expand(24.0),
@@ -180,8 +210,11 @@ impl eframe::App for App {
                     if ui.add_sized([width, height], button).clicked() { self.tab=index; }
                 }
                 if self.tab != previous {
-                    if previous == 6 && !self.options.leave_ini(&mut self.status) {
-                        self.tab=previous;
+                    if previous == 6 && self.options.ini_has_unsaved_changes() {
+                        self.pending_ini_tab = Some(self.tab);
+                        self.tab = previous;
+                    } else if previous == 6 && !self.options.leave_ini(&mut self.status) {
+                        self.tab = previous;
                     } else if self.tab == 6 {
                         if busy || !self.options.enter_ini(&self.root, &mut self.status) { self.tab=previous; }
                     } else if self.tab > 0 { self.options.select_page(self.tab - 1); }
