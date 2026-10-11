@@ -15,6 +15,7 @@ on:
   workflow_dispatch:
 jobs:
   flatpak:
+    if: ${{ false }} # Temporarily disabled while testing AppImage only.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
