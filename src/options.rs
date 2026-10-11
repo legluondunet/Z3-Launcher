@@ -135,10 +135,18 @@ impl Options {
                             }
                             ui.add_space(6.0);
                             ui.label(tr("settings.ini_hint"));
-                            if self.raw_dirty {
-                                ui.colored_label(crate::theme::GOLD, tr("settings.ini_unsaved"));
-                            }
-                            ui.add_space(10.0);
+                            ui.horizontal(|ui| {
+                                if ui.add_enabled(
+                                    !busy && self.raw_dirty,
+                                    egui::Button::new(format!("{} (Ctrl+S)", tr("text.save"))),
+                                ).clicked() {
+                                    self.save_raw(status);
+                                }
+                                if self.raw_dirty {
+                                    ui.colored_label(crate::theme::GOLD, tr("settings.ini_unsaved"));
+                                }
+                            });
+                            ui.add_space(6.0);
                             // Reserve a fixed viewport and draw its border outside the scroll area.
                             let editor_height = (ui.available_height() - 12.0).max(100.0);
                             let editor_width = ui.available_width();
