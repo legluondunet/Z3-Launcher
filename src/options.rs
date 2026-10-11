@@ -136,17 +136,19 @@ impl Options {
                             ui.add_space(6.0);
                             ui.label(tr("settings.ini_hint"));
                             ui.add_space(10.0);
-                            let editor_height = (ui.available_height() - 12.0).max(100.0);
+                            let editor_height = (ui.available_height() - 18.0).max(100.0);
                             ui.add_enabled_ui(!busy, |ui| {
-                                ui.style_mut().visuals.widgets.inactive.bg_fill = crate::theme::GOLD;
                                 egui::Frame::new()
                                     .stroke(egui::Stroke::new(1.0, crate::theme::GOLD))
                                     .inner_margin(egui::Margin::same(2))
                                     .show(ui, |ui| {
+                                // Limit the scroll viewport independently of the editor frame.
+                                // Keep the bottom gold border visible at every scroll position.
+                                ui.set_max_height(editor_height);
                                 egui::ScrollArea::both()
                                     .id_salt("ini-scroll")
                                     .auto_shrink([false, false])
-                                    .max_height(editor_height)
+                                    .max_height((editor_height - 6.0).max(24.0))
                                     .show(ui, |ui| {
                                         if ui.add_sized(
                                             [ui.available_width(), editor_height],
