@@ -106,6 +106,12 @@ impl Options {
             }
         }
     }
+    pub fn ini_has_unsaved_changes(&self) -> bool { self.raw_active && self.raw_dirty }
+    pub fn discard_ini(&mut self) {
+        self.raw_text = self.disk_text.clone();
+        self.raw_dirty = false;
+        self.raw_active = false;
+    }
     pub fn leave_ini(&mut self, status: &mut String) -> bool {
         if !self.save_raw(status) { return false; }
         self.raw_active=false; true
