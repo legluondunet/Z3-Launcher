@@ -160,6 +160,10 @@ impl Options {
                                 visuals.widgets.inactive.bg_fill = crate::theme::GOLD;
                                 visuals.widgets.hovered.bg_fill = crate::theme::GOLD;
                                 visuals.widgets.active.bg_fill = crate::theme::GOLD;
+                                // Scrollbar handle uses the widget foreground stroke in egui.
+                                for widget in [&mut visuals.widgets.inactive, &mut visuals.widgets.hovered, &mut visuals.widgets.active] {
+                                    widget.fg_stroke.color = crate::theme::GOLD;
+                                }
                                 egui::ScrollArea::both()
                                     .id_salt("ini-scroll")
                                     .auto_shrink([false, false])
