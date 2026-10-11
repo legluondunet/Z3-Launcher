@@ -149,36 +149,6 @@ impl eframe::App for App {
                     }
                 }
             });
-            if let Some(target) = self.pending_ini_tab {
-                egui::Window::new(tr("settings.ini_confirm_title"))
-                    .collapsible(false)
-                    .resizable(false)
-                    .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
-                    .show(ctx, |ui| {
-                        ui.label(tr("settings.ini_confirm_question"));
-                        ui.horizontal(|ui| {
-                            if ui.button(tr("settings.ini_keep_changes")).clicked() {
-                                if self.options.leave_ini(&mut self.status) {
-                                    self.pending_ini_tab = None;
-                                    self.tab = target;
-                                    if target > 0 { self.options.select_page(target - 1); }
-                                    else { self.options.cancel_capture(); }
-                                }
-                            }
-                            if ui.button(tr("settings.ini_discard_changes")).clicked() {
-                                self.options.discard_ini();
-                                self.status.clear();
-                                self.pending_ini_tab = None;
-                                self.tab = target;
-                                if target > 0 { self.options.select_page(target - 1); }
-                                else { self.options.cancel_capture(); }
-                            }
-                            if ui.button(tr("text.continue")).clicked() {
-                                self.pending_ini_tab = None;
-                            }
-                        });
-                    });
-            }
         egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::FOREST).inner_margin(24)).show(ctx, |ui| {
             if let Some(background) = &self.background {
                 ui.painter().image(background.id(), ui.max_rect().expand(24.0),
@@ -351,6 +321,36 @@ impl eframe::App for App {
             }
             });
         });
+            if let Some(target) = self.pending_ini_tab {
+                egui::Window::new(tr("settings.ini_confirm_title"))
+                    .collapsible(false)
+                    .resizable(false)
+                    .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+                    .show(ctx, |ui| {
+                        ui.label(tr("settings.ini_confirm_question"));
+                        ui.horizontal(|ui| {
+                            if ui.button(tr("settings.ini_keep_changes")).clicked() {
+                                if self.options.leave_ini(&mut self.status) {
+                                    self.pending_ini_tab = None;
+                                    self.tab = target;
+                                    if target > 0 { self.options.select_page(target - 1); }
+                                    else { self.options.cancel_capture(); }
+                                }
+                            }
+                            if ui.button(tr("settings.ini_discard_changes")).clicked() {
+                                self.options.discard_ini();
+                                self.status.clear();
+                                self.pending_ini_tab = None;
+                                self.tab = target;
+                                if target > 0 { self.options.select_page(target - 1); }
+                                else { self.options.cancel_capture(); }
+                            }
+                            if ui.button(tr("text.continue")).clicked() {
+                                self.pending_ini_tab = None;
+                            }
+                        });
+                    });
+            }
         let settings_changed = !busy && (1..=5).contains(&self.tab) && self.options.has_changes();
         if !busy { self.options.autosave(&mut self.status); }
         // Show one clear message after a successful automatic save.
