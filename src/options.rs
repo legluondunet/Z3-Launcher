@@ -436,7 +436,7 @@ fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Targe
         // Fixed-width cells prevent SDL button names from shifting adjacent controls.
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.0;
-            ui.allocate_ui_with_layout(egui::vec2(86.0, 28.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.allocate_ui_with_layout(egui::vec2(108.0, 28.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 ui.label(label).on_hover_text(help(&t.section, &t.key));
             });
             ui.allocate_ui_with_layout(egui::vec2(126.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
@@ -508,7 +508,17 @@ fn shortcut_row(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, label: &str,
 }
 fn flag(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,section:&str,key:&str,label:&str,default:bool) {
     let raw=doc.value(section,key,if default {"1"}else{"0"}); let mut value=raw=="1"||raw.eq_ignore_ascii_case("true");
-    if ui.checkbox(&mut value,label).on_hover_text(help(section,key)).changed() {doc.set(section,key,if value {"1"}else{"0"});*dirty=true;}
+    let changed = ui.scope(|ui| {
+        // Scrollbar styling is gold; keep unchecked checkbox backgrounds dark
+        // so checked and unchecked options remain visually distinct.
+        let visuals = &mut ui.style_mut().visuals;
+        for widget in [&mut visuals.widgets.inactive, &mut visuals.widgets.hovered, &mut visuals.widgets.active] {
+            widget.bg_fill = crate::theme::FOREST;
+            widget.fg_stroke.color = crate::theme::PARCHMENT;
+        }
+        ui.checkbox(&mut value,label).on_hover_text(help(section,key)).changed()
+    }).inner;
+    if changed {doc.set(section,key,if value {"1"}else{"0"});*dirty=true;}
 }
 fn choice(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,section:&str,key:&str,label:&str,default:&str,values:&[(&str,&str)]) {
     let mut value=doc.value(section,key,default);let old=value.clone();
@@ -648,7 +658,16 @@ fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             let mut extended=parts.contains(&"extend_y");let mut unchanged=parts.contains(&"unchanged_sprites");let mut nofix=parts.contains(&"no_visual_fixes");
             let old=(ratio.clone(),extended,unchanged,nofix);
             egui::ComboBox::from_id_salt("ratio").selected_text(&ratio).show_ui(ui,|ui|{for r in ["4:3","16:9","16:10","18:9"] {ui.selectable_value(&mut ratio,r.into(),r);} }).response.on_hover_text(tr("help.aspect.ratio"));
-            ui.checkbox(&mut extended,tr("text.extend_height_to_240_lines")).on_hover_text(tr("help.aspect.extend"));ui.checkbox(&mut unchanged,tr("text.preserve_original_sprite_behavior")).on_hover_text(tr("help.aspect.sprites"));ui.checkbox(&mut nofix,tr("text.disable_visual_fixes")).on_hover_text(tr("help.aspect.fixes"));
+            ui.scope(|ui| {
+                let visuals = &mut ui.style_mut().visuals;
+                for widget in [&mut visuals.widgets.inactive, &mut visuals.widgets.hovered, &mut visuals.widgets.active] {
+                    widget.bg_fill = crate::theme::FOREST;
+                    widget.fg_stroke.color = crate::theme::PARCHMENT;
+                }
+                ui.checkbox(&mut extended,tr("text.extend_height_to_240_lines")).on_hover_text(tr("help.aspect.extend"));
+                ui.checkbox(&mut unchanged,tr("text.preserve_original_sprite_behavior")).on_hover_text(tr("help.aspect.sprites"));
+                ui.checkbox(&mut nofix,tr("text.disable_visual_fixes")).on_hover_text(tr("help.aspect.fixes"));
+            });
             if old!=(ratio.clone(),extended,unchanged,nofix) {let mut p=Vec::new();if extended {p.push("extend_y".to_owned());}p.push(ratio);if unchanged {p.push("unchanged_sprites".into());}if nofix {p.push("no_visual_fixes".into());}doc.set("General","ExtendedAspectRatio",&p.join(", "));*dirty=true;}
             });
             columns[1].vertical(|ui| {
