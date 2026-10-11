@@ -9,6 +9,8 @@ on:
       - 'packaging/flatpak/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'CHANGELOG.md'
+      - 'tools/sync-flatpak-version.py'
       - '.github/workflows/flatpak.yml'
   workflow_dispatch:
 jobs:
@@ -22,6 +24,8 @@ jobs:
           sudo apt-get install -y flatpak flatpak-builder
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 org.freedesktop.Sdk.Extension.rust-stable//24.08
+      - name: Validate AppStream version
+        run: python3 tools/sync-flatpak-version.py --check
       - name: Build Flatpak
         run: |
           flatpak-builder --force-clean --repo=flatpak-repo flatpak-build packaging/flatpak/io.github.legluondunet.Z3Launcher.yml
