@@ -44,6 +44,14 @@ pub fn apply(ctx: &egui::Context) {
     style.text_styles.insert(egui::TextStyle::Small, FontId::new(11.0, family));
     ctx.set_style(style);
 }
+/// Gold scrollbar handle within a scoped UI; other tabs keep their own style.
+pub fn gold_scrollbar(ui: &mut egui::Ui) {
+    let visuals = &mut ui.style_mut().visuals;
+    for widget in [&mut visuals.widgets.inactive, &mut visuals.widgets.hovered, &mut visuals.widgets.active] {
+        widget.bg_fill = GOLD;
+        widget.fg_stroke.color = GOLD;
+    }
+}
 pub fn background(ctx: &egui::Context) -> Option<egui::TextureHandle> {
     let decoded = image::load_from_memory(include_bytes!("../assets/forest-frame.png")).ok()?.to_rgba8();
     let size = [decoded.width() as usize, decoded.height() as usize];
