@@ -33,6 +33,7 @@ Z3-Launcher is a Rust desktop application for [legluondunet/zelda3](https://gith
 | Windows x86_64 | Standalone `z3-launcher.exe` |
 | Linux x86_64 | Native binary |
 | Linux x86_64 | AppImage |
+| Linux x86_64 | Flatpak (experimental; not yet validated) |
 
 Build artifacts are available from [GitHub Actions](https://github.com/legluondunet/Z3-Launcher/actions). Published versions are listed under [Releases](https://github.com/legluondunet/Z3-Launcher/releases).
 
@@ -74,6 +75,10 @@ z3-launcher status
 ```
 
 Use `--dir DIRECTORY` to choose a different workspace. See [WINDOWS.md](WINDOWS.md) and [APPIMAGE.md](APPIMAGE.md) for platform-specific information.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the development history. The experimental Flatpak includes AppStream release notes, with its version checked against `Cargo.toml` by `tools/sync-flatpak-version.py`.
 
 ## Translations
 
