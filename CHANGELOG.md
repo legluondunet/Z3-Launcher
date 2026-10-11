@@ -106,6 +106,13 @@ These preparation-build numbers come from the archived development notes. They a
 
 The complete commit-by-commit record below lists every GitHub change. All of these changes retained package version 0.11.16; no 0.11.17 or 1.0.0 is claimed here.
 
+### Flatpak packaging (experimental; version 0.11.16 retained)
+
+- Added a Flatpak manifest, desktop entry and GitHub Actions build workflow for an experimental Linux Flatpak bundle.
+- Added AppStream metadata with a release summary and a version check against Cargo.toml.
+- Included the project changelog in the Flatpak documentation files.
+- Flatpak functionality, especially launching the separately downloaded Zelda 3 AppImage inside the sandbox, remains to be validated before publication.
+
 ## Detailed change inventory
 
 The following thematic inventory expands the version history above. It spans multiple preparation builds and GitHub revisions, so its headings do not assign additional version numbers.
