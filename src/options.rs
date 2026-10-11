@@ -206,9 +206,9 @@ impl Options {
                                     .auto_shrink([false, false])
                                     .max_height(ui.available_height())
                                     .show(ui, |ui| {
-                                        let count = self.raw_text.lines().count().max(1);
+                                        let count = self.raw_text.bytes().filter(|&b| b == 10).count() + 1;
                                         let digits = count.to_string().len();
-                                        let numbers = (1..=count).map(|n| format!("{n:>digits$}")).collect::<Vec<_>>().join("\\n");
+                                        let numbers = (1..=count).map(|n| format!("{n:>digits$}")).collect::<Vec<_>>().join("\n");
                                         let mut layouter = |ui: &egui::Ui, text: &dyn egui::TextBuffer, width: f32| {
                                             ini_layout(ui, text.as_str(), width)
                                         };
