@@ -131,10 +131,15 @@ impl eframe::App for App {
         // Reserve the footer before laying out the central panel.
         // The INI editing hint is a tab-specific default, never a global status.
         // Preserve errors, progress messages and other status notifications.
-        if self.tab != 6 && self.status == tr("settings.ini_hint") {
+        if (self.tab != 6 && self.status == tr("settings.ini_hint"))
+            || (self.tab != 5 && self.status == tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field")) {
             self.status.clear();
         }
-        let displayed_status=self.status.clone();
+        let displayed_status = if self.tab == 5 && self.status.is_empty() {
+            tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field").to_owned()
+        } else {
+            self.status.clone()
+        };
         egui::TopBottomPanel::bottom("status-bar").resizable(false)
             .frame(egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(7, 39, 26, 235)).stroke(egui::Stroke::new(1.0, theme::GOLD)).inner_margin(egui::Margin::symmetric(16, 8)))
             .show(ctx, |ui| {
@@ -185,6 +190,9 @@ impl eframe::App for App {
                     if ui.add_sized([width, height], button).clicked() { self.tab=index; }
                 }
                 if self.tab != previous {
+                    if previous == 5 && self.status == tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field") {
+                        self.status.clear();
+                    }
                     if previous == 6 && self.options.ini_has_unsaved_changes() {
                         self.pending_ini_tab = Some(self.tab);
                         self.tab = previous;
@@ -194,6 +202,10 @@ impl eframe::App for App {
                         if busy || !self.options.enter_ini(&self.root, &mut self.status) { self.tab=previous; }
                     } else if self.tab > 0 { self.options.select_page(self.tab - 1); }
                     else { self.options.cancel_capture(); }
+                }
+                if self.tab == 5 && self.tab != previous && !busy {
+                    self.status = tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field").into();
+                    ctx.request_repaint();
                 }
             });
             ui.add_space(10.0);
