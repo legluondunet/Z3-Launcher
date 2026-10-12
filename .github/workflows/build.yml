@@ -1,5 +1,12 @@
 name: Native builds
-on: [push, pull_request, workflow_dispatch]
+# Feature branches are validated through their pull requests.
+# Push builds remain available on main, with manual runs as needed.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
 jobs:
   windows:
     runs-on: windows-latest
@@ -8,6 +15,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Stamp Cargo version with commit
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path("Cargo.toml")
+          lines = p.read_text().splitlines(keepends=True)
+          for i, line in enumerate(lines):
+              if line.startswith("version = "):
+                  base = line.split('"')[1].split("+")[0]
+                  lines[i] = 'version = "' + base + '+' + os.environ["GITHUB_SHA"][:7] + '"\n'
+                  break
+          else:
+              raise SystemExit("Cargo version not found")
+          p.write_text("".join(lines))
+          print(lines[i].strip())
+          PY
       - run: cargo test --no-default-features
       - run: cargo build --release
       - uses: actions/upload-artifact@v4
@@ -22,10 +47,29 @@ jobs:
             LICENSING.md
             assets/DejaVu-LICENSE.txt
   linux:
+    if: ${{ false }} # Temporarily disabled; keep native Linux build configuration.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Stamp Cargo version with commit
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path("Cargo.toml")
+          lines = p.read_text().splitlines(keepends=True)
+          for i, line in enumerate(lines):
+              if line.startswith("version = "):
+                  base = line.split('"')[1].split("+")[0]
+                  lines[i] = 'version = "' + base + '+' + os.environ["GITHUB_SHA"][:7] + '"\n'
+                  break
+          else:
+              raise SystemExit("Cargo version not found")
+          p.write_text("".join(lines))
+          print(lines[i].strip())
+          PY
       - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libxkbcommon-dev libwayland-dev libgl1-mesa-dev
       - run: cargo test
       - run: cargo build --release
@@ -34,6 +78,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Stamp Cargo version with commit
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path("Cargo.toml")
+          lines = p.read_text().splitlines(keepends=True)
+          for i, line in enumerate(lines):
+              if line.startswith("version = "):
+                  base = line.split('"')[1].split("+")[0]
+                  lines[i] = 'version = "' + base + '+' + os.environ["GITHUB_SHA"][:7] + '"\n'
+                  break
+          else:
+              raise SystemExit("Cargo version not found")
+          p.write_text("".join(lines))
+          print(lines[i].strip())
+          PY
       - run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config cmake curl file python3 libsdl2-dev libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev libgl1-mesa-dev
       - run: cargo test
       - run: |

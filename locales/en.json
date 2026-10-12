@@ -4,9 +4,14 @@
     "name": "English"
   },
   "messages": {
+    "settings.ini_confirm_title": "Changes to zelda3.ini",
+    "settings.ini_confirm_question": "You have made changes to the zelda3.ini configuration file. Would you like to keep these changes?",
+    "settings.ini_keep_changes": "Yes, save changes",
+    "settings.ini_discard_changes": "No, discard changes",
     "cli.help": "Z3-Launcher\nsetup | update | run | status\n--dir DIRECTORY --rom US_ROM\nz3-launcher setup --rom /path/zelda3.sfc",
     "cli.unknown_argument": "Unknown argument: {argument}",
     "cli.unknown_command": "Unknown command: {action}",
+    "settings.ini_unsaved": "Unsaved changes",
     "general.interface_language": "Interface language",
     "general.translations_hint": "External translations are loaded at startup.",
     "language.save_failed": "Could not save the language preference: {error}",
@@ -195,7 +200,7 @@
     "text.window_scale": "Window scale",
     "text.window_size_auto_or_widthxheight": "Window size (Auto or widthxheight)",
     "text.windowed": "Windowed",
-    "text.working_directory_full_path": "Working directory (full path)",
+    "text.working_directory_full_path": "Working directory",
     "translations.ignored": "Translation ignored: {path} ({error})",
     "game_language.unsupported": "Unsupported game language.",
     "game_language.resources_missing": "The expected dialogue, font or assets file was not generated.",
@@ -306,7 +311,7 @@
     "settings.external_invalid": "The externally edited INI has invalid settings: {error}",
     "shaders.requires_opengl": "Choose OpenGL or OpenGL ES as the renderer to configure shaders.",
     "text.ini_tab": "zelda3.ini",
-    "settings.ini_hint": "Changes are saved automatically when you leave this tab. The launcher settings are then refreshed.",
+    "settings.ini_hint": "When you leave this tab after editing zelda3.ini, you can choose to save or discard your changes.",
     "settings.ini_saved": "INI file saved; launcher settings updated.",
     "download.install_button": "Download and install",
     "download.update_button": "Update game",
@@ -331,6 +336,7 @@
     "help.launcher.update": "Download the latest game and regenerate resources. Preserves settings, saves and imported languages.",
     "text.controls": "Controls",
     "updates.game": "Zelda3 update available ({version})",
-    "updates.launcher": "Launcher update available ({version})"
+    "updates.launcher": "Launcher update available ({version})",
+    "settings.auto_saved_next_launch": "The setting was automatically saved and will take effect the next time you launch the game."
   }
 }

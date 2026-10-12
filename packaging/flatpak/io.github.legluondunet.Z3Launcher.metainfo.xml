@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.legluondunet.Z3Launcher</id>
+  <name>Z3-Launcher</name>
+  <summary>Install, configure and launch Zelda 3</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer_name>legluondunet</developer_name>
+  <url type="homepage">https://github.com/legluondunet/Z3-Launcher</url>
+  <url type="bugtracker">https://github.com/legluondunet/Z3-Launcher/issues</url>
+  <url type="vcs-browser">https://github.com/legluondunet/Z3-Launcher</url>
+  <description>
+    <p>Z3-Launcher downloads prebuilt Zelda 3 game releases and generates game resources locally from a compatible ROM supplied by the user.</p>
+    <p>Configure gameplay, graphics, audio, keyboard and gamepad controls, shortcuts and the INI file in a multilingual desktop interface.</p>
+    <p>No game ROM or copyrighted Nintendo assets are included.</p>
+  </description>
+  <categories>
+    <category>Game</category>
+  </categories>
+  <launchable type="desktop-id">io.github.legluondunet.Z3Launcher.desktop</launchable>
+  <releases>
+    <release version="0.11.16" date="2026-10-11">
+      <description>
+        <p>Development version with the forest-themed interface, five interface languages, game installation from prebuilt releases and configuration tools. Experimental Flatpak packaging added.</p>
+      </description>
+    </release>
+  </releases>
+</component>

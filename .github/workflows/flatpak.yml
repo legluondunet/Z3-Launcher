@@ -1,0 +1,39 @@
+name: Flatpak (experimental)
+on:
+  push:
+    branches:
+      - feature/validated-forest-ui
+    paths:
+      - 'src/**'
+      - 'locales/**'
+      - 'packaging/flatpak/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'CHANGELOG.md'
+      - 'tools/sync-flatpak-version.py'
+      - '.github/workflows/flatpak.yml'
+  workflow_dispatch:
+jobs:
+  flatpak:
+    if: ${{ false }} # Temporarily disabled while testing AppImage only.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Flatpak tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder appstream-util
+          sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          sudo flatpak install -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 org.freedesktop.Sdk.Extension.rust-stable//24.08
+      - name: Validate AppStream version
+        run: python3 tools/sync-flatpak-version.py --check
+      - name: Embed build commit
+        run: printf '%s\\n' "${GITHUB_SHA::7}" > .build-commit
+      - name: Build Flatpak
+        run: |
+          flatpak-builder --force-clean --default-branch=stable --repo=flatpak-repo flatpak-build packaging/flatpak/io.github.legluondunet.Z3Launcher.yml
+          flatpak build-bundle flatpak-repo Z3-Launcher-x86_64.flatpak io.github.legluondunet.Z3Launcher stable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z3-launcher-flatpak-x86_64-experimental
+          path: Z3-Launcher-x86_64.flatpak

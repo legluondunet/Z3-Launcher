@@ -10,14 +10,14 @@ struct App {
     instance: Option<crate::single_instance::Guard>,
     updates_started: bool, updates_rx: Option<Receiver<crate::updates::Updates>>, updates: crate::updates::Updates,
     root: String, rom: String, lines: Vec<String>, rx: Option<Receiver<Event>>,
-    protect_operation: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize,
+    protect_operation: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize, pending_ini_tab: Option<usize>,
 }
 impl Default for App {
     fn default() -> Self {
         let root = if crate::platform::is_portable() {
             crate::default_root().to_string_lossy().into_owned()
         } else { fs::read_to_string(preferences()).unwrap_or_else(|_| crate::default_root().to_string_lossy().into_owned()) };
-        Self { updates_started: false, updates_rx: None, updates: crate::updates::Updates::default(), instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0 }
+        Self { updates_started: false, updates_rx: None, updates: crate::updates::Updates::default(), instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0, pending_ini_tab: None }
     }
 }
 fn preferences() -> PathBuf { crate::platform::config_dir().join("workspace.txt") }
@@ -64,6 +64,24 @@ impl App {
 }
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
+        // Uniformly scale the reference layout; preserve scroll areas for pages
+        // whose content is taller than the available viewport.
+        // Convert back to native logical points before computing the zoom: the
+        // screen rect itself changes when pixels_per_point changes.
+        const DESIGN_WIDTH: f32 = 1366.0;
+        const DESIGN_HEIGHT: f32 = 900.0;
+        let (window_size, native_ppp) = ctx.input(|i| {
+            // egui 0.31 exposes the OS scale through viewport information.
+            let native = i.viewport().native_pixels_per_point.unwrap_or(1.0);
+            (i.screen_rect().size() * (i.pixels_per_point() / native), native)
+        });
+        let zoom = (window_size.x / DESIGN_WIDTH)
+            .min(window_size.y / DESIGN_HEIGHT)
+            .clamp(0.30, 2.0);
+        let desired_ppp = native_ppp * zoom;
+        if (ctx.pixels_per_point() - desired_ppp).abs() > 0.005 {
+            ctx.set_pixels_per_point(desired_ppp);
+        }
         if !self.updates_started {
             self.updates_started=true;
             let (tx,rx)=mpsc::channel(); self.updates_rx=Some(rx);
@@ -95,13 +113,15 @@ impl eframe::App for App {
         if let Some(result) = done {
             self.rx = None; self.protect_operation = false;
             self.status = match result {
-                Ok(()) => if let Some(code) = imported {
+                Ok(()) => if let Some(code) = imported.as_ref() {
                     self.options.apply_game_language(&code);
                     tr("settings.language_imported").into()
                 } else { tr("text.done").into() },
                 Err(e) => tf("status.error", &[("error", e.to_string())]),
             };
         }
+        // Keep the ROM import outcome authoritative even when its language setting is autosaved.
+        let import_result_status = imported.as_ref().map(|_| self.status.clone());
         let busy = self.rx.is_some();
         let dropped = ctx.input(|input| input.raw.dropped_files.clone());
         if !dropped.is_empty() {
@@ -129,13 +149,27 @@ impl eframe::App for App {
             }
         }
         // Reserve the footer before laying out the central panel.
-        let displayed_status=self.status.clone();
+        // The INI editing hint is a tab-specific default, never a global status.
+        // Preserve errors, progress messages and other status notifications.
+        // Tab-specific hints are display fallbacks, not persistent notifications.
+        // Keep the latest real status (including automatic save) across tab changes.
+        let displayed_status = if self.status.is_empty() || self.status == tr("text.ready") {
+            match self.tab {
+                5 => tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field").to_owned(),
+                6 => tr("settings.ini_hint").to_owned(),
+                _ => String::new(),
+            }
+        } else {
+            self.status.clone()
+        };
         egui::TopBottomPanel::bottom("status-bar").resizable(false)
-            .frame(egui::Frame::new().fill(theme::FOREST).inner_margin(egui::Margin::symmetric(16, 8)))
+            .frame(egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(7, 39, 26, 235)).stroke(egui::Stroke::new(1.0, theme::GOLD)).inner_margin(egui::Margin::symmetric(16, 8)))
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     if busy { ui.spinner(); }
-                    ui.add(egui::Label::new(egui::RichText::new(&displayed_status).size(13.0)).wrap());
+                    // Keep the status bar compact even when a log message contains a long path.
+                    ui.add(egui::Label::new(egui::RichText::new(&displayed_status).size(13.0).color(theme::GOLD)).truncate())
+                        .on_hover_text(&displayed_status);
                 });
                 if let Some(version)=&self.updates.launcher {
                     ui.hyperlink_to(tf("updates.launcher", &[("version", version.clone())]),
@@ -155,11 +189,11 @@ impl eframe::App for App {
                     egui::Rect::from_min_max(egui::pos2(0.0,0.0),egui::pos2(1.0,1.0)),egui::Color32::WHITE);
             }
             theme::header(ui);
-            ui.add_space(8.0); ui.separator();
+            ui.add_space(20.0);
             ui.horizontal(|ui| {
                 let previous = self.tab;
                 let labels = [tr("text.general"), tr("text.gameplay"), tr("text.display"), tr("text.sound_msu"), tr("text.controls"), tr("text.shortcuts"), tr("text.ini_tab")];
-                ui.spacing_mut().item_spacing.x = 6.0;
+                ui.spacing_mut().item_spacing.x = 0.0;
                 ui.spacing_mut().button_padding.x = 8.0;
                 let width = ((ui.available_width() - ui.spacing().item_spacing.x * (labels.len() - 1) as f32) / labels.len() as f32).max(1.0);
                 let mut font = egui::TextStyle::Button.resolve(ui.style());
@@ -169,33 +203,44 @@ impl eframe::App for App {
                     ui.painter().layout((*label).to_owned(), font.clone(), theme::PARCHMENT,
                         (width - 2.0 * ui.spacing().button_padding.x).max(1.0)).size().y
                         + 2.0 * ui.spacing().button_padding.y
-                }).fold(ui.spacing().interact_size.y, f32::max);
+                }).fold(40.0_f32, f32::max);
                 for (index, label) in labels.iter().enumerate() {
                     let active=self.tab == index;
                     let button=egui::Button::new(egui::RichText::new(*label).size(14.0)
                         .color(if active { theme::FOREST } else { theme::PARCHMENT }))
-                        .fill(if active { theme::GOLD } else { theme::FOREST })
+                        .fill(if active { theme::GOLD } else { egui::Color32::from_rgba_unmultiplied(5, 43, 29, 230) })
                         .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
-                        .corner_radius(egui::CornerRadius::same(8)).wrap();
+                        .corner_radius(egui::CornerRadius::same(3)).wrap();
                     if ui.add_sized([width, height], button).clicked() { self.tab=index; }
                 }
                 if self.tab != previous {
-                    if previous == 6 && !self.options.leave_ini(&mut self.status) {
-                        self.tab=previous;
+                    if previous == 6 && self.options.ini_has_unsaved_changes() {
+                        self.pending_ini_tab = Some(self.tab);
+                        self.tab = previous;
+                    } else if previous == 6 && !self.options.leave_ini(&mut self.status) {
+                        self.tab = previous;
                     } else if self.tab == 6 {
                         if busy || !self.options.enter_ini(&self.root, &mut self.status) { self.tab=previous; }
                     } else if self.tab > 0 { self.options.select_page(self.tab - 1); }
                     else { self.options.cancel_capture(); }
+                    // Only clear the previous tab notification after a successful switch.
+                    if self.tab != previous { self.status.clear(); }
                 }
             });
-            ui.separator();
+            ui.add_space(10.0);
             ui.scope(|ui| {
-                for font in ui.style_mut().text_styles.values_mut() { font.size -= 2.0; }
+                // Keep the normal text sizes for readability over the illustrated background.
             if self.tab == 6 {
-                self.options.show_ini(ui, busy);
+                self.options.show_ini(ui, busy, &mut self.status);
             } else if self.tab > 0 {
                 self.options.show(ui, ctx, &self.root, busy, &mut self.status);
             } else {
+            egui::Frame::new()
+                .fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 215))
+                .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
+                .corner_radius(egui::CornerRadius::same(10))
+                .inner_margin(egui::Margin::symmetric(16, 16)).show(ui, |ui| {
+                ui.set_width(ui.available_width());
             ui.add_enabled_ui(!busy, |ui| {
                 let previous = crate::i18n::current();
                 let mut selected = previous.clone();
@@ -215,7 +260,16 @@ impl eframe::App for App {
                 }
                 ui.separator();
                 ui.label(tr("text.working_directory_full_path"));
-                ui.add_enabled(!crate::platform::is_portable(), egui::TextEdit::singleline(&mut self.root).desired_width(f32::INFINITY)).on_hover_text(tr("help.launcher.workspace"));
+                // Show the complete portable workspace path without abbreviating it.
+                // Horizontal scrolling keeps long paths accessible in narrow windows.
+                if crate::platform::is_portable() {
+                    ui.add(egui::TextEdit::singleline(&mut self.root.clone())
+                        .desired_width(f32::INFINITY).interactive(false))
+                        .on_hover_text(self.root.as_str());
+                } else {
+                    ui.add(egui::TextEdit::singleline(&mut self.root).desired_width(f32::INFINITY))
+                        .on_hover_text(tr("help.launcher.workspace"));
+                }
                 ui.label(tr("text.drop_your_sfc_or_smc_rom_here_or_select"));
                 ui.horizontal(|ui| {
                     let width = (ui.available_width() - 140.0).max(80.0);
@@ -253,17 +307,25 @@ impl eframe::App for App {
                     }
                 });
             });
+            });
                 ui.add_space(12.0);
-                ui.separator();
+                egui::Frame::new()
+                .fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 215))
+                .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
+                .corner_radius(egui::CornerRadius::same(10))
+                .inner_margin(egui::Margin::symmetric(16, 16)).show(ui, |ui| {
+                ui.set_width(ui.available_width());
                 ui.small(tr("text.full_log_launcher_log_in_the_working_directory"));
                 // Keep room for the two buttons; the journal takes the remaining height.
                 let footer_height=ui.spacing().interact_size.y.max(
                     ui.text_style_height(&egui::TextStyle::Button) + 2.0 * ui.spacing().button_padding.y);
-                let journal_height=(ui.available_height() - footer_height - ui.spacing().item_spacing.y).max(32.0);
+                let available_journal=(ui.available_height() - footer_height - ui.spacing().item_spacing.y).max(32.0);
+                let journal_height=if self.lines.is_empty() { available_journal.min(130.0) } else { available_journal };
                 egui::Frame::new().fill(ui.visuals().extreme_bg_color)
                     .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
                     .corner_radius(egui::CornerRadius::same(4)).inner_margin(4)
                     .show(ui, |ui| {
+                    theme::gold_scrollbar(ui);
                     egui::ScrollArea::vertical().id_salt("journal-scroll").stick_to_bottom(true)
                         .max_height((journal_height - 8.0).max(24.0)).min_scrolled_height(0.0)
                         .auto_shrink([false, false]).show(ui, |ui| {
@@ -274,7 +336,7 @@ impl eframe::App for App {
                         let previous = egui::text_edit::TextEditState::load(ctx, id)
                             .and_then(|state| state.cursor.char_range());
                         let mut output = egui::TextEdit::multiline(&mut buffer).id(id)
-                            .font(egui::TextStyle::Monospace).desired_width(f32::INFINITY)
+                            .font(egui::TextStyle::Monospace).text_color(theme::INPUT_TEXT).desired_width(f32::INFINITY)
                             .frame(false).desired_rows(1).show(ui);
                         // egui 0.31 starts text selection on any mouse button press.
                         // Restore the existing range when a secondary click opens the copy menu.
@@ -301,10 +363,53 @@ impl eframe::App for App {
                     if ui.button(tr("text.copy_log")).clicked() { ctx.copy_text(self.lines.join("\n")); }
                     if ui.button(tr("text.clear_display")).clicked() { self.lines.clear(); }
                 });
+                });
             }
             });
         });
+            if let Some(target) = self.pending_ini_tab {
+                egui::Window::new(tr("settings.ini_confirm_title"))
+                    .title_bar(false)
+                    .collapsible(false)
+                    .resizable(false)
+                    .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
+                    .show(ctx, |ui| {
+                        ui.label(tr("settings.ini_confirm_question"));
+                        ui.horizontal(|ui| {
+                            if ui.button(tr("settings.ini_keep_changes")).clicked() {
+                                if self.options.leave_ini(&mut self.status) {
+                                    self.pending_ini_tab = None;
+                                    self.tab = target;
+                                    if target > 0 { self.options.select_page(target - 1); }
+                                    else { self.options.cancel_capture(); }
+                                }
+                            }
+                            if ui.button(tr("settings.ini_discard_changes")).clicked() {
+                                self.options.discard_ini();
+                                self.status.clear();
+                                self.pending_ini_tab = None;
+                                self.tab = target;
+                                if target > 0 { self.options.select_page(target - 1); }
+                                else { self.options.cancel_capture(); }
+                            }
+                            if ui.button(tr("text.continue")).clicked() {
+                                self.pending_ini_tab = None;
+                            }
+                        });
+                    });
+            }
+        let settings_changed = !busy && (1..=5).contains(&self.tab) && self.options.has_changes();
         if !busy { self.options.autosave(&mut self.status); }
+        // Show one clear message after a successful automatic save.
+        // Keep validation and disk errors unchanged.
+        if settings_changed && !self.options.has_changes()
+            && self.status == tr("settings.auto_saved") {
+            self.status = tr("settings.auto_saved_next_launch").into();
+        }
+        if let Some(import_status) = import_result_status {
+            // Autosaving the imported language must not hide the import result.
+            self.status = import_status;
+        }
         if let Some((code, root)) = self.options.take_language_request() { self.import_game_language(code, root, ctx); }
         // Status changes made by widgets are reflected in the footer on the next frame.
         if self.status != displayed_status { ctx.request_repaint(); }

@@ -4,9 +4,14 @@
     "name": "Español"
   },
   "messages": {
+    "settings.ini_confirm_title": "Cambios en zelda3.ini",
+    "settings.ini_confirm_question": "Has modificado el archivo de configuración zelda3.ini. ¿Quieres conservar los cambios?",
+    "settings.ini_keep_changes": "Sí, guardar cambios",
+    "settings.ini_discard_changes": "No, descartar cambios",
     "cli.help": "Z3-Launcher\nsetup | update | run | status\n--dir DIRECTORY --rom US_ROM\nz3-launcher setup --rom /path/zelda3.sfc",
     "cli.unknown_argument": "Argumento desconocido: {argument}",
     "cli.unknown_command": "Comando desconocido: {action}",
+    "settings.ini_unsaved": "Cambios sin guardar",
     "general.interface_language": "Idioma de la interfaz",
     "general.translations_hint": "Las traducciones externas se cargan al iniciar.",
     "language.save_failed": "No se pudo guardar el idioma preferido: {error}",
@@ -195,7 +200,7 @@
     "text.window_scale": "Escala de ventana",
     "text.window_size_auto_or_widthxheight": "Tamaño de ventana (Auto o anchoxalto)",
     "text.windowed": "En ventana",
-    "text.working_directory_full_path": "Directorio de trabajo (ruta completa)",
+    "text.working_directory_full_path": "Directorio de trabajo",
     "translations.ignored": "Traducción ignorada: {path} ({error})",
     "game_language.unsupported": "Idioma del juego no compatible.",
     "game_language.resources_missing": "No se generó el archivo esperado de diálogos, fuente o recursos.",
@@ -306,7 +311,7 @@
     "settings.external_invalid": "El INI editado externamente contiene ajustes no válidos: {error}",
     "shaders.requires_opengl": "Elige OpenGL u OpenGL ES como renderizador para configurar shaders.",
     "text.ini_tab": "zelda3.ini",
-    "settings.ini_hint": "Los cambios se guardan automáticamente al salir de esta pestaña. Los ajustes del launcher se actualizan entonces.",
+    "settings.ini_hint": "Al salir de esta pestaña después de modificar zelda3.ini, puedes guardar o descartar los cambios.",
     "settings.ini_saved": "Archivo INI guardado; ajustes del launcher actualizados.",
     "download.install_button": "Descargar e instalar",
     "download.update_button": "Actualizar el juego",
@@ -331,6 +336,7 @@
     "help.launcher.update": "Descarga el último juego y regenera los recursos. Conserva ajustes, partidas guardadas e idiomas importados.",
     "text.controls": "Controles",
     "updates.game": "Actualización de Zelda3 disponible ({version})",
-    "updates.launcher": "Actualización del launcher disponible ({version})"
+    "updates.launcher": "Actualización del launcher disponible ({version})",
+    "settings.auto_saved_next_launch": "El ajuste se ha guardado automáticamente y se aplicará la próxima vez que inicies el juego."
   }
 }

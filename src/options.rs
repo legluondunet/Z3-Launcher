@@ -61,6 +61,37 @@ fn button_name(button: Button) -> Option<&'static str> {
         Button::DPadLeft=>Some("DpadLeft"), Button::DPadRight=>Some("DpadRight"), _=>None
     }
 }
+// Syntax highlighting keeps the original text unchanged for cursor positions and saving.
+fn ini_layout(ui: &egui::Ui, text: &str, wrap_width: f32) -> std::sync::Arc<egui::Galley> {
+    use egui::text::{LayoutJob, TextFormat};
+    let mut job = LayoutJob::default();
+    let font = egui::TextStyle::Monospace.resolve(ui.style());
+    let normal = egui::Color32::from_rgb(230, 232, 211);
+    let section = crate::theme::GOLD;
+    let comment = egui::Color32::from_rgb(139, 174, 145);
+    let key = egui::Color32::from_rgb(133, 205, 219);
+    let value = egui::Color32::from_rgb(237, 220, 168);
+    let mut append = |fragment: &str, color| {
+        job.append(fragment, 0.0, TextFormat { font_id: font.clone(), color, ..Default::default() });
+    };
+    for line in text.split_inclusive('\n') {
+        let body = line.trim_end_matches('\n');
+        let trimmed = body.trim_start();
+        if trimmed.starts_with(';') || trimmed.starts_with('#') {
+            append(line, comment);
+        } else if trimmed.starts_with('[') && trimmed.contains(']') {
+            append(line, section);
+        } else if let Some(eq) = body.find('=') {
+            append(&body[..eq], key);
+            append("=", normal);
+            append(&line[eq + 1..], value);
+        } else {
+            append(line, normal);
+        }
+    }
+    job.wrap.max_width = wrap_width;
+    ui.fonts(|fonts| fonts.layout_job(job))
+}
 pub struct Options {
     doc: Option<Ini>, path: Option<PathBuf>, dirty: bool, last_attempt: Option<String>, page: usize,
     capture: Option<Capture>, pad: Option<Pad>, pad_error: String, confirm_close: bool, raw_text: String, raw_active: bool, raw_dirty: bool, disk_text: String, language_request: Option<String>,
@@ -88,6 +119,7 @@ impl Options {
         }
         self.raw_text=self.disk_text.clone(); self.raw_active=true;
         self.raw_dirty=false; self.capture=None;
+        // The INI hint is rendered as a tab-local footer fallback.
         true
     }
     fn save_raw(&mut self, status: &mut String) -> bool {
@@ -105,23 +137,109 @@ impl Options {
             }
         }
     }
+    pub fn ini_has_unsaved_changes(&self) -> bool { self.raw_active && self.raw_dirty }
+    pub fn discard_ini(&mut self) {
+        self.raw_text = self.disk_text.clone();
+        self.raw_dirty = false;
+        self.raw_active = false;
+    }
     pub fn leave_ini(&mut self, status: &mut String) -> bool {
         if !self.save_raw(status) { return false; }
         self.raw_active=false; true
     }
-    pub fn show_ini(&mut self, ui: &mut egui::Ui, busy: bool) {
-        ui.label(tr("settings.ini_hint"));
-        if let Some(path)=&self.path {
-            ui.small(tf("settings.file", &[("path", path.display().to_string())]));
-        }
-        ui.add_enabled_ui(!busy, |ui| {
-            egui::ScrollArea::both().id_salt("ini-scroll").show(ui, |ui| {
-                if ui.add(egui::TextEdit::multiline(&mut self.raw_text)
-                    .id_salt("ini-editor").font(egui::TextStyle::Monospace)
-                    .code_editor().desired_width(f32::INFINITY).desired_rows(26)).changed() {
-                    self.raw_dirty=self.raw_text != self.disk_text;
-                }
-            });
+    pub fn show_ini(&mut self, ui: &mut egui::Ui, busy: bool, status: &mut String) {
+        // The INI editor needs the entire remaining tab height, unlike compact settings sections.
+        let available_height = ui.available_height();
+        let width = ui.available_width() * 0.97;
+        let margin = (ui.available_width() - width) * 0.5;
+        ui.horizontal(|ui| {
+            ui.add_space(margin);
+            ui.allocate_ui_with_layout(
+                egui::vec2(width, available_height),
+                egui::Layout::top_down(egui::Align::Min),
+                |ui| {
+                    ui.set_width(width);
+                    egui::Frame::new()
+                        .fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 215))
+                        .stroke(egui::Stroke::new(1.0_f32, crate::theme::GOLD))
+                        .corner_radius(egui::CornerRadius::same(10))
+                        .inner_margin(egui::Margin::symmetric(16, 20))
+                        .show(ui, |ui| {
+                            ui.set_width((width - 32.0).max(0.0));
+                            ui.set_min_height((available_height - 40.0).max(0.0));
+                            if let Some(path) = &self.path {
+                                let full_path = path.display().to_string();
+                                ui.add(egui::Label::new(tf("settings.file", &[("path", full_path.clone())])).truncate())
+                                    .on_hover_text(full_path);
+                            }
+                            ui.add_space(6.0);
+                            // Reserve a fixed viewport and draw its border outside the scroll area.
+                            let editor_height = (ui.available_height() - 6.0).max(100.0);
+                            let editor_width = ui.available_width();
+                            let (rect, _) = ui.allocate_exact_size(
+                                egui::vec2(editor_width, editor_height),
+                                egui::Sense::hover(),
+                            );
+                            let mut editor_ui = ui.new_child(
+                                egui::UiBuilder::new()
+                                    .max_rect(rect.shrink(3.0))
+                                    .layout(egui::Layout::top_down(egui::Align::Min)),
+                            );
+                            // The text editor gets a solid dark background; the outer frame stays fixed.
+                            ui.painter().rect_filled(
+                                rect.shrink(1.0),
+                                egui::CornerRadius::same(3),
+                                egui::Color32::from_rgb(5, 27, 18),
+                            );
+                            editor_ui.add_enabled_ui(!busy, |ui| {
+                                // Local scrollbar palette: do not change other tabs or buttons.
+                                let visuals = &mut ui.style_mut().visuals;
+                                visuals.widgets.inactive.bg_fill = crate::theme::GOLD;
+                                visuals.widgets.hovered.bg_fill = crate::theme::GOLD;
+                                visuals.widgets.active.bg_fill = crate::theme::GOLD;
+                                // Scrollbar handle uses the widget foreground stroke in egui.
+                                for widget in [&mut visuals.widgets.inactive, &mut visuals.widgets.hovered, &mut visuals.widgets.active] {
+                                    widget.fg_stroke.color = crate::theme::GOLD;
+                                }
+                                egui::ScrollArea::both()
+                                    .id_salt("ini-scroll")
+                                    .auto_shrink([false, false])
+                                    .max_height(ui.available_height())
+                                    .show(ui, |ui| {
+                                        let mut layouter = |ui: &egui::Ui, text: &str, width: f32| {
+                                            ini_layout(ui, text, width)
+                                        };
+                                        let changed = ui.add_sized(
+                                            [ui.available_width(), ui.available_height()],
+                                            egui::TextEdit::multiline(&mut self.raw_text)
+                                                .id_salt("ini-editor")
+                                                .font(egui::TextStyle::Monospace)
+                                                .code_editor()
+                                                .layouter(&mut layouter)
+                                                .frame(false)
+                                                .desired_width(f32::INFINITY),
+                                        ).changed();
+                                        if changed {
+                                            self.raw_dirty = self.raw_text != self.disk_text;
+                                            *status = if self.raw_dirty {
+                                                tr("settings.ini_unsaved").into()
+                                            } else {
+                                                tr("settings.ini_hint").into()
+                                            };
+                                        }
+                                    });
+                            });
+                            // Paint after the content: scrolling cannot move or cover the border.
+                            ui.painter().rect_stroke(
+                                rect,
+                                egui::CornerRadius::same(3),
+                                egui::Stroke::new(1.0, crate::theme::GOLD),
+                                egui::StrokeKind::Inside,
+                            );
+
+                        });
+                },
+            );
         });
     }
     pub fn cancel_capture(&mut self) { self.capture = None; }
@@ -186,7 +304,6 @@ impl Options {
                 }
             }
         }
-        ui.label(tr("text.settings_will_take_effect_the_next_time_you_launch"));
         ui.horizontal(|ui| {
             if self.dirty {
                 ui.colored_label(egui::Color32::YELLOW, tr("settings.auto_pending"));
@@ -222,7 +339,14 @@ impl Options {
         }
         let mut requested=None;
         ui.add_enabled_ui(!busy, |ui| {
-            egui::ScrollArea::vertical().id_salt("options-scroll").show(ui, |ui| {
+            ui.scope(|ui| {
+                crate::theme::gold_scrollbar(ui);
+                egui::ScrollArea::vertical()
+                    .id_salt(("options-scroll", self.page))
+                    .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
+                    .auto_shrink([false, false])
+                    .max_height(ui.available_height())
+                    .show(ui, |ui| {
                 let doc=self.doc.as_mut().unwrap();
                 match self.page {
                     0=>game(ui,doc,&mut self.dirty,&mut self.language_request),
@@ -242,6 +366,7 @@ impl Options {
                     },
                     _=>shortcuts(ui,doc,&mut self.dirty,&mut requested),
                 }
+                });
             });
         });
         if let Some((target,sequential))=requested {
@@ -268,11 +393,17 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     }
     if pad && ui.button(tr("text.restore_default_gamepad_bindings")).on_hover_text(tr("help.action.restore_pad")).clicked() { doc.set(section,"Controls",PAD_DEFAULT); *dirty=true; }
     if ui.button(tr("text.assign_all_controls")).on_hover_text(tr("help.action.assign_all")).clicked() { *requested=Some((Target {section:section.into(),key:"Controls".into(),index:0,count:12,default:default.into()},true)); }
-    ui.columns(2, |columns| {
-    for (i,label) in control_labels().iter().enumerate() {
-        let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
-        binding_row(&mut columns[i / 6],doc,dirty,label,&t,pad,requested);
-    }
+    ui.add_space(10.0);
+    // Use the same two-column layout and screen-centered gold divider as
+    // Shortcuts and Graphics. Do not position the divider in a scroll canvas.
+    split_columns(ui, |columns| {
+        for (i, label) in control_labels().iter().enumerate() {
+            let t = Target {
+                section: section.into(), key: "Controls".into(),
+                index: i, count: 12, default: default.into(),
+            };
+            binding_row(&mut columns[i / 6], doc, dirty, label, &t, pad, requested);
+        }
     });
 }
 fn set_binding(doc:&mut Ini,target:&Target,value:&str) {
@@ -285,20 +416,112 @@ fn help(section: &str, key: &str) -> &'static str {
     tr(&format!("help.{section}.{key}"))
 }
 fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Target,pad:bool,request:&mut Option<(Target,bool)>) {
-    let raw=doc.value(&t.section,&t.key,&t.default); let mut value=raw.split(',').nth(t.index).unwrap_or("").trim().to_owned();
-    ui.push_id((&t.section,&t.key,t.index),|ui| {ui.horizontal_wrapped(|ui| {
-        ui.add_sized([ui.available_width().min(130.0),22.0],egui::Label::new(label)).on_hover_text(help(&t.section, &t.key));
-        if pad {
-            let old=value.clone();egui::ComboBox::from_id_salt("button").selected_text(if value.is_empty(){tr("text.unassigned")}else{&value}).show_ui(ui,|ui|{ui.selectable_value(&mut value,String::new(),tr("text.unassigned"));for button in PAD_KEYS {ui.selectable_value(&mut value,button.into(),button);} }).response.on_hover_text(help(&t.section, &t.key));
-            if old!=value {set_binding(doc,t,&value);*dirty=true;}
-        } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(ui.available_width().min(120.0))).on_hover_text(help(&t.section, &t.key)).changed() && !value.contains(',') && !value.contains('\n') {set_binding(doc,t,&value);*dirty=true;}
-        if ui.button(tr("text.capture")).on_hover_text(tr("help.action.capture")).clicked() {*request=Some((t.clone(),false));}
-        if ui.button(tr("text.clear")).on_hover_text(tr("help.action.clear")).clicked() {set_binding(doc,t,"");*dirty=true;}
-    });});
+    let raw=doc.value(&t.section,&t.key,&t.default);
+    let mut value=raw.split(',').nth(t.index).unwrap_or("").trim().to_owned();
+    ui.push_id((&t.section,&t.key,t.index),|ui| {
+        // Fixed-width cells prevent SDL button names from shifting adjacent controls.
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 8.0;
+            ui.allocate_ui_with_layout(egui::vec2(108.0, 28.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(label).on_hover_text(help(&t.section, &t.key));
+            });
+            ui.allocate_ui_with_layout(egui::vec2(154.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                if pad {
+                    let old=value.clone();
+                    egui::ComboBox::from_id_salt("button").width(140.0)
+                        .selected_text(if value.is_empty(){tr("text.unassigned")}else{&value})
+                        .show_ui(ui,|ui|{
+                            ui.selectable_value(&mut value,String::new(),tr("text.unassigned"));
+                            for button in PAD_KEYS {ui.selectable_value(&mut value,button.into(),button);}
+                        }).response.on_hover_text(help(&t.section, &t.key));
+                    if old!=value {set_binding(doc,t,&value);*dirty=true;}
+                } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(112.0))
+                    .on_hover_text(help(&t.section, &t.key)).changed()
+                    && !value.contains(',') && !value.contains('\n') {
+                    set_binding(doc,t,&value);*dirty=true;
+                }
+            });
+            ui.allocate_ui_with_layout(egui::vec2(88.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                if ui.add_sized([88.0, 28.0], egui::Button::new(tr("text.capture")))
+                    .on_hover_text(tr("help.action.capture")).clicked() {
+                    *request=Some((t.clone(),false));
+                }
+            });
+            ui.allocate_ui_with_layout(egui::vec2(76.0, 28.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                if ui.add_sized([76.0, 28.0], egui::Button::new(tr("text.clear")))
+                    .on_hover_text(tr("help.action.clear")).clicked() {
+                    set_binding(doc,t,"");*dirty=true;
+                }
+            });
+        });
+        ui.add_space(4.0);
+    });
+}
+// Shortcut rows keep labels separate from inputs, so long translations cannot
+// push the capture/clear buttons into the next column.
+fn shortcut_row(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, label: &str,
+    target: &Target, pad: bool, request: &mut Option<(Target, bool)>, label_width: f32) {
+    ui.push_id((&target.section, &target.key, target.index), |ui| {
+        let raw = doc.value(&target.section, &target.key, &target.default);
+        let mut value = raw.split(',').nth(target.index).unwrap_or("").trim().to_owned();
+        // Labels use the space left by the fixed-width input and action buttons.
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 8.0;
+            ui.allocate_ui_with_layout(
+                egui::vec2(label_width, 28.0),
+                egui::Layout::right_to_left(egui::Align::Center),
+                |ui| {
+                    ui.add(egui::Label::new(label).wrap())
+                        .on_hover_text(help(&target.section, &target.key));
+                },
+            );
+            ui.allocate_ui_with_layout(
+                egui::vec2(154.0, 28.0),
+                egui::Layout::left_to_right(egui::Align::Center),
+                |ui| {
+                    if pad {
+                        let previous = value.clone();
+                        egui::ComboBox::from_id_salt("shortcut-button").width(140.0)
+                            .selected_text(if value.is_empty() { tr("text.unassigned") } else { &value })
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut value, String::new(), tr("text.unassigned"));
+                                for button in PAD_KEYS {
+                                    ui.selectable_value(&mut value, button.into(), button);
+                                }
+                            }).response.on_hover_text(help(&target.section, &target.key));
+                        if previous != value { set_binding(doc, target, &value); *dirty = true; }
+                    } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(140.0))
+                        .on_hover_text(help(&target.section, &target.key)).changed()
+                        && !value.contains(',') && !value.contains('\n') {
+                        set_binding(doc, target, &value); *dirty = true;
+                    }
+                },
+            );
+            if ui.add_sized([88.0, 28.0], egui::Button::new(tr("text.capture")))
+                .on_hover_text(tr("help.action.capture")).clicked() {
+                *request = Some((target.clone(), false));
+            }
+            if ui.add_sized([70.0, 28.0], egui::Button::new(tr("text.clear")))
+                .on_hover_text(tr("help.action.clear")).clicked() {
+                set_binding(doc, target, ""); *dirty = true;
+            }
+        });
+        ui.add_space(5.0);
+    });
 }
 fn flag(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,section:&str,key:&str,label:&str,default:bool) {
     let raw=doc.value(section,key,if default {"1"}else{"0"}); let mut value=raw=="1"||raw.eq_ignore_ascii_case("true");
-    if ui.checkbox(&mut value,label).on_hover_text(help(section,key)).changed() {doc.set(section,key,if value {"1"}else{"0"});*dirty=true;}
+    let changed = ui.scope(|ui| {
+        // Scrollbar styling is gold; keep unchecked checkbox backgrounds dark
+        // so checked and unchecked options remain visually distinct.
+        let visuals = &mut ui.style_mut().visuals;
+        for widget in [&mut visuals.widgets.inactive, &mut visuals.widgets.hovered, &mut visuals.widgets.active] {
+            widget.bg_fill = crate::theme::FOREST;
+            widget.fg_stroke.color = crate::theme::PARCHMENT;
+        }
+        ui.checkbox(&mut value,label).on_hover_text(help(section,key)).changed()
+    }).inner;
+    if changed {doc.set(section,key,if value {"1"}else{"0"});*dirty=true;}
 }
 fn choice(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,section:&str,key:&str,label:&str,default:&str,values:&[(&str,&str)]) {
     let mut value=doc.value(section,key,default);let old=value.clone();
@@ -330,26 +553,67 @@ fn shader_path_allowed(value: &str) -> bool {
         .is_some_and(|ext|ext.eq_ignore_ascii_case("glsl") || ext.eq_ignore_ascii_case("glslp"))
 }
 
+// Two-column layout with the vertical gold divider from the approved mockup.
+// Center the separator in a reserved gutter, without covering either column.
+fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) -> R) -> R {
+    const GUTTER: f32 = 12.0;
+    let center = ui.ctx().screen_rect().center().x;
+    ui.columns(2, |columns| {
+        // Keep a symmetrical 12-point clearance around the absolute center.
+        let left_rect = columns[0].available_rect_before_wrap();
+        let right_rect = columns[1].available_rect_before_wrap();
+        let left_edge = (center - GUTTER).min(left_rect.right());
+        let right_edge = center + GUTTER;
+        let mut inner = [
+            columns[0].new_child(egui::UiBuilder::new().max_rect(
+                egui::Rect::from_min_max(left_rect.min, egui::pos2(left_edge, left_rect.bottom()))
+            )),
+            columns[1].new_child(egui::UiBuilder::new().max_rect(
+                egui::Rect::from_min_max(
+                    egui::pos2(right_edge, right_rect.top()),
+                    egui::pos2(right_rect.right().max(right_edge + 1.0), right_rect.bottom())
+                )
+            )),
+        ];
+        let result = contents(&mut inner);
+        let left = inner[0].min_rect();
+        let right = inner[1].min_rect();
+        let top = left.top().min(right.top());
+        let bottom = left.bottom().max(right.bottom());
+        if bottom > top {
+            columns[0].painter().line_segment(
+                [egui::pos2(center, top), egui::pos2(center, bottom)],
+                egui::Stroke::new(1.0, crate::theme::GOLD),
+            );
+        }
+        columns[0].allocate_rect(left, egui::Sense::hover());
+        columns[1].allocate_rect(right, egui::Sense::hover());
+        result
+    })
+}
 fn settings_frame(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
-    let width=(ui.available_width() - 24.0).max(0.0);
-    egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(3, 16, 10, 110))
+    // Account for the frame's 16 px margins on both sides.
+    let width=(ui.available_width() - 32.0).max(0.0);
+    egui::Frame::new().fill(egui::Color32::from_rgba_unmultiplied(4, 42, 28, 215))
         .stroke(egui::Stroke::new(1.0_f32, crate::theme::GOLD))
-        .corner_radius(egui::CornerRadius::same(8)).inner_margin(12)
+        .corner_radius(egui::CornerRadius::same(10)).inner_margin(egui::Margin::symmetric(16, 20))
         .show(ui, |ui| {
-            ui.set_min_width(width);
+            ui.set_width(width);
             contents(ui);
         });
 }
 fn settings_section(ui: &mut egui::Ui, title: &str, contents: impl FnOnce(&mut egui::Ui)) {
     settings_frame(ui, |ui| {
-        ui.label(egui::RichText::new(title).size(16.0).strong().color(crate::theme::GOLD));
+        ui.label(egui::RichText::new(title).size(18.0).strong().color(crate::theme::GOLD));
+        ui.add_space(4.0);
         ui.separator();
+        ui.add_space(8.0);
         contents(ui);
     });
 }
-// Keep both stacked sections centered at 85% of the tab's available width.
+// Use nearly the full tab width, matching the approved forest mockup.
 fn stacked_settings(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
-    let width = ui.available_width() * 0.85;
+    let width = ui.available_width() * 0.97;
     let margin = (ui.available_width() - width) * 0.5;
     ui.horizontal(|ui| {
         ui.add_space(margin);
@@ -362,7 +626,7 @@ fn stacked_settings(ui: &mut egui::Ui, contents: impl FnOnce(&mut egui::Ui)) {
 fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String>) {
     stacked_settings(ui, |ui| {
         settings_section(ui, tr("text.general"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
                 columns[0].vertical(|ui| {
             for (key,label) in [("Autosave",tr("text.automatically_save_state_on_exit")),("DisplayPerfInTitle",tr("text.show_fps_in_the_window_title")),("DisableFrameDelay",tr("text.disable_frame_delay"))] {flag(ui,doc,dirty,"General",key,label,false);}
                 });
@@ -386,7 +650,7 @@ fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String
             });
         });
         settings_section(ui, tr("text.gameplay_enhancements"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             for (index, (key,label)) in [
                 ("ItemSwitchLR",tr("text.advanced_item_selection_with_l_r")),("ItemSwitchLRLimit",tr("text.limit_cycling_to_the_first_four_items")),
                 ("TurnWhileDashing",tr("text.allow_turning_while_dashing")),("MirrorToDarkworld",tr("text.allow_mirror_travel_to_the_dark_world")),
@@ -403,14 +667,23 @@ fn game(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<String
 fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
     stacked_settings(ui, |ui| {
         settings_section(ui, tr("text.general"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             columns[0].vertical(|ui| {
             let raw=doc.value("General","ExtendedAspectRatio","4:3");let parts:Vec<&str>=raw.split(',').map(str::trim).collect();
             let mut ratio=parts.iter().find(|p|p.contains(':')).copied().unwrap_or("4:3").to_owned();
             let mut extended=parts.contains(&"extend_y");let mut unchanged=parts.contains(&"unchanged_sprites");let mut nofix=parts.contains(&"no_visual_fixes");
             let old=(ratio.clone(),extended,unchanged,nofix);
             egui::ComboBox::from_id_salt("ratio").selected_text(&ratio).show_ui(ui,|ui|{for r in ["4:3","16:9","16:10","18:9"] {ui.selectable_value(&mut ratio,r.into(),r);} }).response.on_hover_text(tr("help.aspect.ratio"));
-            ui.checkbox(&mut extended,tr("text.extend_height_to_240_lines")).on_hover_text(tr("help.aspect.extend"));ui.checkbox(&mut unchanged,tr("text.preserve_original_sprite_behavior")).on_hover_text(tr("help.aspect.sprites"));ui.checkbox(&mut nofix,tr("text.disable_visual_fixes")).on_hover_text(tr("help.aspect.fixes"));
+            ui.scope(|ui| {
+                let visuals = &mut ui.style_mut().visuals;
+                for widget in [&mut visuals.widgets.inactive, &mut visuals.widgets.hovered, &mut visuals.widgets.active] {
+                    widget.bg_fill = crate::theme::FOREST;
+                    widget.fg_stroke.color = crate::theme::PARCHMENT;
+                }
+                ui.checkbox(&mut extended,tr("text.extend_height_to_240_lines")).on_hover_text(tr("help.aspect.extend"));
+                ui.checkbox(&mut unchanged,tr("text.preserve_original_sprite_behavior")).on_hover_text(tr("help.aspect.sprites"));
+                ui.checkbox(&mut nofix,tr("text.disable_visual_fixes")).on_hover_text(tr("help.aspect.fixes"));
+            });
             if old!=(ratio.clone(),extended,unchanged,nofix) {let mut p=Vec::new();if extended {p.push("extend_y".to_owned());}p.push(ratio);if unchanged {p.push("unchanged_sprites".into());}if nofix {p.push("no_visual_fixes".into());}doc.set("General","ExtendedAspectRatio",&p.join(", "));*dirty=true;}
             });
             columns[1].vertical(|ui| {
@@ -422,7 +695,7 @@ fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             });
         });
         settings_section(ui, tr("text.renderer"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             columns[0].vertical(|ui| {
             for (key,label,default) in [("NewRenderer",tr("text.optimized_snes_ppu"),true),("EnhancedMode7",tr("text.high_resolution_world_map_mode_7"),true),("IgnoreAspectRatio",tr("text.stretch_image"),false),("NoSpriteLimits",tr("text.remove_sprite_limits"),true),("LinearFiltering",tr("text.linear_filtering"),false),("DimFlashes",tr("text.reduce_flashing"),false)] {flag(ui,doc,dirty,"Graphics",key,label,default);}
             });
@@ -442,7 +715,7 @@ fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
 fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
     stacked_settings(ui, |ui| {
         settings_section(ui, tr("text.sound"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             columns[0].vertical(|ui| {
             flag(ui,doc,dirty,"Sound","EnableAudio",tr("text.enable_audio"),true);
             choice(ui,doc,dirty,"Sound","AudioChannels",tr("text.channels"),"2",&[("1","Mono"),("2",tr("text.stereo"))]);
@@ -454,10 +727,19 @@ fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             });
         });
         settings_section(ui, tr("text.msu_music"), |ui| {
-            ui.columns(2, |columns| {
+            split_columns(ui, |columns| {
             columns[0].vertical(|ui| {
             choice(ui,doc,dirty,"Sound","EnableMSU",tr("text.format"),"false",&[("false",tr("text.disabled")),("true","MSU PCM"),("deluxe","MSU Deluxe PCM"),("opuz","OPUZ"),("deluxe-opuz","OPUZ Deluxe")]);
             ui.small(tr("text.pcm_requires_44100_hz_opuz_requires_48000_hz_music"));
+            ui.add_space(8.0);
+            // Long translated labels must not compete with the path field for width.
+            ui.label(tr("text.music_track_path_prefix"));
+            let mut value = doc.value("Sound", "MSUPath", "msu/alttp_msu-");
+            if ui.add(egui::TextEdit::singleline(&mut value)
+                .desired_width(ui.available_width().min(280.0)))
+                .on_hover_text(help("Sound", "MSUPath")).changed() {
+                doc.set("Sound", "MSUPath", &value); *dirty = true;
+            }
             });
             columns[1].vertical(|ui| {
             flag(ui,doc,dirty,"Sound","ResumeMSU",tr("text.resume_music_from_its_previous_position"),true);
@@ -465,25 +747,30 @@ fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             if ui.add(egui::Slider::new(&mut volume,0..=100).text(tr("text.msu_volume"))).on_hover_text(help("Sound","MSUVolume")).changed() {doc.set("Sound","MSUVolume",&format!("{volume}%"));*dirty=true;}
             });
             });
-            text(ui,doc,dirty,"Sound","MSUPath",tr("text.music_track_path_prefix"),"msu/alttp_msu-");
+
         });
     });
 }
 fn shortcuts(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<(Target,bool)>) {
     stacked_settings(ui, |ui| {
-    ui.label(tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field"));
     for section in ["KeyMap","GamepadMap"] {settings_section(ui, if section=="KeyMap" {tr("text.keyboard_shortcuts")} else {tr("text.gamepad_shortcuts")},|ui| {
-        ui.columns(2, |columns| {
+        split_columns(ui, |columns| {
+        // Measure once: child UIs can grow after a row, which must not widen later labels.
+        let label_width = (columns[0].available_width().min(columns[1].available_width())
+            - 154.0 - 88.0 - 70.0 - 3.0 * 8.0 - 20.0).max(0.0);
         for (index,(key,label,default)) in [("Reset",tr("text.reset_game"),"Ctrl+r"),("Pause",tr("mapping.pause"),"Shift+p"),("PauseDimmed",tr("text.pause_and_dim"),"p"),("Fullscreen",tr("text.fullscreen"),"Alt+Return"),("WindowBigger",tr("text.increase_window_size"),"Ctrl+Up"),("WindowSmaller",tr("text.decrease_window_size"),"Ctrl+Down"),("VolumeUp",tr("text.volume_up"),"Shift+="),("VolumeDown",tr("text.volume_down"),"Shift+-"),("CheatLife",tr("text.restore_health_and_magic"),"w"),("CheatKeys",tr("text.give_one_key"),"o"),("CheatWalkThroughWalls",tr("text.walk_through_walls"),"Ctrl+e"),("Turbo",tr("mapping.turbo"),"Tab"),("ReplayTurbo",tr("text.replay_speed"),"t"),("StopReplay",tr("text.stop_replay"),"l"),("ClearKeyLog",tr("text.clear_key_log"),"k"),("ToggleRenderer",tr("text.toggle_ppu"),""),("DisplayPerf",tr("text.show_performance"),"")].into_iter().enumerate() {
             let t=Target {section:section.into(),key:key.into(),index:0,count:1,default:if section=="KeyMap" {default.into()}else{String::new()}};
-            binding_row(&mut columns[index / 9],doc,dirty,label,&t,section=="GamepadMap",request);
+            shortcut_row(&mut columns[index / 9],doc,dirty,label,&t,section=="GamepadMap",request,label_width);
         }
         });
         for (key,label,prefix) in [("Load",tr("text.load"),""),("Save",tr("text.save_state"),"Shift+"),("Replay",tr("mapping.replay"),"Ctrl+")] {
             ui.separator();ui.label(label);
             let default=if section=="KeyMap" {(1..=10).map(|i|format!("{prefix}F{i}")).collect::<Vec<_>>().join(", ")}else{",".repeat(9)};
-            ui.columns(2, |columns| {
-            for index in 0..10 {let t=Target {section:section.into(),key:key.into(),index,count:10,default:default.clone()};binding_row(&mut columns[index / 5],doc,dirty,&tf("mapping.slot", &[("slot", (index+1).to_string())]),&t,section=="GamepadMap",request);}
+            split_columns(ui, |columns| {
+        // Measure once: child UIs can grow after a row, which must not widen later labels.
+        let label_width = (columns[0].available_width().min(columns[1].available_width())
+            - 154.0 - 88.0 - 70.0 - 3.0 * 8.0 - 20.0).max(0.0);
+            for index in 0..10 {let t=Target {section:section.into(),key:key.into(),index,count:10,default:default.clone()};shortcut_row(&mut columns[index / 5],doc,dirty,&tf("mapping.slot", &[("slot", (index+1).to_string())]),&t,section=="GamepadMap",request,label_width);}
             });
         }
     });}
