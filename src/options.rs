@@ -735,14 +735,14 @@ fn sound(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
             choice(ui,doc,dirty,"Sound","EnableMSU",tr("text.format"),"false",&[("false",tr("text.disabled")),("true","MSU PCM"),("deluxe","MSU Deluxe PCM"),("opuz","OPUZ"),("deluxe-opuz","OPUZ Deluxe")]);
             ui.small(tr("text.pcm_requires_44100_hz_opuz_requires_48000_hz_music"));
             ui.add_space(8.0);
-            ui.horizontal(|ui| {
-                ui.label(tr("text.music_track_path_prefix"));
-                let mut value = doc.value("Sound", "MSUPath", "msu/alttp_msu-");
-                if ui.add(egui::TextEdit::singleline(&mut value).desired_width(210.0))
-                    .on_hover_text(help("Sound", "MSUPath")).changed() {
-                    doc.set("Sound", "MSUPath", &value); *dirty = true;
-                }
-            });
+            // Long translated labels must not compete with the path field for width.
+            ui.label(tr("text.music_track_path_prefix"));
+            let mut value = doc.value("Sound", "MSUPath", "msu/alttp_msu-");
+            if ui.add(egui::TextEdit::singleline(&mut value)
+                .desired_width(ui.available_width().min(280.0)))
+                .on_hover_text(help("Sound", "MSUPath")).changed() {
+                doc.set("Sound", "MSUPath", &value); *dirty = true;
+            }
             });
             columns[1].vertical(|ui| {
             flag(ui,doc,dirty,"Sound","ResumeMSU",tr("text.resume_music_from_its_previous_position"),true);
