@@ -204,45 +204,19 @@ impl Options {
                                     .auto_shrink([false, false])
                                     .max_height(ui.available_height())
                                     .show(ui, |ui| {
-                                        let count = self.raw_text.bytes().filter(|&b| b == 10).count() + 1;
-                                        let digits = count.to_string().len();
-                                        let numbers = (1..=count).map(|n| format!("{n:>digits$}")).collect::<Vec<_>>().join("\n");
-                                        // Use the same text layout engine, font and line spacing as the editor.
-                                        let mut number_layouter = |ui: &egui::Ui, text: &str, _width: f32| {
-                                            let mut job = egui::text::LayoutJob::simple(
-                                                text.to_owned(),
-                                                egui::TextStyle::Monospace.resolve(ui.style()),
-                                                egui::Color32::from_rgb(139, 174, 145),
-                                                f32::INFINITY,
-                                            );
-                                            job.wrap.max_width = f32::INFINITY;
-                                            ui.fonts(|fonts| fonts.layout_job(job))
-                                        };
                                         let mut layouter = |ui: &egui::Ui, text: &str, width: f32| {
                                             ini_layout(ui, text, width)
                                         };
-                                        let changed = ui.horizontal(|ui| {
-                                            let mut number_text = numbers.as_str();
-                                            ui.add(
-                                                egui::TextEdit::multiline(&mut number_text)
-                                                    .font(egui::TextStyle::Monospace)
-                                                    .layouter(&mut number_layouter)
-                                                    .frame(false)
-                                                    .desired_width((digits as f32 + 1.0) * 9.0)
-                                                    .interactive(false),
-                                            );
-                                            ui.separator();
-                                            ui.add_sized(
-                                                [ui.available_width(), ui.available_height()],
-                                                egui::TextEdit::multiline(&mut self.raw_text)
-                                                    .id_salt("ini-editor")
-                                                    .font(egui::TextStyle::Monospace)
-                                                    .code_editor()
-                                                    .layouter(&mut layouter)
-                                                    .frame(false)
-                                                    .desired_width(f32::INFINITY),
-                                            ).changed()
-                                        }).inner;
+                                        let changed = ui.add_sized(
+                                            [ui.available_width(), ui.available_height()],
+                                            egui::TextEdit::multiline(&mut self.raw_text)
+                                                .id_salt("ini-editor")
+                                                .font(egui::TextStyle::Monospace)
+                                                .code_editor()
+                                                .layouter(&mut layouter)
+                                                .frame(false)
+                                                .desired_width(f32::INFINITY),
+                                        ).changed();
                                         if changed {
                                             self.raw_dirty = self.raw_text != self.disk_text;
                                             *status = if self.raw_dirty {
@@ -415,9 +389,9 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     ui.add_space(10.0);
     // Explicit top-aligned three-column grid: left controls, gold divider, right controls.
     // A fixed content width prevents clipping; the horizontal scroll area handles narrow windows.
-    const GROUP_WIDTH: f32 = 430.0;
+    const GROUP_WIDTH: f32 = 475.0;
     const DIVIDER_WIDTH: f32 = 28.0;
-    const ROW_HEIGHT: f32 = 52.0;
+    const ROW_HEIGHT: f32 = 56.0;
     let gap = ui.spacing().item_spacing.x;
     let total_width = GROUP_WIDTH * 2.0 + DIVIDER_WIDTH + gap * 2.0;
     let available = ui.available_width();
@@ -432,15 +406,10 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
                     egui::vec2(GROUP_WIDTH, ROW_HEIGHT * 6.0),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
-                        ui.horizontal_top(|ui| {
-                            ui.add_space(30.0);
-                            ui.vertical(|ui| {
-                                for (i, label) in control_labels().iter().take(6).enumerate() {
-                                    let t = Target { section: section.into(), key: "Controls".into(), index: i, count: 12, default: default.into() };
-                                    binding_row(ui, doc, dirty, label, &t, pad, requested);
-                                }
-                            });
-                        });
+                        for (i, label) in control_labels().iter().take(6).enumerate() {
+                            let t = Target { section: section.into(), key: "Controls".into(), index: i, count: 12, default: default.into() };
+                            binding_row(ui, doc, dirty, label, &t, pad, requested);
+                        }
                     },
                 );
                 ui.allocate_ui_with_layout(
