@@ -518,7 +518,7 @@ fn shortcut_row(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, label: &str,
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut value, String::new(), tr("text.unassigned"));
                         for button in PAD_KEYS { ui.selectable_value(&mut value, button.into(), button); }
-                    });
+                    }).response.on_hover_text(help(&target.section, &target.key));
                 if previous != value { set_binding(doc, target, &value); *dirty = true; }
             } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(140.0))
                 .on_hover_text(help(&target.section, &target.key)).changed()
