@@ -415,6 +415,9 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     ui.add_space(10.0);
     // Three explicit columns: controls | gold separator | controls.
     // The middle column owns its width, so translated buttons cannot overlap the line.
+    // Keep the two groups close to the central divider, while preserving
+    // a dedicated gutter for it. The right group is anchored to the gutter;
+    // the left group is right-aligned towards it.
     let middle_width = 24.0;
     let side_width = ((ui.available_width() - middle_width - 2.0 * ui.spacing().item_spacing.x) / 2.0).max(0.0);
     ui.columns(3, |columns| {
@@ -424,7 +427,13 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
         for (i,label) in control_labels().iter().enumerate() {
             let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
             let column = if i < 6 { 0 } else { 2 };
-            binding_row(&mut columns[column],doc,dirty,label,&t,pad,requested);
+            if column == 0 {
+                columns[0].with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+                    ui.vertical(|ui| binding_row(ui,doc,dirty,label,&t,pad,requested));
+                });
+            } else {
+                binding_row(&mut columns[2],doc,dirty,label,&t,pad,requested);
+            }
         }
         let left = columns[0].min_rect();
         let right = columns[2].min_rect();
