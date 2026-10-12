@@ -47,7 +47,6 @@ jobs:
             LICENSING.md
             assets/DejaVu-LICENSE.txt
   linux:
-    if: ${{ false }} # Temporarily disabled; keep native Linux build configuration.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,6 +72,16 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libxkbcommon-dev libwayland-dev libgl1-mesa-dev
       - run: cargo test
       - run: cargo build --release
+      - name: Package native Linux build
+        run: |
+          mkdir -p dist
+          tar -czf dist/Z3-Launcher-1.0.0-linux-x86_64.tar.gz \
+            -C target/release z3-launcher -C "$GITHUB_WORKSPACE" \
+            locales LICENSE LICENSE-MIT-original LICENSING.md assets/DejaVu-LICENSE.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z3-launcher-linux-x86_64
+          path: dist/*.tar.gz
   appimage:
     runs-on: ubuntu-22.04
     steps:
@@ -105,3 +114,41 @@ jobs:
         with:
           name: z3-launcher-appimage-x86_64
           path: dist/*.AppImage*
+
+  flatpak:
+    uses: ./.github/workflows/flatpak.yml
+  release:
+    needs: [windows, linux, appimage, flatpak]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+      - name: Publish version 1.0.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+          if [ "$version" != "1.0.0" ]; then
+            echo "Release publication only applies to version 1.0.0."
+            exit 0
+          fi
+          if gh release view v1.0.0 >/dev/null 2>&1; then
+            echo "Release v1.0.0 already exists; leaving it unchanged."
+            exit 0
+          fi
+          mkdir -p release-assets
+          cp release-artifacts/z3-launcher-linux-x86_64/*.tar.gz release-assets/
+          cp release-artifacts/z3-launcher-appimage-x86_64/*.AppImage* release-assets/
+          cp release-artifacts/z3-launcher-flatpak-x86_64-experimental/*.flatpak release-assets/
+          (
+            cd release-artifacts/z3-launcher-windows
+            zip -r ../../release-assets/Z3-Launcher-1.0.0-windows-x86_64.zip .
+          )
+          gh release create v1.0.0 release-assets/* \
+            --target "$GITHUB_SHA" --title "Z3-Launcher 1.0.0" \
+            --notes-file RELEASE_NOTES_1.0.md
