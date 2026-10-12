@@ -266,9 +266,6 @@ impl eframe::App for App {
                     ui.add(egui::TextEdit::singleline(&mut self.root.clone())
                         .desired_width(f32::INFINITY).interactive(false))
                         .on_hover_text(self.root.as_str());
-                } else { full.to_owned() };
-                    ui.add_sized([ui.available_width(), 28.0], egui::Label::new(abbreviated).truncate())
-                        .on_hover_text(full);
                 } else {
                     ui.add(egui::TextEdit::singleline(&mut self.root).desired_width(f32::INFINITY))
                         .on_hover_text(tr("help.launcher.workspace"));
