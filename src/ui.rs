@@ -64,11 +64,11 @@ impl App {
 }
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
-        // Scale the whole egui interface uniformly instead of letting fixed-width
-        // control groups clip when the native window is resized.
+        // Uniformly scale the reference layout; preserve scroll areas for pages
+        // whose content is taller than the available viewport.
         // Convert back to native logical points before computing the zoom: the
         // screen rect itself changes when pixels_per_point changes.
-        const DESIGN_WIDTH: f32 = 1280.0;
+        const DESIGN_WIDTH: f32 = 1366.0;
         const DESIGN_HEIGHT: f32 = 900.0;
         let (window_size, native_ppp) = ctx.input(|i| {
             // egui 0.31 exposes the OS scale through viewport information.
@@ -77,7 +77,7 @@ impl eframe::App for App {
         });
         let zoom = (window_size.x / DESIGN_WIDTH)
             .min(window_size.y / DESIGN_HEIGHT)
-            .clamp(0.4, 2.0);
+            .clamp(0.30, 2.0);
         let desired_ppp = native_ppp * zoom;
         if (ctx.pixels_per_point() - desired_ppp).abs() > 0.005 {
             ctx.set_pixels_per_point(desired_ppp);
