@@ -200,7 +200,7 @@
     "text.window_scale": "Escala de ventana",
     "text.window_size_auto_or_widthxheight": "Tamaño de ventana (Auto o anchoxalto)",
     "text.windowed": "En ventana",
-    "text.working_directory_full_path": "Directorio de trabajo (ruta completa)",
+    "text.working_directory_full_path": "Directorio de trabajo",
     "translations.ignored": "Traducción ignorada: {path} ({error})",
     "game_language.unsupported": "Idioma del juego no compatible.",
     "game_language.resources_missing": "No se generó el archivo esperado de diálogos, fuente o recursos.",
