@@ -168,7 +168,9 @@ impl Options {
                             ui.set_width((width - 32.0).max(0.0));
                             ui.set_min_height((available_height - 40.0).max(0.0));
                             if let Some(path) = &self.path {
-                                ui.small(tf("settings.file", &[("path", path.display().to_string())]));
+                                let full_path = path.display().to_string();
+                                ui.add(egui::Label::new(tf("settings.file", &[("path", full_path.clone())])).truncate())
+                                    .on_hover_text(full_path);
                             }
                             ui.add_space(6.0);
                             // Reserve a fixed viewport and draw its border outside the scroll area.
