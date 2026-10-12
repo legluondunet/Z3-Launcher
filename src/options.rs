@@ -507,6 +507,8 @@ fn shortcut_row(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, label: &str,
         let raw = doc.value(&target.section, &target.key, &target.default);
         let mut value = raw.split(',').nth(target.index).unwrap_or("").trim().to_owned();
         ui.horizontal(|ui| {
+            // Match the fixed field/button spacing used in the Controls tab.
+            ui.spacing_mut().item_spacing.x = 8.0;
             if pad {
                 let previous = value.clone();
                 egui::ComboBox::from_id_salt("shortcut-button").width(140.0)
