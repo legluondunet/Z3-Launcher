@@ -200,7 +200,7 @@
     "text.window_scale": "Window scale",
     "text.window_size_auto_or_widthxheight": "Window size (Auto or widthxheight)",
     "text.windowed": "Windowed",
-    "text.working_directory_full_path": "Working directory (full path)",
+    "text.working_directory_full_path": "Working directory",
     "translations.ignored": "Translation ignored: {path} ({error})",
     "game_language.unsupported": "Unsupported game language.",
     "game_language.resources_missing": "The expected dialogue, font or assets file was not generated.",
