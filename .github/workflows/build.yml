@@ -1,5 +1,12 @@
 name: Native builds
-on: [push, pull_request, workflow_dispatch]
+# Feature branches are validated through their pull requests.
+# Push builds remain available on main, with manual runs as needed.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
 jobs:
   windows:
     runs-on: windows-latest
