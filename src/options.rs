@@ -460,12 +460,11 @@ fn binding_row(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,label:&str,t:&Targe
 // Shortcut rows keep labels separate from inputs, so long translations cannot
 // push the capture/clear buttons into the next column.
 fn shortcut_row(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, label: &str,
-    target: &Target, pad: bool, request: &mut Option<(Target, bool)>) {
+    target: &Target, pad: bool, request: &mut Option<(Target, bool)>, label_width: f32) {
     ui.push_id((&target.section, &target.key, target.index), |ui| {
         let raw = doc.value(&target.section, &target.key, &target.default);
         let mut value = raw.split(',').nth(target.index).unwrap_or("").trim().to_owned();
         // Labels use the space left by the fixed-width input and action buttons.
-        let label_width = (ui.available_width() - 154.0 - 88.0 - 70.0 - 3.0 * 8.0).max(108.0);
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.0;
             ui.allocate_ui_with_layout(
@@ -756,16 +755,22 @@ fn shortcuts(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool,request:&mut Option<(
     stacked_settings(ui, |ui| {
     for section in ["KeyMap","GamepadMap"] {settings_section(ui, if section=="KeyMap" {tr("text.keyboard_shortcuts")} else {tr("text.gamepad_shortcuts")},|ui| {
         split_columns(ui, |columns| {
+        // Measure once: child UIs can grow after a row, which must not widen later labels.
+        let label_width = (columns[0].available_width().min(columns[1].available_width())
+            - 154.0 - 88.0 - 70.0 - 3.0 * 8.0 - 20.0).max(0.0);
         for (index,(key,label,default)) in [("Reset",tr("text.reset_game"),"Ctrl+r"),("Pause",tr("mapping.pause"),"Shift+p"),("PauseDimmed",tr("text.pause_and_dim"),"p"),("Fullscreen",tr("text.fullscreen"),"Alt+Return"),("WindowBigger",tr("text.increase_window_size"),"Ctrl+Up"),("WindowSmaller",tr("text.decrease_window_size"),"Ctrl+Down"),("VolumeUp",tr("text.volume_up"),"Shift+="),("VolumeDown",tr("text.volume_down"),"Shift+-"),("CheatLife",tr("text.restore_health_and_magic"),"w"),("CheatKeys",tr("text.give_one_key"),"o"),("CheatWalkThroughWalls",tr("text.walk_through_walls"),"Ctrl+e"),("Turbo",tr("mapping.turbo"),"Tab"),("ReplayTurbo",tr("text.replay_speed"),"t"),("StopReplay",tr("text.stop_replay"),"l"),("ClearKeyLog",tr("text.clear_key_log"),"k"),("ToggleRenderer",tr("text.toggle_ppu"),""),("DisplayPerf",tr("text.show_performance"),"")].into_iter().enumerate() {
             let t=Target {section:section.into(),key:key.into(),index:0,count:1,default:if section=="KeyMap" {default.into()}else{String::new()}};
-            shortcut_row(&mut columns[index / 9],doc,dirty,label,&t,section=="GamepadMap",request);
+            shortcut_row(&mut columns[index / 9],doc,dirty,label,&t,section=="GamepadMap",request,label_width);
         }
         });
         for (key,label,prefix) in [("Load",tr("text.load"),""),("Save",tr("text.save_state"),"Shift+"),("Replay",tr("mapping.replay"),"Ctrl+")] {
             ui.separator();ui.label(label);
             let default=if section=="KeyMap" {(1..=10).map(|i|format!("{prefix}F{i}")).collect::<Vec<_>>().join(", ")}else{",".repeat(9)};
             split_columns(ui, |columns| {
-            for index in 0..10 {let t=Target {section:section.into(),key:key.into(),index,count:10,default:default.clone()};shortcut_row(&mut columns[index / 5],doc,dirty,&tf("mapping.slot", &[("slot", (index+1).to_string())]),&t,section=="GamepadMap",request);}
+        // Measure once: child UIs can grow after a row, which must not widen later labels.
+        let label_width = (columns[0].available_width().min(columns[1].available_width())
+            - 154.0 - 88.0 - 70.0 - 3.0 * 8.0 - 20.0).max(0.0);
+            for index in 0..10 {let t=Target {section:section.into(),key:key.into(),index,count:10,default:default.clone()};shortcut_row(&mut columns[index / 5],doc,dirty,&tf("mapping.slot", &[("slot", (index+1).to_string())]),&t,section=="GamepadMap",request,label_width);}
             });
         }
     });}
