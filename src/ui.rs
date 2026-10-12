@@ -151,7 +151,7 @@ impl eframe::App for App {
         // Preserve errors, progress messages and other status notifications.
         // Tab-specific hints are display fallbacks, not persistent notifications.
         // Keep the latest real status (including automatic save) across tab changes.
-        let displayed_status = if self.status.is_empty() {
+        let displayed_status = if self.status.is_empty() || self.status == tr("text.ready") {
             match self.tab {
                 5 => tr("text.keyboard_and_gamepad_bindings_are_independent_an_empty_field").to_owned(),
                 6 => tr("settings.ini_hint").to_owned(),
