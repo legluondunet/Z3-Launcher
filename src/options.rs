@@ -579,24 +579,38 @@ fn shader_path_allowed(value: &str) -> bool {
 // Two-column layout with the vertical gold divider from the approved mockup.
 // Center the separator in a reserved gutter, without covering either column.
 fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) -> R) -> R {
+    const GUTTER: f32 = 20.0;
     let center = ui.ctx().screen_rect().center().x;
     ui.columns(2, |columns| {
-        // The divider is centered in the normal column gap. Leave clearance
-        // on the left without relying on private egui cursor APIs.
-        let left_width = columns[0].available_width();
-        columns[0].set_max_width((left_width - 24.0).max(80.0));
-        // Center between the reserved right edge of left content and the start of right content.
-        let result = contents(columns);
-        let left = columns[0].min_rect();
-        let right = columns[1].min_rect();
+        // Keep a symmetrical 20-point clearance around the absolute center.
+        let left_rect = columns[0].available_rect_before_wrap();
+        let right_rect = columns[1].available_rect_before_wrap();
+        let left_edge = (center - GUTTER).min(left_rect.right());
+        let right_edge = center + GUTTER;
+        let mut inner = [
+            columns[0].new_child(egui::UiBuilder::new().max_rect(
+                egui::Rect::from_min_max(left_rect.min, egui::pos2(left_edge, left_rect.bottom()))
+            )),
+            columns[1].new_child(egui::UiBuilder::new().max_rect(
+                egui::Rect::from_min_max(
+                    egui::pos2(right_edge, right_rect.top()),
+                    egui::pos2(right_rect.right().max(right_edge + 1.0), right_rect.bottom())
+                )
+            )),
+        ];
+        let result = contents(&mut inner);
+        let left = inner[0].min_rect();
+        let right = inner[1].min_rect();
         let top = left.top().min(right.top());
         let bottom = left.bottom().max(right.bottom());
         if bottom > top {
             columns[0].painter().line_segment(
                 [egui::pos2(center, top), egui::pos2(center, bottom)],
-                egui::Stroke::new(1.0_f32, crate::theme::GOLD),
+                egui::Stroke::new(1.0, crate::theme::GOLD),
             );
         }
+        columns[0].allocate_rect(left, egui::Sense::hover());
+        columns[1].allocate_rect(right, egui::Sense::hover());
         result
     })
 }
