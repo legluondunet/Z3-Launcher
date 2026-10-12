@@ -19,6 +19,9 @@
   </categories>
   <launchable type="desktop-id">io.github.legluondunet.Z3Launcher.desktop</launchable>
   <releases>
+    <release version="1.0.0" date="2026-10-12">
+      <description><p>First stable release with the validated forest interface and Linux and Windows packages.</p></description>
+    </release>
     <release version="0.11.16" date="2026-10-11">
       <description>
         <p>Development version with the forest-themed interface, five interface languages, game installation from prebuilt releases and configuration tools. Experimental Flatpak packaging added.</p>

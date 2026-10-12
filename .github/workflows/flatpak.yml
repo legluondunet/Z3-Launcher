@@ -1,21 +1,9 @@
-name: Flatpak (experimental)
+name: Flatpak
 on:
-  push:
-    branches:
-      - feature/validated-forest-ui
-    paths:
-      - 'src/**'
-      - 'locales/**'
-      - 'packaging/flatpak/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'CHANGELOG.md'
-      - 'tools/sync-flatpak-version.py'
-      - '.github/workflows/flatpak.yml'
+  workflow_call:
   workflow_dispatch:
 jobs:
   flatpak:
-    if: ${{ false }} # Temporarily disabled while testing AppImage only.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +16,7 @@ jobs:
       - name: Validate AppStream version
         run: python3 tools/sync-flatpak-version.py --check
       - name: Embed build commit
-        run: printf '%s\\n' "${GITHUB_SHA::7}" > .build-commit
+        run: printf '%s\n' "${GITHUB_SHA::7}" > .build-commit
       - name: Build Flatpak
         run: |
           flatpak-builder --force-clean --default-branch=stable --repo=flatpak-repo flatpak-build packaging/flatpak/io.github.legluondunet.Z3Launcher.yml

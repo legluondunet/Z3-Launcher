@@ -6,11 +6,18 @@ All notable Z3-Launcher changes, from the original source import to the latest d
 
 This history covers the original C#/WinForms source supplied for the port, the archived Rust development notes, and every Git commit reachable from `feature/validated-forest-ui` through [efbad1a](https://github.com/legluondunet/Z3-Launcher/commit/efbad1a83f12694c79ba1ebacef9028040cb358d).
 
-The original preparation-build numbering is preserved below. The later proposed 0.1.0 / 0.2.0 / 0.3.0 / 1.0.0 milestone scheme is not used.
+The original preparation-build numbering is preserved below. The historical preparation-build numbers remain unchanged. Version 1.0.0 marks the first stable release.
 
 The first expanded source import on GitHub, [b83ca1b](https://github.com/legluondunet/Z3-Launcher/commit/b83ca1b9d192fd83ba444230c7f6ffdb47642706), already declared **0.11.16** in `Cargo.toml`. That package version is still unchanged at the covered revision. GitHub changes are therefore recorded under 0.11.16, with commit references rather than invented version increments. No GitHub releases or tag refs were found when checked on 2026-10-10. Workflow artifacts are development builds, not published releases.
 
 This documentation change does not alter Cargo's version, create tags or publish a release.
+
+## 1.0.0 — 2026-10-13
+
+- Release the validated forest interface for Linux and Windows.
+- Center separators across tabs and show complete shortcut labels with aligned fields.
+- Restore native Linux and Flatpak builds alongside Windows and AppImage.
+- Publish release assets only after all four build jobs succeed on main.
 
 ## Version history
 
