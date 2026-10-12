@@ -260,13 +260,13 @@ impl eframe::App for App {
                 }
                 ui.separator();
                 ui.label(tr("text.working_directory_full_path"));
-                // In portable mode the workspace is immutable: show a concise path,
-                // while keeping the complete path accessible on hover.
+                // Show the complete portable workspace path without abbreviating it.
+                // Horizontal scrolling keeps long paths accessible in narrow windows.
                 if crate::platform::is_portable() {
-                    let full = self.root.as_str();
-                    let abbreviated = if full.chars().count() > 100 {
-                        format!("…{}", full.chars().rev().take(99).collect::<String>().chars().rev().collect::<String>())
-                    } else { full.to_owned() };
+                    ui.add(egui::TextEdit::singleline(&mut self.root.clone())
+                        .desired_width(f32::INFINITY).interactive(false))
+                        .on_hover_text(self.root.as_str());
+                } else { full.to_owned() };
                     ui.add_sized([ui.available_width(), 28.0], egui::Label::new(abbreviated).truncate())
                         .on_hover_text(full);
                 } else {
