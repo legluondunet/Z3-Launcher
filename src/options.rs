@@ -431,7 +431,7 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
                             egui::Sense::hover(),
                         );
                         ui.painter().line_segment(
-                            [egui::pos2(ui.ctx().screen_rect().center().x, rect.top()), egui::pos2(ui.ctx().screen_rect().center().x, rect.bottom())],
+                            [egui::pos2(rect.center().x, rect.top()), egui::pos2(rect.center().x, rect.bottom())],
                             egui::Stroke::new(1.0, crate::theme::GOLD),
                         );
                     },
