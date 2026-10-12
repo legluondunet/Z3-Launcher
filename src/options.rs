@@ -119,7 +119,7 @@ impl Options {
         }
         self.raw_text=self.disk_text.clone(); self.raw_active=true;
         self.raw_dirty=false; self.capture=None;
-        *status = tr("settings.ini_hint").into();
+        // The INI hint is rendered as a tab-local footer fallback.
         true
     }
     fn save_raw(&mut self, status: &mut String) -> bool {
@@ -399,13 +399,16 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     let gap = ui.spacing().item_spacing.x;
     let total_width = GROUP_WIDTH * 2.0 + DIVIDER_WIDTH + gap * 2.0;
     let available = ui.available_width();
+    // When controls overflow, center their virtual canvas around the viewport.
+    // On sufficiently wide windows, the reserved divider is exactly centered.
+    let side_margin = ((available - total_width) / 2.0).max(0.0);
     egui::ScrollArea::horizontal()
         .id_salt(if pad { "gamepad-controls-horizontal" } else { "keyboard-controls-horizontal" })
         .auto_shrink([false, true])
         .show(ui, |ui| {
             ui.add_space(0.0);
             ui.horizontal_top(|ui| {
-                ui.add_space(((available - total_width) / 2.0).max(0.0));
+                ui.add_space(side_margin);
                 ui.allocate_ui_with_layout(
                     egui::vec2(GROUP_WIDTH, ROW_HEIGHT * 6.0),
                     egui::Layout::top_down(egui::Align::Min),
@@ -582,8 +585,7 @@ fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) ->
         let left_width = columns[0].available_width();
         columns[0].set_max_width((left_width - 24.0).max(80.0));
         // Center between the reserved right edge of left content and the start of right content.
-        let left_content_edge = columns[0].max_rect().right() - 24.0;
-        let center = (left_content_edge + columns[1].max_rect().left()) * 0.5;
+        let center = (columns[0].max_rect().left() + columns[1].max_rect().right()) * 0.5;
         let result = contents(columns);
         let left = columns[0].min_rect();
         let right = columns[1].min_rect();
