@@ -428,7 +428,7 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
                             egui::Sense::hover(),
                         );
                         ui.painter().line_segment(
-                            [egui::pos2(ui.ctx().content_rect().center().x, rect.top()), egui::pos2(ui.ctx().content_rect().center().x, rect.bottom())],
+                            [egui::pos2(ui.ctx().screen_rect().center().x, rect.top()), egui::pos2(ui.ctx().screen_rect().center().x, rect.bottom())],
                             egui::Stroke::new(1.0, crate::theme::GOLD),
                         );
                     },
@@ -585,7 +585,7 @@ fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) ->
         let left_width = columns[0].available_width();
         columns[0].set_max_width((left_width - 24.0).max(80.0));
         // Center between the reserved right edge of left content and the start of right content.
-        let center = ui.ctx().content_rect().center().x;
+        let center = ui.ctx().screen_rect().center().x;
         let result = contents(columns);
         let left = columns[0].min_rect();
         let right = columns[1].min_rect();
