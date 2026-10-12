@@ -464,11 +464,12 @@ fn shortcut_row(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, label: &str,
     ui.push_id((&target.section, &target.key, target.index), |ui| {
         let raw = doc.value(&target.section, &target.key, &target.default);
         let mut value = raw.split(',').nth(target.index).unwrap_or("").trim().to_owned();
-        // Keep fixed-width cells while letting translated labels wrap in full.
+        // Labels use the space left by the fixed-width input and action buttons.
+        let label_width = (ui.available_width() - 154.0 - 88.0 - 70.0 - 3.0 * 8.0).max(108.0);
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.0;
             ui.allocate_ui_with_layout(
-                egui::vec2(108.0, 28.0),
+                egui::vec2(label_width, 28.0),
                 egui::Layout::right_to_left(egui::Align::Center),
                 |ui| {
                     ui.add(egui::Label::new(label).wrap())
