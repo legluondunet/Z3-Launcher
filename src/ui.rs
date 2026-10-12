@@ -113,7 +113,7 @@ impl eframe::App for App {
         if let Some(result) = done {
             self.rx = None; self.protect_operation = false;
             self.status = match result {
-                Ok(()) => if let Some(code) = imported {
+                Ok(()) => if let Some(code) = imported.as_ref() {
                     self.options.apply_game_language(&code);
                     tr("settings.language_imported").into()
                 } else { tr("text.done").into() },
