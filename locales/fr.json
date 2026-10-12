@@ -200,7 +200,7 @@
     "text.window_scale": "Échelle de la fenêtre",
     "text.window_size_auto_or_widthxheight": "Taille (Auto ou largeurxhauteur)",
     "text.windowed": "Fenêtre",
-    "text.working_directory_full_path": "Dossier de travail (chemin complet)",
+    "text.working_directory_full_path": "Dossier de travail",
     "translations.ignored": "Traduction ignorée : {path} ({error})",
     "game_language.unsupported": "Langue du jeu non prise en charge.",
     "game_language.resources_missing": "Le dialogue, la police ou le fichier de ressources attendu n’a pas été généré.",
