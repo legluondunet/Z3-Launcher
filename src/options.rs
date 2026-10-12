@@ -508,23 +508,23 @@ fn shortcut_row(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, label: &str,
         ui.horizontal(|ui| {
             if pad {
                 let previous = value.clone();
-                egui::ComboBox::from_id_salt("shortcut-button").width(108.0)
+                egui::ComboBox::from_id_salt("shortcut-button").width(140.0)
                     .selected_text(if value.is_empty() { tr("text.unassigned") } else { &value })
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut value, String::new(), tr("text.unassigned"));
                         for button in PAD_KEYS { ui.selectable_value(&mut value, button.into(), button); }
                     });
                 if previous != value { set_binding(doc, target, &value); *dirty = true; }
-            } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(108.0))
+            } else if ui.add(egui::TextEdit::singleline(&mut value).desired_width(140.0))
                 .on_hover_text(help(&target.section, &target.key)).changed()
                 && !value.contains(',') && !value.contains('\n') {
                 set_binding(doc, target, &value); *dirty = true;
             }
-            if ui.add_sized([78.0, 28.0], egui::Button::new(tr("text.capture")))
+            if ui.add_sized([88.0, 28.0], egui::Button::new(tr("text.capture")))
                 .on_hover_text(tr("help.action.capture")).clicked() {
                 *request = Some((target.clone(), false));
             }
-            if ui.add_sized([66.0, 28.0], egui::Button::new(tr("text.clear")))
+            if ui.add_sized([70.0, 28.0], egui::Button::new(tr("text.clear")))
                 .on_hover_text(tr("help.action.clear")).clicked() {
                 set_binding(doc, target, ""); *dirty = true;
             }
