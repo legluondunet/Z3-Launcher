@@ -71,7 +71,8 @@ impl eframe::App for App {
         const DESIGN_WIDTH: f32 = 1280.0;
         const DESIGN_HEIGHT: f32 = 900.0;
         let (window_size, native_ppp) = ctx.input(|i| {
-            let native = i.native_pixels_per_point.unwrap_or(1.0);
+            // egui 0.31 exposes the OS scale through viewport information.
+            let native = i.viewport().native_pixels_per_point.unwrap_or(1.0);
             (i.screen_rect().size() * (i.pixels_per_point() / native), native)
         });
         let zoom = (window_size.x / DESIGN_WIDTH)
