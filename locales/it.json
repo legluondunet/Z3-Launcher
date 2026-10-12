@@ -200,7 +200,7 @@
     "text.window_scale": "Scala finestra",
     "text.window_size_auto_or_widthxheight": "Dimensione finestra (Auto o larghezzaxaltezza)",
     "text.windowed": "In finestra",
-    "text.working_directory_full_path": "Cartella di lavoro (percorso completo)",
+    "text.working_directory_full_path": "Cartella di lavoro",
     "translations.ignored": "Traduzione ignorata: {path} ({error})",
     "game_language.unsupported": "Lingua del gioco non supportata.",
     "game_language.resources_missing": "Il file previsto di dialoghi, caratteri o risorse non è stato generato.",
