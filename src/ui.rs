@@ -64,6 +64,23 @@ impl App {
 }
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
+        // Scale the whole egui interface uniformly instead of letting fixed-width
+        // control groups clip when the native window is resized.
+        // Convert back to native logical points before computing the zoom: the
+        // screen rect itself changes when pixels_per_point changes.
+        const DESIGN_WIDTH: f32 = 1280.0;
+        const DESIGN_HEIGHT: f32 = 900.0;
+        let (window_size, native_ppp) = ctx.input(|i| {
+            let native = i.native_pixels_per_point.unwrap_or(1.0);
+            (i.screen_rect().size() * (i.pixels_per_point() / native), native)
+        });
+        let zoom = (window_size.x / DESIGN_WIDTH)
+            .min(window_size.y / DESIGN_HEIGHT)
+            .clamp(0.4, 2.0);
+        let desired_ppp = native_ppp * zoom;
+        if (ctx.pixels_per_point() - desired_ppp).abs() > 0.005 {
+            ctx.set_pixels_per_point(desired_ppp);
+        }
         if !self.updates_started {
             self.updates_started=true;
             let (tx,rx)=mpsc::channel(); self.updates_rx=Some(rx);
