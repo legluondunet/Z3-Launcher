@@ -579,10 +579,10 @@ fn shader_path_allowed(value: &str) -> bool {
 // Two-column layout with the vertical gold divider from the approved mockup.
 // Center the separator in a reserved gutter, without covering either column.
 fn split_columns<R>(ui: &mut egui::Ui, contents: impl FnOnce(&mut [egui::Ui]) -> R) -> R {
-    const GUTTER: f32 = 20.0;
+    const GUTTER: f32 = 12.0;
     let center = ui.ctx().screen_rect().center().x;
     ui.columns(2, |columns| {
-        // Keep a symmetrical 20-point clearance around the absolute center.
+        // Keep a symmetrical 12-point clearance around the absolute center.
         let left_rect = columns[0].available_rect_before_wrap();
         let right_rect = columns[1].available_rect_before_wrap();
         let left_edge = (center - GUTTER).min(left_rect.right());
