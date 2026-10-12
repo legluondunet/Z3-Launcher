@@ -413,40 +413,52 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     if pad && ui.button(tr("text.restore_default_gamepad_bindings")).on_hover_text(tr("help.action.restore_pad")).clicked() { doc.set(section,"Controls",PAD_DEFAULT); *dirty=true; }
     if ui.button(tr("text.assign_all_controls")).on_hover_text(tr("help.action.assign_all")).clicked() { *requested=Some((Target {section:section.into(),key:"Controls".into(),index:0,count:12,default:default.into()},true)); }
     ui.add_space(10.0);
-    // Three explicit columns: controls | gold separator | controls.
-    // The middle column owns its width, so translated buttons cannot overlap the line.
-    // Keep the two groups close to the central divider, while preserving
-    // a dedicated gutter for it. The right group is anchored to the gutter;
-    // the left group is right-aligned towards it.
-    let middle_width = 24.0;
-    let side_width = ((ui.available_width() - middle_width - 2.0 * ui.spacing().item_spacing.x) / 2.0).max(0.0);
-    ui.columns(3, |columns| {
-        columns[0].set_max_width(side_width);
-        columns[1].set_max_width(middle_width);
-        columns[2].set_max_width(side_width);
-        for (i,label) in control_labels().iter().enumerate() {
-            let t=Target {section:section.into(),key:"Controls".into(),index:i,count:12,default:default.into()};
-            let column = if i < 6 { 0 } else { 2 };
-            if column == 0 {
-                columns[0].with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-                    ui.vertical(|ui| binding_row(ui,doc,dirty,label,&t,pad,requested));
-                });
-            } else {
-                binding_row(&mut columns[2],doc,dirty,label,&t,pad,requested);
-            }
-        }
-        let left = columns[0].min_rect();
-        let right = columns[2].min_rect();
-        let top = left.top().min(right.top());
-        let bottom = left.bottom().max(right.bottom());
-        if bottom > top {
-            let x = columns[1].max_rect().center().x;
-            columns[1].painter().line_segment(
-                [egui::pos2(x, top), egui::pos2(x, bottom)],
-                egui::Stroke::new(1.0, crate::theme::GOLD),
-            );
-        }
-    });
+    // Two fixed-width control groups around an independent gold divider.
+    // Horizontal scrolling keeps all buttons reachable on narrow windows.
+    const GROUP_WIDTH: f32 = 465.0;
+    const DIVIDER_WIDTH: f32 = 28.0;
+    let total_width = 2.0 * GROUP_WIDTH + DIVIDER_WIDTH + 2.0 * ui.spacing().item_spacing.x;
+    let available = ui.available_width();
+    egui::ScrollArea::horizontal()
+        .id_salt(if pad { "gamepad-controls-horizontal" } else { "keyboard-controls-horizontal" })
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.add_space(((available - total_width) * 0.5).max(0.0));
+                ui.allocate_ui_with_layout(
+                    egui::vec2(GROUP_WIDTH, 0.0),
+                    egui::Layout::top_down(egui::Align::Min),
+                    |ui| {
+                        for (i, label) in control_labels().iter().take(6).enumerate() {
+                            let t = Target { section: section.into(), key: "Controls".into(), index: i, count: 12, default: default.into() };
+                            binding_row(ui, doc, dirty, label, &t, pad, requested);
+                        }
+                    },
+                );
+                ui.allocate_ui_with_layout(
+                    egui::vec2(DIVIDER_WIDTH, 0.0),
+                    egui::Layout::top_down(egui::Align::Center),
+                    |ui| {
+                        let (rect, _) = ui.allocate_exact_size(egui::vec2(DIVIDER_WIDTH, 6.0 * 56.0), egui::Sense::hover());
+                        let x = rect.center().x;
+                        ui.painter().line_segment(
+                            [egui::pos2(x, rect.top()), egui::pos2(x, rect.bottom())],
+                            egui::Stroke::new(1.0, crate::theme::GOLD),
+                        );
+                    },
+                );
+                ui.allocate_ui_with_layout(
+                    egui::vec2(GROUP_WIDTH, 0.0),
+                    egui::Layout::top_down(egui::Align::Min),
+                    |ui| {
+                        for (i, label) in control_labels().iter().enumerate().skip(6) {
+                            let t = Target { section: section.into(), key: "Controls".into(), index: i, count: 12, default: default.into() };
+                            binding_row(ui, doc, dirty, label, &t, pad, requested);
+                        }
+                    },
+                );
+            });
+        });
 }
 fn set_binding(doc:&mut Ini,target:&Target,value:&str) {
     let mut values:Vec<String>=doc.value(&target.section,&target.key,&target.default).split(',').map(|s|s.trim().to_owned()).collect();
