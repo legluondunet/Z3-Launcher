@@ -394,60 +394,17 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     if pad && ui.button(tr("text.restore_default_gamepad_bindings")).on_hover_text(tr("help.action.restore_pad")).clicked() { doc.set(section,"Controls",PAD_DEFAULT); *dirty=true; }
     if ui.button(tr("text.assign_all_controls")).on_hover_text(tr("help.action.assign_all")).clicked() { *requested=Some((Target {section:section.into(),key:"Controls".into(),index:0,count:12,default:default.into()},true)); }
     ui.add_space(10.0);
-    // Explicit top-aligned three-column grid: left controls, gold divider, right controls.
-    // A fixed content width prevents clipping; the horizontal scroll area handles narrow windows.
-    const GROUP_WIDTH: f32 = 475.0;
-    const DIVIDER_WIDTH: f32 = 28.0;
-    const ROW_HEIGHT: f32 = 56.0;
-    let gap = ui.spacing().item_spacing.x;
-    let total_width = GROUP_WIDTH * 2.0 + DIVIDER_WIDTH + gap * 2.0;
-    let available = ui.available_width();
-    // When controls overflow, center their virtual canvas around the viewport.
-    // On sufficiently wide windows, the reserved divider is exactly centered.
-    let side_margin = ((available - total_width) / 2.0).max(0.0);
-    egui::ScrollArea::horizontal()
-        .id_salt(if pad { "gamepad-controls-horizontal" } else { "keyboard-controls-horizontal" })
-        .auto_shrink([false, true])
-        .show(ui, |ui| {
-            ui.add_space(0.0);
-            ui.horizontal_top(|ui| {
-                ui.add_space(side_margin);
-                ui.allocate_ui_with_layout(
-                    egui::vec2(GROUP_WIDTH, ROW_HEIGHT * 6.0),
-                    egui::Layout::top_down(egui::Align::Min),
-                    |ui| {
-                        for (i, label) in control_labels().iter().take(6).enumerate() {
-                            let t = Target { section: section.into(), key: "Controls".into(), index: i, count: 12, default: default.into() };
-                            binding_row(ui, doc, dirty, label, &t, pad, requested);
-                        }
-                    },
-                );
-                ui.allocate_ui_with_layout(
-                    egui::vec2(DIVIDER_WIDTH, ROW_HEIGHT * 6.0),
-                    egui::Layout::top_down(egui::Align::Center),
-                    |ui| {
-                        let (rect, _) = ui.allocate_exact_size(
-                            egui::vec2(DIVIDER_WIDTH, ROW_HEIGHT * 6.0),
-                            egui::Sense::hover(),
-                        );
-                        ui.painter().line_segment(
-                            [egui::pos2(rect.center().x, rect.top()), egui::pos2(rect.center().x, rect.bottom())],
-                            egui::Stroke::new(1.0, crate::theme::GOLD),
-                        );
-                    },
-                );
-                ui.allocate_ui_with_layout(
-                    egui::vec2(GROUP_WIDTH, ROW_HEIGHT * 6.0),
-                    egui::Layout::top_down(egui::Align::Min),
-                    |ui| {
-                        for (i, label) in control_labels().iter().enumerate().skip(6) {
-                            let t = Target { section: section.into(), key: "Controls".into(), index: i, count: 12, default: default.into() };
-                            binding_row(ui, doc, dirty, label, &t, pad, requested);
-                        }
-                    },
-                );
-            });
-        });
+    // Use the same two-column layout and screen-centered gold divider as
+    // Shortcuts and Graphics. Do not position the divider in a scroll canvas.
+    split_columns(ui, |columns| {
+        for (i, label) in control_labels().iter().enumerate() {
+            let t = Target {
+                section: section.into(), key: "Controls".into(),
+                index: i, count: 12, default: default.into(),
+            };
+            binding_row(&mut columns[i / 6], doc, dirty, label, &t, pad, requested);
+        }
+    });
 }
 fn set_binding(doc:&mut Ini,target:&Target,value:&str) {
     let mut values:Vec<String>=doc.value(&target.section,&target.key,&target.default).split(',').map(|s|s.trim().to_owned()).collect();
