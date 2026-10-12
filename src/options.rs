@@ -339,7 +339,11 @@ impl Options {
         ui.add_enabled_ui(!busy, |ui| {
             ui.scope(|ui| {
                 crate::theme::gold_scrollbar(ui);
-                egui::ScrollArea::vertical().id_salt(("options-scroll", self.page)).show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .id_salt(("options-scroll", self.page))
+                    .auto_shrink([false, false])
+                    .max_height(ui.available_height())
+                    .show(ui, |ui| {
                 let doc=self.doc.as_mut().unwrap();
                 match self.page {
                     0=>game(ui,doc,&mut self.dirty,&mut self.language_request),
