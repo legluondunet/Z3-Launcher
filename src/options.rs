@@ -415,9 +415,9 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
     ui.add_space(10.0);
     // Explicit top-aligned three-column grid: left controls, gold divider, right controls.
     // A fixed content width prevents clipping; the horizontal scroll area handles narrow windows.
-    const GROUP_WIDTH: f32 = 465.0;
+    const GROUP_WIDTH: f32 = 430.0;
     const DIVIDER_WIDTH: f32 = 28.0;
-    const ROW_HEIGHT: f32 = 60.0;
+    const ROW_HEIGHT: f32 = 52.0;
     let gap = ui.spacing().item_spacing.x;
     let total_width = GROUP_WIDTH * 2.0 + DIVIDER_WIDTH + gap * 2.0;
     let available = ui.available_width();
@@ -432,10 +432,15 @@ fn controls_bindings(ui: &mut egui::Ui, doc: &mut Ini, dirty: &mut bool, pad: bo
                     egui::vec2(GROUP_WIDTH, ROW_HEIGHT * 6.0),
                     egui::Layout::top_down(egui::Align::Min),
                     |ui| {
-                        for (i, label) in control_labels().iter().take(6).enumerate() {
-                            let t = Target { section: section.into(), key: "Controls".into(), index: i, count: 12, default: default.into() };
-                            binding_row(ui, doc, dirty, label, &t, pad, requested);
-                        }
+                        ui.horizontal_top(|ui| {
+                            ui.add_space(30.0);
+                            ui.vertical(|ui| {
+                                for (i, label) in control_labels().iter().take(6).enumerate() {
+                                    let t = Target { section: section.into(), key: "Controls".into(), index: i, count: 12, default: default.into() };
+                                    binding_row(ui, doc, dirty, label, &t, pad, requested);
+                                }
+                            });
+                        });
                     },
                 );
                 ui.allocate_ui_with_layout(
