@@ -120,6 +120,8 @@ impl eframe::App for App {
                 Err(e) => tf("status.error", &[("error", e.to_string())]),
             };
         }
+        // Keep the ROM import outcome authoritative even when its language setting is autosaved.
+        let import_result_status = imported.as_ref().map(|_| self.status.clone());
         let busy = self.rx.is_some();
         let dropped = ctx.input(|input| input.raw.dropped_files.clone());
         if !dropped.is_empty() {
@@ -219,6 +221,8 @@ impl eframe::App for App {
                         if busy || !self.options.enter_ini(&self.root, &mut self.status) { self.tab=previous; }
                     } else if self.tab > 0 { self.options.select_page(self.tab - 1); }
                     else { self.options.cancel_capture(); }
+                    // Only clear the previous tab notification after a successful switch.
+                    if self.tab != previous { self.status.clear(); }
                 }
             });
             ui.add_space(10.0);
@@ -366,6 +370,7 @@ impl eframe::App for App {
         });
             if let Some(target) = self.pending_ini_tab {
                 egui::Window::new(tr("settings.ini_confirm_title"))
+                    .title_bar(false)
                     .collapsible(false)
                     .resizable(false)
                     .anchor(egui::Align2::CENTER_CENTER, egui::Vec2::ZERO)
@@ -401,6 +406,10 @@ impl eframe::App for App {
         if settings_changed && !self.options.has_changes()
             && self.status == tr("settings.auto_saved") {
             self.status = tr("settings.auto_saved_next_launch").into();
+        }
+        if let Some(import_status) = import_result_status {
+            // Autosaving the imported language must not hide the import result.
+            self.status = import_status;
         }
         if let Some((code, root)) = self.options.take_language_request() { self.import_game_language(code, root, ctx); }
         // Status changes made by widgets are reflected in the footer on the next frame.
