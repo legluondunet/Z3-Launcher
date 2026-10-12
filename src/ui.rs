@@ -254,7 +254,19 @@ impl eframe::App for App {
                 }
                 ui.separator();
                 ui.label(tr("text.working_directory_full_path"));
-                ui.add_enabled(!crate::platform::is_portable(), egui::TextEdit::singleline(&mut self.root).desired_width(f32::INFINITY)).on_hover_text(tr("help.launcher.workspace"));
+                // In portable mode the workspace is immutable: show a concise path,
+                // while keeping the complete path accessible on hover.
+                if crate::platform::is_portable() {
+                    let full = self.root.as_str();
+                    let abbreviated = if full.chars().count() > 100 {
+                        format!("…{}", full.chars().rev().take(99).collect::<String>().chars().rev().collect::<String>())
+                    } else { full.to_owned() };
+                    ui.add_sized([ui.available_width(), 28.0], egui::Label::new(abbreviated).truncate())
+                        .on_hover_text(full);
+                } else {
+                    ui.add(egui::TextEdit::singleline(&mut self.root).desired_width(f32::INFINITY))
+                        .on_hover_text(tr("help.launcher.workspace"));
+                }
                 ui.label(tr("text.drop_your_sfc_or_smc_rom_here_or_select"));
                 ui.horizontal(|ui| {
                     let width = (ui.available_width() - 140.0).max(80.0);
