@@ -200,7 +200,7 @@
     "text.window_scale": "Fensterskalierung",
     "text.window_size_auto_or_widthxheight": "Fenstergröße (Auto oder BreitexHöhe)",
     "text.windowed": "Fenstermodus",
-    "text.working_directory_full_path": "Arbeitsverzeichnis (vollständiger Pfad)",
+    "text.working_directory_full_path": "Arbeitsverzeichnis",
     "translations.ignored": "Übersetzung ignoriert: {path} ({error})",
     "game_language.unsupported": "Nicht unterstützte Spielsprache.",
     "game_language.resources_missing": "Die erwartete Dialog-, Schrift- oder Ressourcendatei wurde nicht erzeugt.",
