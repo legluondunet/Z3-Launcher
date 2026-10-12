@@ -341,6 +341,7 @@ impl Options {
                 crate::theme::gold_scrollbar(ui);
                 egui::ScrollArea::vertical()
                     .id_salt(("options-scroll", self.page))
+                    .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
                     .auto_shrink([false, false])
                     .max_height(ui.available_height())
                     .show(ui, |ui| {
