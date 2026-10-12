@@ -37,6 +37,9 @@ pub fn apply(ctx: &egui::Context) {
     style.spacing.item_spacing = egui::vec2(12.0, 10.0);
     style.spacing.button_padding = egui::vec2(16.0, 8.0);
     style.spacing.interact_size.y = 32.0;
+    // Delay help popups so passing over controls does not obscure neighboring fields.
+    style.interaction.tooltip_delay = 0.65;
+    style.interaction.tooltip_grace_time = 0.20;
     let family = FontFamily::Name("parchment".into());
     style.text_styles.insert(egui::TextStyle::Heading, FontId::new(28.0, family.clone()));
     style.text_styles.insert(egui::TextStyle::Body, FontId::new(14.0, family.clone()));
