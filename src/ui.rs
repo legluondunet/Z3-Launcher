@@ -167,7 +167,9 @@ impl eframe::App for App {
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     if busy { ui.spinner(); }
-                    ui.add(egui::Label::new(egui::RichText::new(&displayed_status).size(13.0).color(theme::GOLD)).wrap());
+                    // Keep the status bar compact even when a log message contains a long path.
+                    ui.add(egui::Label::new(egui::RichText::new(&displayed_status).size(13.0).color(theme::GOLD)).truncate())
+                        .on_hover_text(&displayed_status);
                 });
                 if let Some(version)=&self.updates.launcher {
                     ui.hyperlink_to(tf("updates.launcher", &[("version", version.clone())]),
