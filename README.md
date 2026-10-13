@@ -62,6 +62,17 @@ Z3-Launcher/
 
 Portable mode does not automatically move data from an existing non-portable installation. See [WINDOWS.md](WINDOWS.md).
 
+### Portable mode (native Linux binary)
+
+Extract the Linux `.tar.gz` archive into a writable directory. Create an **empty file** named `portable.txt` alongside the extracted `z3-launcher` executable:
+
+```bash
+touch portable.txt
+./z3-launcher
+```
+
+The marker must be next to the executable, not merely in the current working directory. The launcher stores game data in the adjacent `Z3-Launcher/` directory and preferences in `Z3-Launcher/config/`. Without this marker, it uses the normal XDG data and configuration directories. Existing data is not moved automatically.
+
 ### Portable mode (Linux AppImage)
 
 Place an empty `portable.txt` next to the `.AppImage` file to use an adjacent `Z3-Launcher` data directory. Alternatively, create a directory whose name is the **full AppImage filename followed by `.home`** (for example `Z3-Launcher-1.1.0-x86_64.AppImage.home`): this uses AppImage portable-home mode, which takes precedence over `portable.txt`. Keep the AppImage and its matching `.home` directory together when moving them. Restart the launcher after changing modes. Existing data is not migrated automatically. See [APPIMAGE.md](APPIMAGE.md).
