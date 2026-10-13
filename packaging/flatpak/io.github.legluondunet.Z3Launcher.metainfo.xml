@@ -19,6 +19,9 @@
   </categories>
   <launchable type="desktop-id">io.github.legluondunet.Z3Launcher.desktop</launchable>
   <releases>
+    <release version="1.1.0" date="2026-10-13">
+      <description><p>Automatically detect the system language on first launch, fall back to English for unsupported languages, and preserve manual language preferences.</p></description>
+    </release>
     <release version="1.0.0" date="2026-10-12">
       <description><p>First stable release with the validated forest interface and Linux and Windows packages.</p></description>
     </release>
