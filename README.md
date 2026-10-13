@@ -18,24 +18,24 @@ Z3-Launcher is a Rust desktop application for [legluondunet/zelda3](https://gith
 - **Install and play:** select a compatible US ROM, download the latest game release, extract assets locally, and launch Zelda 3.
 - **Safe game updates:** verify downloads with SHA-256 checksums, regenerate game resources, and preserve existing configuration, save files, MSU music packs and imported languages. Failed file replacements are rolled back.
 - **Graphical settings:** adjust gameplay, graphics, audio, keyboard bindings, gamepad controls and shortcuts without manually editing the INI file.
-- **Built-in INI editor:** edit `zelda3.ini` directly. Changes are saved when leaving the tab, with validation and status feedback.
-- **Automatic settings saves:** valid changes are saved automatically and applied on the next game launch.
+- **Built-in INI editor:** edit `zelda3.ini` directly. When leaving the tab with unsaved changes, a confirmation dialog lets you save, discard or continue editing; the editor includes line numbers and INI syntax highlighting.
+- **Automatic settings saves:** changes made through the graphical settings controls are saved automatically and applied on the next game launch.
 - **Input configuration:** assign keyboard shortcuts and SDL gamepad bindings, capture inputs, and restore default controller bindings.
 - **Graphics customization:** choose display and fullscreen modes, rendering options, Link sprites and compatible OpenGL `.glsl` / `.glslp` shaders.
 - **Multilingual interface:** English, French, German, Spanish and Italian. Importing a supported game-language ROM is a separate feature and does not change the interface language.
 - **Portable installations:** keep game files and preferences alongside the launcher when portable mode is enabled.
-- **Forest-inspired interface:** pixel-art background, translucent panels, and gold-accented controls.
+- **Forest-inspired interface:** pixel-art background, translucent panels, gold-accented controls and scrollbars, plus contextual messages in the status bar.
 
 ## Supported platforms
 
 | Platform | Distribution |
 | --- | --- |
 | Windows x86_64 | Standalone `z3-launcher.exe` |
-| Linux x86_64 | Native binary |
+| Linux x86_64 | Native binary (CI build temporarily disabled) |
 | Linux x86_64 | AppImage |
-| Linux x86_64 | Flatpak (experimental; not yet validated) |
+| Linux x86_64 | Flatpak (experimental; CI build temporarily disabled) |
 
-Build artifacts are available from [GitHub Actions](https://github.com/legluondunet/Z3-Launcher/actions). Published versions are listed under [Releases](https://github.com/legluondunet/Z3-Launcher/releases).
+Windows and AppImage CI builds are currently enabled; native Linux and experimental Flatpak CI builds are temporarily disabled. Build artifacts are available from [GitHub Actions](https://github.com/legluondunet/Z3-Launcher/actions). Published versions are listed under [Releases](https://github.com/legluondunet/Z3-Launcher/releases).
 
 ## Quick start
 
