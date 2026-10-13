@@ -152,7 +152,7 @@ mod tests {
         assert_eq!(initial_language(None, Some("pt_BR.UTF-8")), "en");
         assert_eq!(initial_language(None, None), "en");
         assert_eq!(initial_language(Some("en"), Some("fr_FR")), "en");
-        assert_eq!(initial_language(Some("fr\\n"), Some("de_DE")), "fr");
+        assert_eq!(initial_language(Some("fr\n"), Some("de_DE")), "fr");
         assert_eq!(initial_language(Some("pt"), Some("fr_FR")), "en");
     }
     #[test] fn partial_catalog_and_bad_placeholders_are_safe() {
