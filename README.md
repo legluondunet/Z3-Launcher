@@ -1,17 +1,11 @@
-<img width="1251" height="863" alt="image" src="https://github.com/user-attachments/assets/a6901e13-d0d5-4623-80f5-80348b4523a0" /># Z3-Launcher
-
 **A graphical Zelda 3 installer, updater and configuration manager for Linux and Windows.**
+
+<img width="1251" height="863" alt="image" src="https://github.com/user-attachments/assets/a6901e13-d0d5-4623-80f5-80348b4523a0" /># Z3-Launcher
 
 [![Native builds](https://github.com/legluondunet/Z3-Launcher/actions/workflows/build.yml/badge.svg?branch=feature%2Fvalidated-forest-ui)](https://github.com/legluondunet/Z3-Launcher/actions/workflows/build.yml)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 
-Z3-Launcher is a Rust desktop application for [legluondunet/zelda3](https://github.com/legluondunet/zelda3), based on the [snesrev/zelda3](https://github.com/snesrev/zelda3) project. It downloads prebuilt game releases, extracts the required assets from **your own ROM**, and provides a graphical interface for configuring and launching the game.
-
-**No compiler, Git checkout, system Python or command-line setup is needed to play.**
-
-<img width="1251" height="863" alt="image" src="https://github.com/user-attachments/assets/79d68b74-5015-4859-867e-4388becf2713" />
-
-*The forest artwork used by the launcher. A full application screenshot will be added here.*
+Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.com/legluondunet/zelda3), based on the [Zelda 3 Launcher](https://github.com/RadzPrower/Zelda-3-Launcher) project code to manage [snesrev/zelda3](https://github.com/snesrev/zelda3) game. It downloads prebuilt Zelda 3 releases, extracts the required assets from **your own ROM**, and provides a graphical interface for configuring and launching the game.
 
 ## Features
 
@@ -35,7 +29,6 @@ Z3-Launcher is a Rust desktop application for [legluondunet/zelda3](https://gith
 | Linux x86_64 | AppImage |
 | Linux x86_64 | Flatpak (experimental; not yet validated) |
 
-Build artifacts are available from [GitHub Actions](https://github.com/legluondunet/Z3-Launcher/actions). Published versions are listed under [Releases](https://github.com/legluondunet/Z3-Launcher/releases).
 
 ## Quick start
 
