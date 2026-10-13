@@ -4,7 +4,7 @@ All notable Z3-Launcher changes, from the original source import to the latest d
 
 ## Scope and version numbering
 
-This history covers the original C#/WinForms source supplied for the port, the archived Rust development notes, and every Git commit reachable from `feature/validated-forest-ui` through [efbad1a](https://github.com/legluondunet/Z3-Launcher/commit/efbad1a83f12694c79ba1ebacef9028040cb358d).
+This history covers the original C#/WinForms source supplied for the port, the archived Rust development notes, and the GitHub development history. The original detailed commit inventory below runs through [efbad1a](https://github.com/legluondunet/Z3-Launcher/commit/efbad1a83f12694c79ba1ebacef9028040cb358d); subsequent work is summarized in the October 2026 continuation section.
 
 The original preparation-build numbering is preserved below. The later proposed 0.1.0 / 0.2.0 / 0.3.0 / 1.0.0 milestone scheme is not used.
 
@@ -104,7 +104,7 @@ These preparation-build numbers come from the archived development notes. They a
 - Applied the validated forest interface and corrected layout, compilation, autosave and translation issues.
 - Updated the English README through 2026-10-09.
 
-The complete commit-by-commit record below lists every GitHub change. All of these changes retained package version 0.11.16; no 0.11.17 or 1.0.0 is claimed here.
+The historical commit-by-commit inventory below covers the initial GitHub development period through efbad1a; later changes are summarized separately. All of these changes retained package version 0.11.16; no 0.11.17 or 1.0.0 is claimed here.
 
 ### Flatpak packaging (experimental; version 0.11.16 retained)
 
@@ -112,6 +112,33 @@ The complete commit-by-commit record below lists every GitHub change. All of the
 - Added AppStream metadata with a release summary and a version check against Cargo.toml.
 - Included the project changelog in the Flatpak documentation files.
 - Flatpak functionality, especially launching the separately downloaded Zelda 3 AppImage inside the sandbox, remains to be validated before publication.
+
+## October 2026 continuation — 0.11.16 (unreleased)
+
+The following changes were made after the original detailed inventory. The Cargo package version remains **0.11.16**; these are development commits, not separate published releases.
+
+### INI editor and save confirmation
+- Reworked the built-in `zelda3.ini` editor with syntax coloring, line numbers, a fixed gold border, dark forest-green background and gold scrollbar.
+- Removed the redundant Save button. When leaving the INI tab with unsaved edits, the launcher asks whether to keep the changes, discard them or continue editing.
+- Moved the INI editing explanation into the status bar, displayed as a default hint only on the INI tab. Unsaved-change and save-result notifications remain available.
+- Improved editor scrolling, status messages and handling of configuration edits.
+
+### Controls, shortcuts and visual consistency
+- Standardized the appearance of checked and unchecked options and made scrollbars gold across settings tabs.
+- Made gamepad mapping dropdowns uniformly wide enough for the longest D-pad labels.
+- Reworked the keyboard and gamepad control layout into two aligned groups with a dedicated gold divider and horizontal overflow handling; refined column widths and vertical spacing.
+- Moved the explanation of independent keyboard and gamepad shortcuts into the status bar as a shortcut-tab-only default hint.
+- Continued adjustments for translations and different window sizes. The final control spacing remains subject to visual validation.
+
+### Builds, version identification and packaging
+- Added a build-time Git commit identifier alongside the application version.
+- Temporarily disabled native Linux and experimental Flatpak CI jobs while preserving their workflow definitions.
+- Subsequently re-enabled Windows CI builds alongside AppImage builds. Current automatic build targets are **Windows and AppImage**.
+- Kept `0.11.16` as the package version throughout these iterations.
+
+### Documentation
+- Refreshed the README to describe the confirmation dialog for unsaved INI edits, current visual features and enabled/disabled CI packages.
+- Updated this changelog without changing the application version or publishing a release.
 
 ## Detailed change inventory
 
