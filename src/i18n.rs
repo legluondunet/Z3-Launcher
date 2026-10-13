@@ -15,7 +15,7 @@ fn selection() -> &'static RwLock<String> { CURRENT.get_or_init(||RwLock::new("e
 fn preference() -> PathBuf { crate::platform::config_dir().join("language.txt") }
 
 fn supported_system_language(locale: &str) -> Option<&'static str> {
-    let language = locale.trim().split(['_', '-', '.','@']).next()?.to_ascii_lowercase();
+    let language = locale.trim().split(['_', '-', '.','@']).next()?.trim().to_ascii_lowercase();
     match language.as_str() {
         "en" => Some("en"), "fr" => Some("fr"), "de" => Some("de"),
         "es" => Some("es"), "it" => Some("it"), _ => None,
