@@ -13,6 +13,43 @@ static CATALOG:OnceLock<Catalog>=OnceLock::new();
 static CURRENT:OnceLock<RwLock<String>>=OnceLock::new();
 fn selection() -> &'static RwLock<String> { CURRENT.get_or_init(||RwLock::new("en".into())) }
 fn preference() -> PathBuf { crate::platform::config_dir().join("language.txt") }
+
+fn supported_system_language(locale: &str) -> Option<&'static str> {
+    let language = locale.trim().split(['_', '-', '.','@']).next()?.to_ascii_lowercase();
+    match language.as_str() {
+        "en" => Some("en"), "fr" => Some("fr"), "de" => Some("de"),
+        "es" => Some("es"), "it" => Some("it"), _ => None,
+    }
+}
+
+#[cfg(windows)]
+fn system_locale() -> Option<String> {
+    // Read the Windows display locale, independently of the process environment.
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn GetUserDefaultLocaleName(locale_name: *mut u16, locale_name_count: i32) -> i32;
+    }
+    let mut buffer = [0u16; 85];
+    let count = unsafe { GetUserDefaultLocaleName(buffer.as_mut_ptr(), buffer.len() as i32) };
+    if count <= 1 { return None; }
+    String::from_utf16(&buffer[..(count as usize - 1)]).ok()
+}
+
+#[cfg(not(windows))]
+fn system_locale() -> Option<String> {
+    ["LC_ALL", "LC_MESSAGES", "LANG"].iter()
+        .filter_map(|key| std::env::var(key).ok())
+        .find(|value| !value.trim().is_empty())
+}
+
+fn initial_language(saved: Option<&str>, system: Option<&str>) -> &'static str {
+    if let Some(saved) = saved {
+        // A manually saved preference always takes precedence.
+        return supported_system_language(saved).unwrap_or("en");
+    }
+    system.and_then(supported_system_language).unwrap_or("en")
+}
+
 fn placeholders(text:&str) -> Vec<String> {
     let mut names=Vec::new();let mut remaining=text;
     while let Some(start)=remaining.find('{') {
@@ -67,8 +104,11 @@ fn catalog() -> &'static Catalog {
     })
 }
 pub fn init() {
-    let c=catalog();let saved=fs::read_to_string(preference()).unwrap_or_else(|_|"en".into());
-    let code=if c.locales.contains_key(saved.trim()) {saved.trim()}else{"en"};
+    let c=catalog();
+    let saved=fs::read_to_string(preference()).ok();
+    let detected=if saved.is_none() {system_locale()} else {None};
+    let code=initial_language(saved.as_deref(), detected.as_deref());
+    let code=if c.locales.contains_key(code) {code}else{"en"};
     *selection().write().unwrap_or_else(|e|e.into_inner())=code.to_owned();
 }
 pub fn current() -> String {selection().read().unwrap_or_else(|e|e.into_inner()).clone()}
@@ -104,6 +144,17 @@ fn format_template(template:&str,values:&[(&str,String)]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test] fn system_locale_and_saved_preference() {
+        assert_eq!(initial_language(None, Some("fr_FR.UTF-8")), "fr");
+        assert_eq!(initial_language(None, Some("de-DE")), "de");
+        assert_eq!(initial_language(None, Some("es_ES@euro")), "es");
+        assert_eq!(initial_language(None, Some("it_IT")), "it");
+        assert_eq!(initial_language(None, Some("pt_BR.UTF-8")), "en");
+        assert_eq!(initial_language(None, None), "en");
+        assert_eq!(initial_language(Some("en"), Some("fr_FR")), "en");
+        assert_eq!(initial_language(Some("fr\\n"), Some("de_DE")), "fr");
+        assert_eq!(initial_language(Some("pt"), Some("fr_FR")), "en");
+    }
     #[test] fn partial_catalog_and_bad_placeholders_are_safe() {
         let baseline=BTreeMap::from([("greeting".into(),"Hello {name}".into()),("save".into(),"Save".into())]);
         let mut locales=BTreeMap::new();
