@@ -4,20 +4,27 @@ All notable Z3-Launcher changes, from the original source import to the latest d
 
 ## Scope and version numbering
 
-This history covers the original C#/WinForms source supplied for the port, the archived Rust development notes, and every Git commit reachable from `feature/validated-forest-ui` through [efbad1a](https://github.com/legluondunet/Z3-Launcher/commit/efbad1a83f12694c79ba1ebacef9028040cb358d).
+This history covers the original C#/WinForms source supplied for the port, the archived Rust development notes, and the initial GitHub commit inventory through [efbad1a](https://github.com/legluondunet/Z3-Launcher/commit/efbad1a83f12694c79ba1ebacef9028040cb358d).
 
 The original preparation-build numbering is preserved below. The historical preparation-build numbers remain unchanged. Version 1.0.0 marks the first stable release.
 
-The first expanded source import on GitHub, [b83ca1b](https://github.com/legluondunet/Z3-Launcher/commit/b83ca1b9d192fd83ba444230c7f6ffdb47642706), already declared **0.11.16** in `Cargo.toml`. That package version is still unchanged at the covered revision. GitHub changes are therefore recorded under 0.11.16, with commit references rather than invented version increments. No GitHub releases or tag refs were found when checked on 2026-10-10. Workflow artifacts are development builds, not published releases.
+The first expanded source import on GitHub, [b83ca1b](https://github.com/legluondunet/Z3-Launcher/commit/b83ca1b9d192fd83ba444230c7f6ffdb47642706), declared **0.11.16**. That number is preserved for the historical development period; the current package version is **1.0.0**. The first stable release was published on 2026-10-13 (French local time).
 
-This documentation change does not alter Cargo's version, create tags or publish a release.
+This documentation update does not change the existing release, its tag or Cargo's version.
 
 ## 1.0.0 — 2026-10-13
 
-- Release the validated forest interface for Linux and Windows.
-- Center separators across tabs and show complete shortcut labels with aligned fields.
-- Restore native Linux and Flatpak builds alongside Windows and AppImage.
-- Publish release assets only after all four build jobs succeed on main.
+**First stable release:** [Z3-Launcher v1.0.0](https://github.com/legluondunet/Z3-Launcher/releases/tag/v1.0.0), published 2026-10-12 at 23:02 UTC (2026-10-13 in France), from commit [`39eddcd`](https://github.com/legluondunet/Z3-Launcher/commit/39eddcd1bc274803130ffbcda5d16810f55f3d72).
+
+- First stable Linux and Windows release, with the validated forest-themed graphical interface and gold controls.
+- Install and update prebuilt Zelda 3 packages, extracting assets locally from a compatible user-provided ROM.
+- Configure gameplay, graphics, audio, keyboard, gamepad, shortcuts and `zelda3.ini`; automatic saves for graphical settings and contextual status messages.
+- Improve layout consistency, centered gold dividers, scrolling settings and readable shortcut labels.
+- Five interface languages: English, French, German, Spanish and Italian.
+- Published Windows x86_64 ZIP, Linux x86_64 TAR.GZ, AppImage, experimental Flatpak and AppImage SHA-256 checksum.
+- Preserve original authorship and license notices; new project work uses GPL-3.0-or-later.
+
+No Nintendo ROMs or copyrighted game assets are included.
 
 ## Version history
 
@@ -111,14 +118,14 @@ These preparation-build numbers come from the archived development notes. They a
 - Applied the validated forest interface and corrected layout, compilation, autosave and translation issues.
 - Updated the English README through 2026-10-09.
 
-The complete commit-by-commit record below lists every GitHub change. All of these changes retained package version 0.11.16; no 0.11.17 or 1.0.0 is claimed here.
+The historical commit-by-commit record below covers the initial development period through efbad1a. These commits retained package version 0.11.16; the later stable 1.0.0 release is documented above.
 
-### Flatpak packaging (experimental; version 0.11.16 retained)
+### Flatpak packaging (experimental; initially developed under 0.11.16)
 
 - Added a Flatpak manifest, desktop entry and GitHub Actions build workflow for an experimental Linux Flatpak bundle.
 - Added AppStream metadata with a release summary and a version check against Cargo.toml.
 - Included the project changelog in the Flatpak documentation files.
-- Flatpak functionality, especially launching the separately downloaded Zelda 3 AppImage inside the sandbox, remains to be validated before publication.
+- An experimental Flatpak bundle was subsequently included in the published 1.0.0 release; compatibility with separately downloaded game executables remains an area to validate.
 
 ## Detailed change inventory
 
