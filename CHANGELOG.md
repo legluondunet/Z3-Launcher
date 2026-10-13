@@ -8,9 +8,16 @@ This history covers the original C#/WinForms source supplied for the port, the a
 
 The original preparation-build numbering is preserved below. The historical preparation-build numbers remain unchanged. Version 1.0.0 marks the first stable release.
 
-The first expanded source import on GitHub, [b83ca1b](https://github.com/legluondunet/Z3-Launcher/commit/b83ca1b9d192fd83ba444230c7f6ffdb47642706), declared **0.11.16**. That number is preserved for the historical development period; the current package version is **1.0.0**. The first stable release was published on 2026-10-13 (French local time).
+The first expanded source import on GitHub, [b83ca1b](https://github.com/legluondunet/Z3-Launcher/commit/b83ca1b9d192fd83ba444230c7f6ffdb47642706), declared **0.11.16**. That number is preserved for the historical development period; the first stable package version was **1.0.0**. The first stable release was published on 2026-10-13 (French local time).
 
-This documentation update does not change the existing release, its tag or Cargo's version.
+Release 1.1.0 introduces automatic system-language detection while retaining the existing 1.0.0 release and historical tags.
+
+## 1.1.0 — 2026-10-13
+
+- Detect the operating system language automatically on first launch (Windows and Linux).
+- Select English, French, German, Spanish or Italian when supported; fall back to English for unsupported system languages.
+- Keep the language selected manually by the user across restarts.
+- Improve saved-language whitespace handling and locale-detection regression tests.
 
 ## 1.0.0 — 2026-10-13
 
