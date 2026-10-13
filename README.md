@@ -33,6 +33,39 @@ Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.co
 
 Download the published **[latest Z3-Launcher release](https://github.com/legluondunet/Z3-Launcher/releases/latest)** (Windows ZIP, Linux native TAR.GZ, AppImage or experimental Flatpak). Release archives include the launcher; a compatible user-provided ROM is still required to install the game.
 
+## Installation and portable mode
+
+Download the package for your system from the [latest release](https://github.com/legluondunet/Z3-Launcher/releases/latest).
+
+### Flatpak (Linux, experimental)
+
+Install Flatpak first using your distribution's package manager, then install the downloaded bundle (replace the filename with the one you downloaded):
+
+```bash
+flatpak install --user ./Z3-Launcher-x86_64.flatpak
+flatpak run io.github.legluondunet.Z3Launcher
+```
+
+The bundle is an experimental distribution format; the separately downloaded Zelda 3 game may require additional Flatpak sandbox permissions depending on your system.
+
+### Portable mode (Windows)
+
+Extract the Windows ZIP into a writable folder. Create an **empty file** named `portable.txt` next to `z3-launcher.exe` (make sure Windows does not name it `portable.txt.txt`). Restart the launcher. It will use the adjacent `Z3-Launcher` directory for game data and configuration:
+
+```text
+Z3-Launcher/
+├── z3-launcher.exe
+├── portable.txt
+└── Z3-Launcher/
+    └── config/
+```
+
+Portable mode does not automatically move data from an existing non-portable installation. See [WINDOWS.md](WINDOWS.md).
+
+### Portable mode (Linux AppImage)
+
+Place an empty `portable.txt` next to the `.AppImage` file to use an adjacent `Z3-Launcher` data directory. Alternatively, create a directory whose name is the **full AppImage filename followed by `.home`** (for example `Z3-Launcher-1.1.0-x86_64.AppImage.home`): this uses AppImage portable-home mode, which takes precedence over `portable.txt`. Keep the AppImage and its matching `.home` directory together when moving them. Restart the launcher after changing modes. Existing data is not migrated automatically. See [APPIMAGE.md](APPIMAGE.md).
+
 ## Quick start
 
 1. Download Z3-Launcher for your operating system.
@@ -74,7 +107,7 @@ Use `--dir DIRECTORY` to choose a different workspace. See [WINDOWS.md](WINDOWS.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for the development history and the published 1.0.0 release. The experimental Flatpak includes AppStream release notes, with its version checked against `Cargo.toml` by `tools/sync-flatpak-version.py`.
+See [CHANGELOG.md](CHANGELOG.md) for the development history and release notes. The experimental Flatpak includes AppStream release notes, with its version checked against `Cargo.toml` by `tools/sync-flatpak-version.py`.
 
 ## Translations
 
