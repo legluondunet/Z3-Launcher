@@ -75,7 +75,7 @@ jobs:
       - name: Package native Linux build
         run: |
           mkdir -p dist
-          tar -czf dist/Z3-Launcher-1.0.0-linux-x86_64.tar.gz \
+          tar -czf dist/Z3-Launcher-1.1.0-linux-x86_64.tar.gz \
             -C target/release z3-launcher -C "$GITHUB_WORKSPACE" \
             locales LICENSE LICENSE-MIT-original LICENSING.md assets/DejaVu-LICENSE.txt
       - uses: actions/upload-artifact@v4
@@ -128,17 +128,17 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: release-artifacts
-      - name: Publish version 1.0.0
+      - name: Publish version 1.1.0
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
-          if [ "$version" != "1.0.0" ]; then
-            echo "Release publication only applies to version 1.0.0."
+          if [ "$version" != "1.1.0" ]; then
+            echo "Release publication only applies to version 1.1.0."
             exit 0
           fi
-          if gh release view v1.0.0 >/dev/null 2>&1; then
-            echo "Release v1.0.0 already exists; leaving it unchanged."
+          if gh release view v1.1.0 >/dev/null 2>&1; then
+            echo "Release v1.1.0 already exists; leaving it unchanged."
             exit 0
           fi
           mkdir -p release-assets
@@ -147,8 +147,8 @@ jobs:
           cp release-artifacts/z3-launcher-flatpak-x86_64-experimental/*.flatpak release-assets/
           (
             cd release-artifacts/z3-launcher-windows
-            zip -r ../../release-assets/Z3-Launcher-1.0.0-windows-x86_64.zip .
+            zip -r ../../release-assets/Z3-Launcher-1.1.0-windows-x86_64.zip .
           )
-          gh release create v1.0.0 release-assets/* \
-            --target "$GITHUB_SHA" --title "Z3-Launcher 1.0.0" \
-            --notes-file RELEASE_NOTES_1.0.md
+          gh release create v1.1.0 release-assets/* \
+            --target "$GITHUB_SHA" --title "Z3-Launcher 1.1.0" \
+            --notes-file RELEASE_NOTES_1.1.md
