@@ -17,7 +17,7 @@ Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.co
 - **Automatic settings saves:** valid changes made through the graphical settings controls are saved automatically and applied on the next game launch.
 - **Input configuration:** assign keyboard shortcuts and SDL gamepad bindings, capture inputs, and restore default controller bindings.
 - **Graphics customization:** choose display and fullscreen modes, rendering options, Link sprites and compatible OpenGL `.glsl` / `.glslp` shaders.
-- **Multilingual interface:** English, French, German, Spanish and Italian. Importing a supported game-language ROM is a separate feature and does not change the interface language.
+- **Multilingual interface:** English, French, German, Spanish and Italian, with automatic system-language detection on first launch and English fallback. Importing a supported game-language ROM is a separate feature and does not change the interface language.
 - **Portable installations:** keep game files and preferences alongside the launcher when portable mode is enabled.
 - **Forest-inspired interface:** pixel-art background, translucent panels, gold-accented controls and scrollbars.
 
@@ -31,7 +31,7 @@ Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.co
 | Linux x86_64 | Flatpak (experimental) |
 
 
-Download the published **[Z3-Launcher 1.0.0 release](https://github.com/legluondunet/Z3-Launcher/releases/tag/v1.0.0)** (Windows ZIP, Linux native TAR.GZ, AppImage or experimental Flatpak). Release archives include the launcher; a compatible user-provided ROM is still required to install the game.
+Download the published **[latest Z3-Launcher release](https://github.com/legluondunet/Z3-Launcher/releases/latest)** (Windows ZIP, Linux native TAR.GZ, AppImage or experimental Flatpak). Release archives include the launcher; a compatible user-provided ROM is still required to install the game.
 
 ## Quick start
 
