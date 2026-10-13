@@ -1,4 +1,4 @@
-# Z3-Launcher
+<img width="1251" height="863" alt="image" src="https://github.com/user-attachments/assets/a6901e13-d0d5-4623-80f5-80348b4523a0" /># Z3-Launcher
 
 **A graphical Zelda 3 installer, updater and configuration manager for Linux and Windows.**
 
@@ -9,7 +9,7 @@ Z3-Launcher is a Rust desktop application for [legluondunet/zelda3](https://gith
 
 **No compiler, Git checkout, system Python or command-line setup is needed to play.**
 
-![Forest-themed interface artwork](assets/forest-frame.png)
+<img width="1251" height="863" alt="image" src="https://github.com/user-attachments/assets/79d68b74-5015-4859-867e-4388becf2713" />
 
 *The forest artwork used by the launcher. A full application screenshot will be added here.*
 
