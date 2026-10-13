@@ -1,7 +1,7 @@
 # Z3-Launcher
 **A graphical Zelda 3 installer, updater and configuration manager for Linux and Windows.**
 
-[![Native builds](https://github.com/legluondunet/Z3-Launcher/actions/workflows/build.yml/badge.svg?branch=feature%2Fvalidated-forest-ui)](https://github.com/legluondunet/Z3-Launcher/actions/workflows/build.yml)
+[![Native builds](https://github.com/legluondunet/Z3-Launcher/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/legluondunet/Z3-Launcher/actions/workflows/build.yml)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 
 Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.com/legluondunet/zelda3), based on the [Zelda 3 Launcher](https://github.com/RadzPrower/Zelda-3-Launcher) project code to manage [snesrev/zelda3](https://github.com/snesrev/zelda3) game. It downloads prebuilt Zelda 3 releases, extracts the required assets from **your own ROM**, and provides a graphical interface for configuring and launching the game.
@@ -13,13 +13,13 @@ Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.co
 - **Install and play:** select a compatible US ROM, download the latest game release, extract assets locally, and launch Zelda 3.
 - **Safe game updates:** verify downloads with SHA-256 checksums, regenerate game resources, and preserve existing configuration, save files, MSU music packs and imported languages. Failed file replacements are rolled back.
 - **Graphical settings:** adjust gameplay, graphics, audio, keyboard bindings, gamepad controls and shortcuts without manually editing the INI file.
-- **Built-in INI editor:** edit `zelda3.ini` directly. Changes are saved when leaving the tab, with validation and status feedback.
-- **Automatic settings saves:** valid changes are saved automatically and applied on the next game launch.
+- **Built-in INI editor:** edit `zelda3.ini` directly. When leaving the tab with unsaved changes, choose whether to save, discard or continue editing. The editor provides syntax highlighting, line numbers and status feedback.
+- **Automatic settings saves:** valid changes made through the graphical settings controls are saved automatically and applied on the next game launch.
 - **Input configuration:** assign keyboard shortcuts and SDL gamepad bindings, capture inputs, and restore default controller bindings.
 - **Graphics customization:** choose display and fullscreen modes, rendering options, Link sprites and compatible OpenGL `.glsl` / `.glslp` shaders.
 - **Multilingual interface:** English, French, German, Spanish and Italian. Importing a supported game-language ROM is a separate feature and does not change the interface language.
 - **Portable installations:** keep game files and preferences alongside the launcher when portable mode is enabled.
-- **Forest-inspired interface:** pixel-art background, translucent panels, and gold-accented controls.
+- **Forest-inspired interface:** pixel-art background, translucent panels, gold-accented controls and scrollbars.
 
 ## Supported platforms
 
@@ -28,8 +28,10 @@ Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.co
 | Windows x86_64 | Standalone `z3-launcher.exe` |
 | Linux x86_64 | Native binary |
 | Linux x86_64 | AppImage |
-| Linux x86_64 | Flatpak (experimental; not yet validated) |
+| Linux x86_64 | Flatpak (experimental) |
 
+
+Download the published **[Z3-Launcher 1.0.0 release](https://github.com/legluondunet/Z3-Launcher/releases/tag/v1.0.0)** (Windows ZIP, Linux native TAR.GZ, AppImage or experimental Flatpak). Release archives include the launcher; a compatible user-provided ROM is still required to install the game.
 
 ## Quick start
 
@@ -72,7 +74,7 @@ Use `--dir DIRECTORY` to choose a different workspace. See [WINDOWS.md](WINDOWS.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for the development history. The experimental Flatpak includes AppStream release notes, with its version checked against `Cargo.toml` by `tools/sync-flatpak-version.py`.
+See [CHANGELOG.md](CHANGELOG.md) for the development history and the published 1.0.0 release. The experimental Flatpak includes AppStream release notes, with its version checked against `Cargo.toml` by `tools/sync-flatpak-version.py`.
 
 ## Translations
 
