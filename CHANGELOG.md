@@ -8,9 +8,24 @@ This history covers the original C#/WinForms source supplied for the port, the a
 
 The original preparation-build numbering is preserved below. The later proposed 0.1.0 / 0.2.0 / 0.3.0 / 1.0.0 milestone scheme is not used.
 
-The first expanded source import on GitHub, [b83ca1b](https://github.com/legluondunet/Z3-Launcher/commit/b83ca1b9d192fd83ba444230c7f6ffdb47642706), already declared **0.11.16** in `Cargo.toml`. That package version is still unchanged at the covered revision. GitHub changes are therefore recorded under 0.11.16, with commit references rather than invented version increments. No GitHub releases or tag refs were found when checked on 2026-10-10. Workflow artifacts are development builds, not published releases.
+The first expanded source import on GitHub, [b83ca1b](https://github.com/legluondunet/Z3-Launcher/commit/b83ca1b9d192fd83ba444230c7f6ffdb47642706), already declared **0.11.16** in `Cargo.toml`. That package version is still unchanged at the covered revision. GitHub changes are therefore recorded under 0.11.16, with commit references rather than invented version increments. The first stable GitHub release, **v1.0.0**, was published on 2026-10-13 (French local time). Earlier workflow artifacts were development builds, not published releases.
 
-This documentation change does not alter Cargo's version, create tags or publish a release.
+This documentation change does not alter Cargo's version, create tags or publish a new release.
+
+## [1.0.0] — 2026-10-13
+
+**First stable release**, published on GitHub as [v1.0.0](https://github.com/legluondunet/Z3-Launcher/releases/tag/v1.0.0) (2026-10-12 23:02 UTC).
+
+- First public stable release of Z3-Launcher for Windows and Linux.
+- Forest-themed graphical interface with gold controls, scrolling layouts and five interface languages.
+- Install and update Zelda 3 from prebuilt releases, extracting game resources locally from a compatible user-provided ROM.
+- Configure gameplay, graphics, audio, keyboard, gamepad, shortcuts and `zelda3.ini`.
+- Automatic saving for graphical settings and confirmation when leaving the INI editor with unsaved changes.
+- Centered column separators, readable shortcut labels and contextual status messages.
+- Published assets: Windows x86_64 ZIP, Linux x86_64 TAR.GZ, Linux x86_64 AppImage and experimental Flatpak, plus an AppImage SHA-256 checksum file.
+- Release built from commit [`39eddcd`](https://github.com/legluondunet/Z3-Launcher/commit/39eddcd1bc274803130ffbcda5d16810f55f3d72).
+
+A compatible ROM is required; no Nintendo ROM or copyrighted game assets are distributed. Original license notices are preserved, and new project work uses GPL-3.0-or-later.
 
 ## Version history
 
@@ -104,7 +119,7 @@ These preparation-build numbers come from the archived development notes. They a
 - Applied the validated forest interface and corrected layout, compilation, autosave and translation issues.
 - Updated the English README through 2026-10-09.
 
-The historical commit-by-commit inventory below covers the initial GitHub development period through efbad1a; later changes are summarized separately. All of these changes retained package version 0.11.16; no 0.11.17 or 1.0.0 is claimed here.
+The historical commit-by-commit inventory below covers the initial GitHub development period through efbad1a; later changes are summarized separately. These historical changes retained package version 0.11.16; the later stable 1.0.0 release is documented above.
 
 ### Flatpak packaging (experimental; version 0.11.16 retained)
 
@@ -115,7 +130,7 @@ The historical commit-by-commit inventory below covers the initial GitHub develo
 
 ## October 2026 continuation — 0.11.16 (unreleased)
 
-The following changes were made after the original detailed inventory. The Cargo package version remains **0.11.16**; these are development commits, not separate published releases.
+The following changes were made after the original detailed inventory. The Cargo package version remains **0.11.16**; these were development commits preceding the published v1.0.0 release.
 
 ### INI editor and save confirmation
 - Reworked the built-in `zelda3.ini` editor with syntax coloring, line numbers, a fixed gold border, dark forest-green background and gold scrollbar.
@@ -134,7 +149,7 @@ The following changes were made after the original detailed inventory. The Cargo
 - Added a build-time Git commit identifier alongside the application version.
 - Temporarily disabled native Linux and experimental Flatpak CI jobs while preserving their workflow definitions.
 - Subsequently re-enabled Windows CI builds alongside AppImage builds. Current automatic build targets are **Windows and AppImage**.
-- Kept `0.11.16` as the package version throughout these iterations.
+- Kept `0.11.16` as the package version during these development iterations, before the subsequent v1.0.0 release.
 
 ### Documentation
 - Refreshed the README to describe the confirmation dialog for unsaved INI edits, current visual features and enabled/disabled CI packages.
