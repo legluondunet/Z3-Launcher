@@ -17,7 +17,7 @@ impl Default for App {
         let root = if crate::platform::is_portable() {
             crate::default_root().to_string_lossy().into_owned()
         } else { fs::read_to_string(preferences()).unwrap_or_else(|_| crate::default_root().to_string_lossy().into_owned()) };
-        Self { updates_started: false, updates_rx: None, updates: crate::updates::Updates::default(), instance: None, root, rom: String::new(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0, pending_ini_tab: None }
+        Self { updates_started: false, updates_rx: None, updates: crate::updates::Updates::default(), instance: None, root, rom: Launcher::adjacent_rom().map(|path| path.to_string_lossy().into_owned()).unwrap_or_default(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0, pending_ini_tab: None }
     }
 }
 fn preferences() -> PathBuf { crate::platform::config_dir().join("workspace.txt") }
