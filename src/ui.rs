@@ -342,17 +342,25 @@ impl eframe::App for App {
                 let footer_height = ui.spacing().interact_size.y.max(
                     ui.text_style_height(&egui::TextStyle::Button) + 2.0 * ui.spacing().button_padding.y);
                 let available_journal = (ui.available_height() - footer_height - ui.spacing().item_spacing.y).max(100.0);
+                // Resize defaults to the width of its contents. Lock its width
+                // to the enclosing card and only let the user adjust height.
+                let journal_width = ui.available_width();
                 egui::Resize::default()
                     .id_salt("journal-resize")
+                    .default_width(journal_width)
+                    .min_width(journal_width)
+                    .max_width(journal_width)
                     .default_height(230.0)
                     .min_height(100.0)
                     .max_height(available_journal)
                     .resizable([false, true])
                     .show(ui, |ui| {
+                    ui.set_width(journal_width);
                     egui::Frame::new().fill(ui.visuals().extreme_bg_color)
                         .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
                         .corner_radius(egui::CornerRadius::same(4)).inner_margin(4)
                         .show(ui, |ui| {
+                        ui.set_width(ui.available_width());
                         theme::gold_scrollbar(ui);
                         egui::ScrollArea::vertical().id_salt("journal-scroll").stick_to_bottom(true)
                             .max_height((ui.available_height() - 8.0).max(24.0))
