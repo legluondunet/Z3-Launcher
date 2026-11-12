@@ -436,7 +436,19 @@ pub fn start(instance: crate::single_instance::Guard) -> eframe::Result<()> {
     eframe::run_native("Z3-Launcher", options, Box::new(move |cc| {
         theme::apply(&cc.egui_ctx);
         instance.watch_activation(&cc.egui_ctx)?;
-        let mut app=App::default(); app.instance=Some(instance); app.background=theme::background(&cc.egui_ctx);
+        let mut app = App::default();
+        app.instance = Some(instance);
+        let (background, background_diagnostics) = theme::background(&cc.egui_ctx);
+        app.background = background;
+        // Keep the selected image path and any decoding errors in launcher.log.
+        if let Ok(launcher) = Launcher::new(&app.root) {
+            if let Ok(log) = launcher.log(Arc::new(|_| {})) {
+                for message in &background_diagnostics {
+                    log(message.clone());
+                }
+            }
+        }
+        app.lines.extend(background_diagnostics);
         Ok(Box::new(app))
     }))
 }
