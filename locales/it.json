@@ -90,7 +90,7 @@
     "text.extend_height_to_240_lines": "Estendi altezza a 240 linee",
     "text.format": "Formato",
     "text.french": "Francese",
-    "text.full_log_launcher_log_in_the_working_directory": "Registro completo: launcher.log nella cartella di lavoro",
+    "text.full_log_in_working_directory": "Registro completo: Z3-Launcher.log nella cartella di lavoro",
     "text.fullscreen": "Schermo intero",
     "text.fullscreen_mode": "Modalità schermo intero",
     "text.game_language_matching_assets_required": "Lingua del gioco (richiede risorse corrispondenti)",
