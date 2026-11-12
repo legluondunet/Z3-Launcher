@@ -77,6 +77,12 @@ The marker must be next to the executable, not merely in the current working dir
 
 Place an empty `portable.txt` next to the `.AppImage` file to use an adjacent `Z3-Launcher` data directory. Alternatively, create a directory whose name is the **full AppImage filename followed by `.home`** (for example `Z3-Launcher-1.1.0-x86_64.AppImage.home`): this uses AppImage portable-home mode, which takes precedence over `portable.txt`. Keep the AppImage and its matching `.home` directory together when moving them. Restart the launcher after changing modes. Existing data is not migrated automatically. See [APPIMAGE.md](APPIMAGE.md).
 
+### Adjacent ROM and portable mode
+
+On startup, the launcher looks for a compatible US `.sfc` or `.smc` ROM next to its executable (or next to the original AppImage file). It validates the SHA-256 hash and preselects the ROM for installation. The original ROM is not modified; a copy named `zelda3.sfc` is created inside the installed `zelda3/` directory only after successful asset generation.
+
+To keep launcher-generated data beside the executable, create an empty `portable.txt` file in that same directory before starting the launcher. The game, configuration, shaders and logs will be written there or into its subdirectories. For AppImage, `portable.txt` next to the AppImage takes priority over its `.home` directory.
+
 ## Quick start
 
 1. Download Z3-Launcher for your operating system.
