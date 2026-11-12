@@ -9,14 +9,14 @@ Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.co
 <img width="1251" height="863" alt="image" src="https://github.com/user-attachments/assets/a6901e13-d0d5-4623-80f5-80348b4523a0" />
 
 
-### Custom launcher background (experimental)
+### Custom launcher background
 
 To replace the built-in forest background **without recompiling and without enabling portable mode**, place a PNG called `background.png` in a `config/` directory next to the actual executable or AppImage. Restart the launcher after replacing it.
 
 For example:
 
 ```text
-Z3-Launcher-1.0.0-x86_64.AppImage
+Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
 config/
   background.png
 ```
@@ -39,7 +39,7 @@ The first valid image takes priority. Invalid images are skipped, and the built-
 - **Input configuration:** assign keyboard shortcuts and SDL gamepad bindings, capture inputs, and restore default controller bindings.
 - **Graphics customization:** choose display and fullscreen modes, rendering options, Link sprites and compatible OpenGL `.glsl` / `.glslp` shaders.
 - **Multilingual interface:** English, French, German, Spanish and Italian, with automatic system-language detection on first launch and English fallback. Importing a supported game-language ROM is a separate feature and does not change the interface language.
-- **Portable installations:** keep game files and preferences alongside the launcher when portable mode is enabled.
+- **Portable installations:** keep game files, preferences, shaders and logs in the executable/AppImage directory when `portable.txt` is present, without an extra nested workspace.
 - **Forest-inspired interface:** pixel-art background, translucent panels, gold-accented controls and scrollbars.
 
 ## Supported platforms
@@ -71,43 +71,46 @@ The bundle is an experimental distribution format; the separately downloaded Zel
 
 ### Portable mode (Windows)
 
-Extract the Windows ZIP into a writable folder. Create an **empty file** named `portable.txt` next to `z3-launcher.exe` (make sure Windows does not name it `portable.txt.txt`). Restart the launcher. It will use the adjacent `Z3-Launcher` directory for game data and configuration:
+Extract the ZIP into a writable folder. Create an **empty file** named `portable.txt` next to `z3-launcher.exe` (make sure Windows does not add another `.txt`). Restart the launcher. It stores the game, configuration, shaders and `Z3-Launcher.log` alongside the executable, in that directory or its subdirectories; there is no extra nested `Z3-Launcher/` workspace:
 
 ```text
 Z3-Launcher/
 ├── z3-launcher.exe
 ├── portable.txt
-└── Z3-Launcher/
-    └── config/
+├── Z3-Launcher.log
+├── config/
+└── zelda3/
 ```
 
-Portable mode does not automatically move data from an existing non-portable installation. See [WINDOWS.md](WINDOWS.md).
+Portable mode does not automatically migrate existing non-portable data. See [WINDOWS.md](WINDOWS.md).
 
 ### Portable mode (native Linux binary)
 
-Extract the Linux `.tar.gz` archive into a writable directory. Create an **empty file** named `portable.txt` alongside the extracted `z3-launcher` executable:
+Extract the Linux `.tar.gz` archive into a writable directory and create an empty `portable.txt` alongside the `z3-launcher` binary:
 
 ```bash
 touch portable.txt
 ./z3-launcher
 ```
 
-The marker must be next to the executable, not merely in the current working directory. The launcher stores game data in the adjacent `Z3-Launcher/` directory and preferences in `Z3-Launcher/config/`. Without this marker, it uses the normal XDG data and configuration directories. Existing data is not moved automatically.
+The marker must be next to the executable, not just in the terminal's working directory. The launcher stores game files, `config/`, shaders and its log in the executable directory or its subdirectories. Without the marker, normal XDG user data and configuration locations apply; existing data is not moved automatically.
 
 ### Portable mode (Linux AppImage)
 
-Place an empty `portable.txt` next to the `.AppImage` file to use an adjacent `Z3-Launcher` data directory. Alternatively, create a directory whose name is the **full AppImage filename followed by `.home`** (for example `Z3-Launcher-1.1.0-x86_64.AppImage.home`): this uses AppImage portable-home mode, which takes precedence over `portable.txt`. Keep the AppImage and its matching `.home` directory together when moving them. Restart the launcher after changing modes. Existing data is not migrated automatically. See [APPIMAGE.md](APPIMAGE.md).
+Create an empty `portable.txt` next to the **original AppImage file**, not in its temporary mount. This gives the launcher a workspace alongside the AppImage and **takes priority** over an AppImage portable-home `.home` directory, when both are present.
+
+Alternatively, without `portable.txt`, create a directory matching the **entire AppImage filename followed by `.home`** (for example `Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage.home`); that uses the AppImage portable-home environment. Keep the AppImage and matching directory together if you move or rename them. Restart after changing modes; data is never migrated automatically. See [APPIMAGE.md](APPIMAGE.md).
 
 ### Adjacent ROM and portable mode
 
-On startup, the launcher looks for a compatible US `.sfc` or `.smc` ROM next to its executable (or next to the original AppImage file). It validates the SHA-256 hash and preselects the ROM for installation. The original ROM is not modified; a copy named `zelda3.sfc` is created inside the installed `zelda3/` directory only after successful asset generation.
+At startup, the launcher checks for a compatible headerless US `.sfc` or `.smc` ROM next to its executable or the original AppImage. It verifies the ROM's SHA-256 hash and preselects the matching file. Your original ROM remains untouched: on installation, a copy named `zelda3.sfc` is written inside the installed `zelda3/` directory only after resource generation succeeds.
 
-To keep launcher-generated data beside the executable, create an empty `portable.txt` file in that same directory before starting the launcher. The game, configuration, shaders and logs will be written there or into its subdirectories. For AppImage, `portable.txt` next to the AppImage takes priority over its `.home` directory.
+The adjacent-ROM detection and external `background.png` override work **without** portable mode. Use `portable.txt` only when you also want launcher-generated files to live beside the executable.
 
 ## Quick start
 
 1. Download Z3-Launcher for your operating system.
-2. Start the launcher and select your **headerless US Zelda: A Link to the Past ROM** (`.sfc` or `.smc`).
+2. Start the launcher. A matching ROM beside the executable/AppImage is selected automatically; otherwise select your **headerless US Zelda: A Link to the Past ROM** (`.sfc` or `.smc`).
 3. Select **Download and install**. The launcher retrieves the game package and generates `zelda3_assets.dat` locally.
 4. Select **Play Zelda 3**.
 5. Customize the game in the **Game**, **Graphics**, **Audio**, **Controls**, **Shortcuts**, or **zelda3.ini** tabs.

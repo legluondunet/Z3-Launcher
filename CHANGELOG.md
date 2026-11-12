@@ -12,6 +12,18 @@ The first expanded source import on GitHub, [b83ca1b](https://github.com/legluon
 
 Release 1.1.0 introduces automatic system-language detection while retaining the existing 1.0.0 release and historical tags.
 
+The next release, 1.2.0, consolidates the portable workspace, adjacent-ROM discovery, customizable forest background, interface refinements, and launcher journal migration.
+
+## 1.2.0 — 2026-11-12 (prepared; publication pending)
+
+- Detect a compatible headerless US `.sfc` or `.smc` ROM next to the executable or original AppImage, validate its SHA-256, and preselect it. Copy the ROM into the game directory only when installing.
+- Make `portable.txt` store game files, configuration, shaders and logs in the executable/AppImage directory, without an extra nested `Z3-Launcher` directory. For AppImage, `portable.txt` takes priority over `.home`.
+- Allow a replacement `config/background.png` or adjacent `background.png` without recompilation or portable mode. Tile the background and safely fall back when an override cannot be loaded.
+- Improve the forest UI with a compact translucent header, clearer app/version information, a slightly dimmed background, aligned controls and a vertically resizable journal. Remove the routine embedded-background journal message.
+- Rename the launcher journal to `Z3-Launcher.log`. Preserve older `launcher.log` data during migration without overwriting an existing new log.
+- Keep the five interface translations and document the updated installation and portable-mode behavior.
+
+
 ## 1.1.0 — 2026-10-13
 
 - Detect the operating system language automatically on first launch (Windows and Linux).
