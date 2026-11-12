@@ -200,7 +200,7 @@ impl eframe::App for App {
                         painter.image(background.id(),
                             egui::Rect::from_min_size(min, egui::vec2(tile_width, tile_height)),
                             egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-                            egui::Color32::WHITE);
+                            egui::Color32::from_rgb(224, 224, 224));
                     }
                 }
             }
@@ -279,18 +279,23 @@ impl eframe::App for App {
                 // Show the complete portable workspace path without abbreviating it.
                 // Horizontal scrolling keeps long paths accessible in narrow windows.
                 if crate::platform::is_portable() {
-                    ui.add(egui::TextEdit::singleline(&mut self.root.clone())
-                        .desired_width(f32::INFINITY).interactive(false))
+                    ui.add_sized([ui.available_width(), 32.0],
+                        egui::TextEdit::singleline(&mut self.root.clone())
+                            .desired_width(f32::INFINITY).interactive(false))
                         .on_hover_text(self.root.as_str());
                 } else {
-                    ui.add(egui::TextEdit::singleline(&mut self.root).desired_width(f32::INFINITY))
+                    ui.add_sized([ui.available_width(), 32.0],
+                        egui::TextEdit::singleline(&mut self.root).desired_width(f32::INFINITY))
                         .on_hover_text(tr("help.launcher.workspace"));
                 }
                 ui.label(tr("text.drop_your_sfc_or_smc_rom_here_or_select"));
                 ui.horizontal(|ui| {
-                    let width = (ui.available_width() - 140.0).max(80.0);
-                    ui.add_sized([width, 32.0], egui::TextEdit::singleline(&mut self.rom)).on_hover_text(tr("help.launcher.rom"));
-                    if ui.button(tr("text.browse")).on_hover_text(tr("help.launcher.rom")).clicked() {
+                    let browse_width = 115.0;
+                    let width = (ui.available_width() - browse_width - ui.spacing().item_spacing.x).max(80.0);
+                    ui.add_sized([width, 32.0], egui::TextEdit::singleline(&mut self.rom))
+                        .on_hover_text(tr("help.launcher.rom"));
+                    if ui.add_sized([browse_width, 32.0], egui::Button::new(tr("text.browse")))
+                        .on_hover_text(tr("help.launcher.rom")).clicked() {
                         let mut dialog = rfd::FileDialog::new()
                             .set_title(tr("text.select_the_zelda_3_rom"))
                             .add_filter(tr("text.snes_rom_sfc_smc"), &["sfc", "smc", "SFC", "SMC"]);
