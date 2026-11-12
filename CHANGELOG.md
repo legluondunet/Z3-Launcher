@@ -14,7 +14,7 @@ Release 1.1.0 introduces automatic system-language detection while retaining the
 
 The next release, 1.2.0, consolidates the portable workspace, adjacent-ROM discovery, customizable forest background, interface refinements, and launcher journal migration.
 
-## 1.2.0 — 2026-11-12 (prepared; publication pending)
+## 1.2.0 — 2026-11-12
 
 - Detect a compatible headerless US `.sfc` or `.smc` ROM next to the executable or original AppImage, validate its SHA-256, and preselect it. Copy the ROM into the game directory only when installing.
 - Make `portable.txt` store game files, configuration, shaders and logs in the executable/AppImage directory, without an extra nested `Z3-Launcher` directory. For AppImage, `portable.txt` takes priority over `.home`.
