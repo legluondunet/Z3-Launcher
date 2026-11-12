@@ -18,16 +18,17 @@ fn appimage_home() -> Option<PathBuf> {
 fn home() -> PathBuf { std::env::var_os("HOME").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(".")) }
 fn portable_at(executable: &Path) -> Option<PathBuf> {
     let parent = executable.parent()?;
-    if parent.join("portable.txt").is_file() { Some(parent.join("Z3-Launcher")) } else { None }
+    if parent.join("portable.txt").is_file() { Some(parent.to_path_buf()) } else { None }
 }
 pub fn portable_dir() -> Option<PathBuf> {
     PORTABLE.get_or_init(|| {
-        // .home takes priority and follows the image when moved or renamed.
-        if let Some(home) = appimage_home() { return Some(home.join(".local/share/Z3-Launcher")); }
         // AppImage mounts are read-only. Resolve portable.txt next to the actual AppImage.
         #[cfg(target_os = "linux")]
         if std::env::var_os("Z3_APPIMAGE_ENV").is_some() {
-            if let Some(image) = std::env::var_os("APPIMAGE") { return portable_at(Path::new(&image)); }
+            if let Some(image) = std::env::var_os("APPIMAGE") {
+                if let Some(dir) = portable_at(Path::new(&image)) { return Some(dir); }
+                if let Some(home) = appimage_home() { return Some(home.join(".local/share/Z3-Launcher")); }
+            }
         }
         std::env::current_exe().ok().and_then(|exe| portable_at(&exe))
     }).clone()
@@ -40,6 +41,7 @@ pub fn data_dir() -> PathBuf {
     portable_dir().unwrap_or_else(||std::env::var_os("XDG_DATA_HOME").map(PathBuf::from).unwrap_or_else(|| home().join(".local/share")).join("Z3-Launcher"))
 }
 pub fn config_dir() -> PathBuf {
+    if let Some(root) = portable_dir() { return root.join("config"); }
     if let Some(home) = appimage_home() { return home.join(".config/Z3-Launcher"); }
     #[cfg(windows)]
     { return portable_dir().map(|root|root.join("config")).unwrap_or_else(|| windows_home().join("Z3-Launcher/config")); }
@@ -72,7 +74,7 @@ mod tests {
         assert_eq!(portable_at(&exe),None);
         std::fs::create_dir(dir.join("portable.txt")).unwrap();assert_eq!(portable_at(&exe),None);
         std::fs::remove_dir(dir.join("portable.txt")).unwrap();std::fs::write(dir.join("portable.txt"),"").unwrap();
-        assert_eq!(portable_at(&exe),Some(dir.join("Z3-Launcher")));
+        assert_eq!(portable_at(&exe),Some(dir.clone()));
         std::fs::remove_dir_all(dir).unwrap();
     }
 }
