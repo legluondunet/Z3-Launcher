@@ -111,7 +111,6 @@ pub fn background(ctx: &egui::Context) -> (Option<egui::TextureHandle>, Vec<Stri
         }
     }
     let decoded = decoded.or_else(|| {
-        diagnostics.push("Background: using embedded forest image".to_owned());
         image::load_from_memory(include_bytes!("../assets/forest-frame.png"))
             .ok()
             .map(|image| image.to_rgba8())
