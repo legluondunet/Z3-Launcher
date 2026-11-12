@@ -111,7 +111,6 @@ pub fn background(ctx: &egui::Context) -> (Option<egui::TextureHandle>, Vec<Stri
         }
     }
     let decoded = decoded.or_else(|| {
-        diagnostics.push("Background: using embedded forest image".to_owned());
         image::load_from_memory(include_bytes!("../assets/forest-frame.png"))
             .ok()
             .map(|image| image.to_rgba8())
@@ -124,17 +123,36 @@ pub fn background(ctx: &egui::Context) -> (Option<egui::TextureHandle>, Vec<Stri
     (texture, diagnostics)
 }
 pub fn header(ui: &mut egui::Ui) {
-    ui.horizontal(|ui| {
-        let (rect, _) = ui.allocate_exact_size(egui::vec2(46.0, 46.0), egui::Sense::hover());
-        let point = |x: f32, y: f32| egui::pos2(rect.left()+x, rect.top()+y);
-        for (x,y) in EMBLEM_TRIANGLES {
-            ui.painter().add(egui::Shape::convex_polygon(vec![point(x,y),point(x-11.0,y+20.0),point(x+11.0,y+20.0)], GOLD, Stroke::NONE));
-        }
-        ui.vertical(|ui| {
-            ui.label(RichText::new("Z3-Launcher").heading().size(30.0).strong());
-            ui.small(format!("{} · v{}", std::env::consts::OS, if env!("CARGO_PKG_VERSION").contains('+') { env!("CARGO_PKG_VERSION").to_owned() } else { format!("{}+{}", env!("CARGO_PKG_VERSION"), env!("Z3_BUILD_COMMIT")) }));
+    // Match the existing settings panels while keeping the frame tightly fitted
+    // around the emblem and both text lines (no full-width header bar).
+    egui::Frame::new()
+        .fill(Color32::from_rgba_unmultiplied(4, 42, 28, 215))
+        .stroke(Stroke::new(1.0, GOLD))
+        .corner_radius(egui::CornerRadius::same(10))
+        .inner_margin(egui::Margin::symmetric(16, 10))
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                let (rect, _) = ui.allocate_exact_size(egui::vec2(46.0, 46.0), egui::Sense::hover());
+                let point = |x: f32, y: f32| egui::pos2(rect.left()+x, rect.top()+y);
+                for (x, y) in EMBLEM_TRIANGLES {
+                    ui.painter().add(egui::Shape::convex_polygon(
+                        vec![point(x, y), point(x-11.0, y+20.0), point(x+11.0, y+20.0)],
+                        GOLD,
+                        Stroke::NONE,
+                    ));
+                }
+                ui.vertical(|ui| {
+                    ui.label(RichText::new("Z3-Launcher").heading().size(30.0).strong().color(PARCHMENT));
+                    let version = if env!("CARGO_PKG_VERSION").contains('+') {
+                        env!("CARGO_PKG_VERSION").to_owned()
+                    } else {
+                        format!("{}+{}", env!("CARGO_PKG_VERSION"), env!("Z3_BUILD_COMMIT"))
+                    };
+                    ui.label(RichText::new(format!("{} · v{}", std::env::consts::OS, version))
+                        .size(14.0).color(GOLD));
+                });
+            });
         });
-    });
 }
 
 /// Transparent native window icon using the same gold and geometry as the header.

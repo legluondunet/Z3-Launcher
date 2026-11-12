@@ -200,7 +200,7 @@ impl eframe::App for App {
                         painter.image(background.id(),
                             egui::Rect::from_min_size(min, egui::vec2(tile_width, tile_height)),
                             egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-                            egui::Color32::WHITE);
+                            egui::Color32::from_rgb(224, 224, 224));
                     }
                 }
             }
@@ -279,18 +279,23 @@ impl eframe::App for App {
                 // Show the complete portable workspace path without abbreviating it.
                 // Horizontal scrolling keeps long paths accessible in narrow windows.
                 if crate::platform::is_portable() {
-                    ui.add(egui::TextEdit::singleline(&mut self.root.clone())
-                        .desired_width(f32::INFINITY).interactive(false))
+                    ui.add_sized([ui.available_width(), 32.0],
+                        egui::TextEdit::singleline(&mut self.root.clone())
+                            .desired_width(f32::INFINITY).interactive(false))
                         .on_hover_text(self.root.as_str());
                 } else {
-                    ui.add(egui::TextEdit::singleline(&mut self.root).desired_width(f32::INFINITY))
+                    ui.add_sized([ui.available_width(), 32.0],
+                        egui::TextEdit::singleline(&mut self.root).desired_width(f32::INFINITY))
                         .on_hover_text(tr("help.launcher.workspace"));
                 }
                 ui.label(tr("text.drop_your_sfc_or_smc_rom_here_or_select"));
                 ui.horizontal(|ui| {
-                    let width = (ui.available_width() - 140.0).max(80.0);
-                    ui.add_sized([width, 32.0], egui::TextEdit::singleline(&mut self.rom)).on_hover_text(tr("help.launcher.rom"));
-                    if ui.button(tr("text.browse")).on_hover_text(tr("help.launcher.rom")).clicked() {
+                    let browse_width = 115.0;
+                    let width = (ui.available_width() - browse_width - ui.spacing().item_spacing.x).max(80.0);
+                    ui.add_sized([width, 32.0], egui::TextEdit::singleline(&mut self.rom))
+                        .on_hover_text(tr("help.launcher.rom"));
+                    if ui.add_sized([browse_width, 32.0], egui::Button::new(tr("text.browse")))
+                        .on_hover_text(tr("help.launcher.rom")).clicked() {
                         let mut dialog = rfd::FileDialog::new()
                             .set_title(tr("text.select_the_zelda_3_rom"))
                             .add_filter(tr("text.snes_rom_sfc_smc"), &["sfc", "smc", "SFC", "SMC"]);
@@ -332,19 +337,34 @@ impl eframe::App for App {
                 .inner_margin(egui::Margin::symmetric(16, 16)).show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.small(tr("text.full_log_launcher_log_in_the_working_directory"));
-                // Keep room for the two buttons; the journal takes the remaining height.
-                let footer_height=ui.spacing().interact_size.y.max(
+                // Start with a shorter journal; users can drag the lower-right
+                // resize handle to expand it without obscuring the controls above.
+                let footer_height = ui.spacing().interact_size.y.max(
                     ui.text_style_height(&egui::TextStyle::Button) + 2.0 * ui.spacing().button_padding.y);
-                let available_journal=(ui.available_height() - footer_height - ui.spacing().item_spacing.y).max(32.0);
-                let journal_height=if self.lines.is_empty() { available_journal.min(130.0) } else { available_journal };
-                egui::Frame::new().fill(ui.visuals().extreme_bg_color)
-                    .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
-                    .corner_radius(egui::CornerRadius::same(4)).inner_margin(4)
+                let available_journal = (ui.available_height() - footer_height - ui.spacing().item_spacing.y).max(100.0);
+                // Resize defaults to the width of its contents. Lock its width
+                // to the enclosing card and only let the user adjust height.
+                let journal_width = ui.available_width();
+                egui::Resize::default()
+                    .id_salt("journal-resize")
+                    .default_width(journal_width)
+                    .min_width(journal_width)
+                    .max_width(journal_width)
+                    .default_height(230.0)
+                    .min_height(100.0)
+                    .max_height(available_journal)
+                    .resizable([false, true])
                     .show(ui, |ui| {
-                    theme::gold_scrollbar(ui);
-                    egui::ScrollArea::vertical().id_salt("journal-scroll").stick_to_bottom(true)
-                        .max_height((journal_height - 8.0).max(24.0)).min_scrolled_height(0.0)
-                        .auto_shrink([false, false]).show(ui, |ui| {
+                    ui.set_width(journal_width);
+                    egui::Frame::new().fill(ui.visuals().extreme_bg_color)
+                        .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
+                        .corner_radius(egui::CornerRadius::same(4)).inner_margin(4)
+                        .show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        theme::gold_scrollbar(ui);
+                        egui::ScrollArea::vertical().id_salt("journal-scroll").stick_to_bottom(true)
+                            .max_height((ui.available_height() - 8.0).max(24.0))
+                            .min_scrolled_height(0.0).auto_shrink([false, false]).show(ui, |ui| {
                         let text = self.lines.join("\n");
                         // An immutable TextBuffer allows selection and Ctrl+C without editing the log.
                         let mut buffer = text.as_str();
@@ -374,6 +394,7 @@ impl eframe::App for App {
                             }
                         });
                     });
+                });
                 });
                 ui.horizontal(|ui| {
                     if ui.button(tr("text.copy_log")).clicked() { ctx.copy_text(self.lines.join("\n")); }
