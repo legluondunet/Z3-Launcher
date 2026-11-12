@@ -336,7 +336,7 @@ impl eframe::App for App {
                 .corner_radius(egui::CornerRadius::same(10))
                 .inner_margin(egui::Margin::symmetric(16, 16)).show(ui, |ui| {
                 ui.set_width(ui.available_width());
-                ui.small(tr("text.full_log_launcher_log_in_the_working_directory"));
+                ui.small(tr("text.full_log_in_working_directory"));
                 // Start with a shorter journal; users can drag the lower-right
                 // resize handle to expand it without obscuring the controls above.
                 let footer_height = ui.spacing().interact_size.y.max(
@@ -461,7 +461,7 @@ pub fn start(instance: crate::single_instance::Guard) -> eframe::Result<()> {
         app.instance = Some(instance);
         let (background, background_diagnostics) = theme::background(&cc.egui_ctx);
         app.background = background;
-        // Keep the selected image path and any decoding errors in launcher.log.
+        // Keep the selected image path and any decoding errors in Z3-Launcher.log.
         if let Ok(launcher) = Launcher::new(&app.root) {
             if let Ok(log) = launcher.log(Arc::new(|_| {})) {
                 for message in &background_diagnostics {
