@@ -51,6 +51,19 @@ impl Launcher {
             callback(line);
         }))
     }
+    /// Find a compatible US ROM next to the launcher without changing the original.
+    /// Installation copies it to zelda3/zelda3.sfc only after assets are generated.
+    pub fn adjacent_rom() -> Option<PathBuf> {
+        let dir = crate::platform::executable_dir()?;
+        let mut candidates: Vec<PathBuf> = fs::read_dir(dir).ok()?
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .filter(|path| path.is_file() && path.extension().is_some_and(|ext| {
+                ext.to_str().is_some_and(|ext| ext.eq_ignore_ascii_case("sfc") || ext.eq_ignore_ascii_case("smc"))
+            }))
+            .collect();
+        candidates.sort();
+        candidates.into_iter().find(|path| Self::verify_rom(path).is_ok())
+    }
     pub fn verify_rom(path: &Path) -> Result<()> {
         if format!("{:x}", Sha256::digest(fs::read(path)?)) != ROM_HASH {
             return Err(tf("rom.incompatible", &[("hash", ROM_HASH.into())]).into());
