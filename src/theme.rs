@@ -55,11 +55,73 @@ pub fn gold_scrollbar(ui: &mut egui::Ui) {
         widget.fg_stroke.color = GOLD;
     }
 }
-pub fn background(ctx: &egui::Context) -> Option<egui::TextureHandle> {
-    let decoded = image::load_from_memory(include_bytes!("../assets/forest-frame.png")).ok()?.to_rgba8();
-    let size = [decoded.width() as usize, decoded.height() as usize];
-    let image = egui::ColorImage::from_rgba_unmultiplied(size, decoded.as_raw());
-    Some(ctx.load_texture("forest-frame", image, egui::TextureOptions::LINEAR))
+/// External artwork is located relative to the real launcher, not the
+/// temporary AppImage mount. Local overrides work even without portable.txt.
+fn background_candidates() -> Vec<std::path::PathBuf> {
+    let executable = {
+        #[cfg(target_os = "linux")]
+        {
+            if std::env::var_os("Z3_APPIMAGE_ENV").is_some() {
+                std::env::var_os("APPIMAGE")
+                    .map(std::path::PathBuf::from)
+                    .or_else(|| std::env::current_exe().ok())
+            } else {
+                std::env::current_exe().ok()
+            }
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            std::env::current_exe().ok()
+        }
+    };
+    let mut paths = Vec::new();
+    if let Some(dir) = executable.as_deref().and_then(std::path::Path::parent) {
+        paths.push(dir.join("config/background.png"));
+        paths.push(dir.join("background.png"));
+    }
+    let configured = crate::platform::config_dir().join("background.png");
+    if !paths.contains(&configured) {
+        paths.push(configured);
+    }
+    paths
+}
+
+/// Return the texture and diagnostics for launcher.log.
+pub fn background(ctx: &egui::Context) -> (Option<egui::TextureHandle>, Vec<String>) {
+    let mut diagnostics = Vec::new();
+    let mut decoded = None;
+    for path in background_candidates() {
+        if !path.is_file() {
+            continue;
+        }
+        match std::fs::read(&path) {
+            Ok(bytes) => match image::load_from_memory(&bytes) {
+                Ok(image) => {
+                    diagnostics.push(format!("Background: loaded external image {}", path.display()));
+                    decoded = Some(image.to_rgba8());
+                    break;
+                }
+                Err(error) => diagnostics.push(format!(
+                    "Background: invalid external image {}: {error}", path.display()
+                )),
+            },
+            Err(error) => diagnostics.push(format!(
+                "Background: cannot read external image {}: {error}", path.display()
+            )),
+        }
+    }
+    let decoded = decoded.or_else(|| {
+        diagnostics.push("Background: using embedded forest image".to_owned());
+        image::load_from_memory(include_bytes!("../assets/forest-frame.png"))
+            .ok()
+            .map(|image| image.to_rgba8())
+    });
+    let texture = decoded.map(|image| {
+        let size = [image.width() as usize, image.height() as usize];
+        let image = egui::ColorImage::from_rgba_unmultiplied(size, image.as_raw());
+        ctx.load_texture("forest-frame", image, egui::TextureOptions::LINEAR)
+    });
+    (texture, diagnostics)
 }
 pub fn header(ui: &mut egui::Ui) {
     ui.horizontal(|ui| {

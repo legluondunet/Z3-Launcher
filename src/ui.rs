@@ -185,8 +185,24 @@ impl eframe::App for App {
             });
         egui::CentralPanel::default().frame(egui::Frame::new().fill(theme::FOREST).inner_margin(24)).show(ctx, |ui| {
             if let Some(background) = &self.background {
-                ui.painter().image(background.id(), ui.max_rect().expand(24.0),
-                    egui::Rect::from_min_max(egui::pos2(0.0,0.0),egui::pos2(1.0,1.0)),egui::Color32::WHITE);
+                // Experimental tiling: preserve image proportions instead of stretching
+                // it to the window. The clip prevents painting outside the panel.
+                let rect = ui.max_rect().expand(24.0);
+                let painter = ui.painter().with_clip_rect(rect);
+                let size = background.size_vec2();
+                let tile_width = 640.0;
+                let tile_height = tile_width * size.y / size.x;
+                let columns = (rect.width() / tile_width).ceil() as usize;
+                let rows = (rect.height() / tile_height).ceil() as usize;
+                for y in 0..rows {
+                    for x in 0..columns {
+                        let min = rect.min + egui::vec2(x as f32 * tile_width, y as f32 * tile_height);
+                        painter.image(background.id(),
+                            egui::Rect::from_min_size(min, egui::vec2(tile_width, tile_height)),
+                            egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                            egui::Color32::WHITE);
+                    }
+                }
             }
             theme::header(ui);
             ui.add_space(20.0);
@@ -420,7 +436,19 @@ pub fn start(instance: crate::single_instance::Guard) -> eframe::Result<()> {
     eframe::run_native("Z3-Launcher", options, Box::new(move |cc| {
         theme::apply(&cc.egui_ctx);
         instance.watch_activation(&cc.egui_ctx)?;
-        let mut app=App::default(); app.instance=Some(instance); app.background=theme::background(&cc.egui_ctx);
+        let mut app = App::default();
+        app.instance = Some(instance);
+        let (background, background_diagnostics) = theme::background(&cc.egui_ctx);
+        app.background = background;
+        // Keep the selected image path and any decoding errors in launcher.log.
+        if let Ok(launcher) = Launcher::new(&app.root) {
+            if let Ok(log) = launcher.log(Arc::new(|_| {})) {
+                for message in &background_diagnostics {
+                    log(message.clone());
+                }
+            }
+        }
+        app.lines.extend(background_diagnostics);
         Ok(Box::new(app))
     }))
 }
