@@ -56,7 +56,14 @@ pub fn gold_scrollbar(ui: &mut egui::Ui) {
     }
 }
 pub fn background(ctx: &egui::Context) -> Option<egui::TextureHandle> {
-    let decoded = image::load_from_memory(include_bytes!("../assets/forest-frame.png")).ok()?.to_rgba8();
+    // Allow testing a custom background without rebuilding the launcher.
+    // An unreadable or invalid PNG must never prevent startup.
+    let override_path = crate::platform::config_dir().join("background.png");
+    let custom = std::fs::read(&override_path).ok()
+        .and_then(|bytes| image::load_from_memory(&bytes).ok());
+    let decoded = custom.or_else(|| {
+        image::load_from_memory(include_bytes!("../assets/forest-frame.png")).ok()
+    })?.to_rgba8();
     let size = [decoded.width() as usize, decoded.height() as usize];
     let image = egui::ColorImage::from_rgba_unmultiplied(size, decoded.as_raw());
     Some(ctx.load_texture("forest-frame", image, egui::TextureOptions::LINEAR))
