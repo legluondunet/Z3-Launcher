@@ -27,7 +27,7 @@ The launcher searches for an override in this order:
 2. `background.png` directly beside the executable or original AppImage.
 3. `background.png` in the platform's normal Z3-Launcher configuration directory (including the AppImage `.home/.config/Z3-Launcher` location when applicable).
 
-The first valid image takes priority. Invalid images are skipped, and the built-in background is used if none can be loaded. Startup diagnostics in `launcher.log` and the interface journal report the selected source or an image-loading error. The override is drawn as repeating tiles, not stretched; for invisible joins, the image itself must be seamlessly tileable on all four edges.
+The first valid image takes priority. Invalid images are skipped, and the built-in background is used if none can be loaded. Startup diagnostics in `Z3-Launcher.log` and the interface journal report the selected source or an image-loading error. The override is drawn as repeating tiles, not stretched; for invisible joins, the image itself must be seamlessly tileable on all four edges.
 
 ## Features
 
