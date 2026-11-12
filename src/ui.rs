@@ -337,19 +337,26 @@ impl eframe::App for App {
                 .inner_margin(egui::Margin::symmetric(16, 16)).show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.small(tr("text.full_log_launcher_log_in_the_working_directory"));
-                // Keep room for the two buttons; the journal takes the remaining height.
-                let footer_height=ui.spacing().interact_size.y.max(
+                // Start with a shorter journal; users can drag the lower-right
+                // resize handle to expand it without obscuring the controls above.
+                let footer_height = ui.spacing().interact_size.y.max(
                     ui.text_style_height(&egui::TextStyle::Button) + 2.0 * ui.spacing().button_padding.y);
-                let available_journal=(ui.available_height() - footer_height - ui.spacing().item_spacing.y).max(32.0);
-                let journal_height=if self.lines.is_empty() { available_journal.min(130.0) } else { available_journal };
-                egui::Frame::new().fill(ui.visuals().extreme_bg_color)
-                    .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
-                    .corner_radius(egui::CornerRadius::same(4)).inner_margin(4)
+                let available_journal = (ui.available_height() - footer_height - ui.spacing().item_spacing.y).max(100.0);
+                egui::Resize::default()
+                    .id_salt("journal-resize")
+                    .default_height(230.0)
+                    .min_height(100.0)
+                    .max_height(available_journal)
+                    .resizable([false, true])
                     .show(ui, |ui| {
-                    theme::gold_scrollbar(ui);
-                    egui::ScrollArea::vertical().id_salt("journal-scroll").stick_to_bottom(true)
-                        .max_height((journal_height - 8.0).max(24.0)).min_scrolled_height(0.0)
-                        .auto_shrink([false, false]).show(ui, |ui| {
+                    egui::Frame::new().fill(ui.visuals().extreme_bg_color)
+                        .stroke(egui::Stroke::new(1.0_f32, theme::GOLD))
+                        .corner_radius(egui::CornerRadius::same(4)).inner_margin(4)
+                        .show(ui, |ui| {
+                        theme::gold_scrollbar(ui);
+                        egui::ScrollArea::vertical().id_salt("journal-scroll").stick_to_bottom(true)
+                            .max_height((ui.available_height() - 8.0).max(24.0))
+                            .min_scrolled_height(0.0).auto_shrink([false, false]).show(ui, |ui| {
                         let text = self.lines.join("\n");
                         // An immutable TextBuffer allows selection and Ctrl+C without editing the log.
                         let mut buffer = text.as_str();
@@ -379,6 +386,7 @@ impl eframe::App for App {
                             }
                         });
                     });
+                });
                 });
                 ui.horizontal(|ui| {
                     if ui.button(tr("text.copy_log")).clicked() { ctx.copy_text(self.lines.join("\n")); }
