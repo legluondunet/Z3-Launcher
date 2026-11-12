@@ -12,6 +12,7 @@ use std::{
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub const ROM_HASH: &str = "66871d66be19ad2c34c927d6b14cd8eb6fc3181965b6e517cb361f7316009cfb";
 pub const DEFAULT_RENDERER: &str = "OpenGL";
+pub const LOG_FILENAME: &str = "Z3-Launcher.log";
 pub type Log = Arc<dyn Fn(String) + Send + Sync>;
 #[derive(Clone)]
 pub struct Launcher {
@@ -38,11 +39,19 @@ impl Launcher {
         self.root.join("zelda3")
     }
     pub fn log(&self, callback: Log) -> Result<Log> {
+        let log_path = self.root.join(LOG_FILENAME);
+        let legacy_path = self.root.join("launcher.log");
+        // Keep the earlier journal when upgrading; never overwrite a newer log.
+        if legacy_path.is_file() && !log_path.exists() {
+            if let Err(error) = fs::rename(&legacy_path, &log_path) {
+                eprintln!("Could not rename {} to {}: {error}", legacy_path.display(), log_path.display());
+            }
+        }
         let file = Arc::new(Mutex::new(
             fs::OpenOptions::new()
                 .create(true)
                 .append(true)
-                .open(self.root.join("launcher.log"))?,
+                .open(log_path)?,
         ));
         Ok(Arc::new(move |line| {
             if let Ok(mut f) = file.lock() {
@@ -322,6 +331,38 @@ pub fn save_ini(path: &Path, text: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn log_uses_application_name_and_preserves_legacy_contents() {
+        let dir = tempfile::tempdir().unwrap();
+        let old_path = dir.path().join("launcher.log");
+        let new_path = dir.path().join(LOG_FILENAME);
+        fs::write(&old_path, "Previous installation log\\n").unwrap();
+        let launcher = Launcher { root: dir.path().to_owned() };
+        let log = launcher.log(Arc::new(|_| {})).unwrap();
+        log("New message".to_owned());
+        let contents = fs::read_to_string(&new_path).unwrap();
+        assert!(contents.contains("Previous installation log"));
+        assert!(contents.contains("New message"));
+        assert!(!old_path.exists());
+    }
+
+    #[test]
+    fn log_does_not_overwrite_existing_named_journal() {
+        let dir = tempfile::tempdir().unwrap();
+        let old_path = dir.path().join("launcher.log");
+        let new_path = dir.path().join(LOG_FILENAME);
+        fs::write(&old_path, "Old history\\n").unwrap();
+        fs::write(&new_path, "New history\\n").unwrap();
+        let launcher = Launcher { root: dir.path().to_owned() };
+        let log = launcher.log(Arc::new(|_| {})).unwrap();
+        log("Added".to_owned());
+        let contents = fs::read_to_string(&new_path).unwrap();
+        assert!(contents.contains("New history"));
+        assert!(contents.contains("Added"));
+        assert!(!contents.contains("Old history"));
+        assert!(old_path.exists());
+    }
+
     #[test]
     fn rejects_invalid_rom_before_network_access() {
         let t = tempfile::tempdir().unwrap();
