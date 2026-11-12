@@ -33,6 +33,15 @@ pub fn portable_dir() -> Option<PathBuf> {
         std::env::current_exe().ok().and_then(|exe| portable_at(&exe))
     }).clone()
 }
+pub fn executable_dir() -> Option<PathBuf> {
+    #[cfg(target_os = "linux")]
+    if std::env::var_os("Z3_APPIMAGE_ENV").is_some() {
+        if let Some(image) = std::env::var_os("APPIMAGE") {
+            return PathBuf::from(image).parent().map(Path::to_path_buf);
+        }
+    }
+    std::env::current_exe().ok()?.parent().map(Path::to_path_buf)
+}
 pub fn is_portable() -> bool { portable_dir().is_some() }
 pub fn data_dir() -> PathBuf {
     #[cfg(windows)]
