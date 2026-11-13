@@ -4,20 +4,21 @@
 [![Native builds](https://github.com/legluondunet/Z3-Launcher/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/legluondunet/Z3-Launcher/actions/workflows/build.yml)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 
-Z3-Launcher is a graphical installer, updater, and configuration manager for [legluondunet/zelda3](https://github.com/legluondunet/zelda3), a fork of the [snesrev/zelda3](https://github.com/snesrev/zelda3) project. Z3-Launcher itself is based on the original [Zelda 3 Launcher](https://github.com/RadzPrower/Zelda-3-Launcher) by RadzPrower. It downloads ready-to-run game packages, extracts the required assets locally from **your own compatible ROM**, and lets you configure and launch Zelda 3 on Linux and Windows.
+Z3-Launcher is a graphical installer, updater, and configuration manager **dedicated exclusively to [Z3R (Zelda 3 Reborn)](https://github.com/xander-haj/Z3R)**, a fork of [snesrev/zelda3](https://github.com/snesrev/zelda3). Z3-Launcher itself is based on the original [Zelda 3 Launcher](https://github.com/RadzPrower/Zelda-3-Launcher) by RadzPrower. It downloads official Z3R game packages, extracts the required assets locally from **your own compatible ROM**, and lets you configure and launch Z3R on Linux and Windows.
 
 <img width="1251" height="863" alt="Z3-Launcher main window with game installation controls, configuration tabs, and journal panel" src="https://github.com/user-attachments/assets/0d97a976-0465-49c0-b5a8-6f93f79b094b" />
 
 
 ## Features
 
-- **Install and play:** select a compatible US ROM, download the latest game release, extract assets locally, and launch Zelda 3.
-- **Safe game updates:** verify downloads with SHA-256 checksums, regenerate game resources, and preserve existing configuration, save files, MSU music packs and imported languages. Failed file replacements are rolled back.
+- **Install and play:** select a compatible US ROM, download the latest official Z3R release, extract assets locally, and launch Z3R.
+- **Safe game updates:** verify official GitHub Release asset SHA-256 digests, regenerate game resources, and preserve existing configuration, save files, MSU music packs and imported languages. Failed file replacements are rolled back.
 - **Game settings:** configure gameplay, graphics, audio, keyboard/gamepad bindings, and shortcuts through the interface. Valid changes are saved automatically for the next launch; gamepad input capture and default binding restoration are supported.
 - **Built-in INI editor:** edit `zelda3.ini` with syntax highlighting, line numbers, and save/discard prompts.
 - **Advanced graphics:** select window and fullscreen modes, rendering options, Link sprites, and compatible OpenGL `.glsl` / `.glslp` shaders.
 - **Multilingual interface:** English, French, German, Spanish and Italian, with automatic system-language detection on first launch and English fallback. Importing a supported game-language ROM is a separate feature and does not change the interface language.
 - **Portable installations:** keep game files, preferences, shaders and logs in the executable/AppImage directory when `portable.txt` is present, without an extra nested workspace. Both `Z3-Launcher.log` and `zelda3.log` are stored at the workspace root.
+- **Z3R configuration:** built-in settings and INI editing, including preservation of an existing `zelda3.user.ini` override file.
 - **Forest-inspired interface:** pixel-art background, translucent panels, gold-accented controls and scrollbars.
 
 ## Supported platforms
@@ -78,14 +79,14 @@ Z3-Launcher/
 ├── Z3-Launcher.log
 ├── zelda3.log
 ├── config/
-└── zelda3/
+└── Z3R/
 ```
 
 On AppImage, `portable.txt` takes priority over a matching `<full AppImage filename>.home` directory. Without portable mode, user data and configuration follow the normal platform directories. Switching modes does not migrate existing data. See [WINDOWS.md](WINDOWS.md) and [APPIMAGE.md](APPIMAGE.md) for platform-specific instructions.
 
 ### Automatic ROM discovery
 
-The launcher checks for a supported headerless US `.sfc` or `.smc` ROM next to the executable or original AppImage, verifies its SHA-256 hash, and preselects it. The original is not modified; a copy is stored inside the installed `zelda3/` directory when installing. ROM discovery works without portable mode.
+The launcher checks for a supported headerless US `.sfc` or `.smc` ROM next to the executable or original AppImage, verifies its SHA-256 hash, and preselects it. The original is not modified; a copy is stored inside the installed `Z3R/` directory when installing. ROM discovery works without portable mode.
 
 ### Separate launcher and game journals
 
@@ -95,7 +96,7 @@ With `portable.txt`, both logs are directly next to the launcher executable or o
 
 ## Updating the game
 
-Use **Update game** to download the latest compatible [zelda3 release](https://github.com/legluondunet/zelda3/releases/latest) and regenerate its assets. The updater checks the published `SHA256SUMS` file, preserves user data and protects the existing installation when an update fails.
+Use **Update game** to download the latest compatible [official Z3R release](https://github.com/xander-haj/Z3R/releases/latest) and regenerate its assets. The updater checks the release package's published SHA-256 digest, preserves user data and protects the existing installation when an update fails.
 
 Public downloads do not require a GitHub account or API token. A game release must be available before installation can proceed.
 
@@ -144,4 +145,4 @@ For non-GUI tests, run `cargo test --no-default-features`. To build the Linux Ap
 
 Z3-Launcher is distributed under **GPL-3.0-or-later**. See [LICENSE](LICENSE) and [LICENSING.md](LICENSING.md) for license details and preserved upstream notices.
 
-Game project: [legluondunet/zelda3](https://github.com/legluondunet/zelda3) · Original Zelda 3 reverse-engineering project: [snesrev/zelda3](https://github.com/snesrev/zelda3).
+Game project: [xander-haj/Z3R](https://github.com/xander-haj/Z3R) · Original Zelda 3 reverse-engineering project: [snesrev/zelda3](https://github.com/snesrev/zelda3). The original Zelda 3 Launcher by RadzPrower is separately credited above.

@@ -21,7 +21,7 @@ chmod +x Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
 ./Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
 ```
 
-If FUSE is unavailable, try `--appimage-extract-and-run`. A compatible user-provided ROM is required to generate Zelda 3 resources. The launcher downloads a prebuilt Zelda 3 game package, validates its published SHA-256, and generates resources locally; it does **not** compile the game from source, and its user does **not** need Rust or Make.
+If FUSE is unavailable, try `--appimage-extract-and-run`. A compatible user-provided ROM is required to generate Zelda 3 resources. The launcher downloads a prebuilt official Z3R game package, validates its published SHA-256, and generates resources locally; it does **not** compile the game from source, and its user does **not** need Rust or Make.
 
 ## Command-line diagnostics
 
