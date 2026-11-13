@@ -21,7 +21,7 @@ chmod +x Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
 ./Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
 ```
 
-If FUSE is unavailable, try `--appimage-extract-and-run`. A compatible user-provided ROM is required to generate Zelda 3 resources. The launcher downloads a prebuilt Zelda 3 game package, validates its published SHA-256, and generates resources locally; it does **not** compile the game from source, and its user does **not** need Rust or Make.
+If FUSE is unavailable, try `--appimage-extract-and-run`. A compatible user-provided ROM is required to generate Zelda 3 resources. The launcher downloads a prebuilt Z3R game package, validates its GitHub SHA-256 digest, and generates resources locally; it does **not** compile the game from source, and its user does **not** need Rust or Make.
 
 ## Command-line diagnostics
 
@@ -40,7 +40,7 @@ Run `./Z3-Launcher-<version>-x86_64.AppImage --version` to print its embedded ve
 
 ## Separate logs
 
-The launcher writes `Z3-Launcher.log` and saves Zelda 3 runtime output to `zelda3.log` beside it, at the workspace root. With `portable.txt`, both logs are next to the original AppImage. Without portable mode, both stay together in the user's data directory. Use the two journal views inside Z3-Launcher to inspect them.
+The launcher writes `Z3-Launcher.log` and saves Z3R runtime output to `zelda3.log` beside it, at the workspace root. With `portable.txt`, both logs are next to the original AppImage. Without portable mode, both stay together in the user's data directory. Use the two journal views inside Z3-Launcher to inspect them.
 
 ## Validation before publication
 
