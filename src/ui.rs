@@ -356,7 +356,7 @@ impl eframe::App for App {
                 ui.small(tr("text.full_log_in_working_directory"));
                 ui.horizontal(|ui| {
                     ui.selectable_value(&mut self.journal_view, JournalView::Launcher, "Z3-Launcher");
-                    ui.selectable_value(&mut self.journal_view, JournalView::Game, "Zelda 3");
+                    ui.selectable_value(&mut self.journal_view, JournalView::Game, "Z3R");
                 });
                 // Refresh while the game is running; no polling when idle.
                 if self.journal_view == JournalView::Game && self.rx.is_some() {
