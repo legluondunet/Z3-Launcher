@@ -29,7 +29,17 @@ fn start() -> core::Result<()> {
         #[cfg(feature = "gui")]
         {
             let Some(instance) = single_instance::acquire()? else { return Ok(()); };
-            return ui::start(instance).map_err(|e| e.to_string().into());
+            let result = ui::start(instance);
+            #[cfg(target_os = "linux")]
+            if let Err(ref error) = result {
+                // The failed Wayland initialization has returned and released its
+                // single-instance guard. Restart in a fresh process because winit
+                // must not create a second event loop in the same process.
+                if retry_with_x11_after_wayland_failure(error)? {
+                    return Ok(());
+                }
+            }
+            return result.map_err(|e| e.to_string().into());
         }
         #[cfg(not(feature = "gui"))]
         { help(); return Ok(()); }
@@ -78,6 +88,61 @@ fn start() -> core::Result<()> {
     launcher.action_with_verbosity(
         &cli.action, cli.rom.as_deref(), &log, cli.verbose,
     )
+}
+
+// eframe 0.31 uses glutin/EGL for native Wayland windows. Some Linux
+// environments reject the Wayland display handle when creating the GL context.
+// Only this specific startup failure is eligible for a one-time X11 retry.
+#[cfg(all(target_os = "linux", feature = "gui"))]
+fn should_retry_x11(
+    message: &str,
+    is_glutin_config_error: bool,
+    wayland_available: bool,
+    x11_available: bool,
+    already_retried: bool,
+    disabled: bool,
+) -> bool {
+    is_glutin_config_error
+        && message.contains("provided display handle is not supported")
+        && wayland_available
+        && x11_available
+        && !already_retried
+        && !disabled
+}
+
+#[cfg(all(target_os = "linux", feature = "gui"))]
+fn retry_with_x11_after_wayland_failure(error: &eframe::Error) -> core::Result<bool> {
+    const RETRIED: &str = "Z3_X11_FALLBACK_ATTEMPTED";
+    const DISABLED: &str = "Z3_DISABLE_X11_FALLBACK";
+    let has_display = |name| std::env::var_os(name).is_some_and(|value| !value.is_empty());
+    if !should_retry_x11(
+        &error.to_string(),
+        matches!(error, eframe::Error::NoGlutinConfigs(_, _)),
+        has_display("WAYLAND_DISPLAY"),
+        has_display("DISPLAY"),
+        std::env::var_os(RETRIED).is_some(),
+        std::env::var_os(DISABLED).is_some(),
+    ) {
+        return Ok(false);
+    }
+
+    eprintln!(
+        "Z3-Launcher: Wayland OpenGL initialization failed ({error}). \
+         Retrying once under X11/XWayland."
+    );
+    // Do not change the calling environment or globally force X11.
+    // Re-exec the same binary while the AppImage mount and host libraries
+    // remain available, and inherit its stdout/stderr for diagnostics.
+    let status = std::process::Command::new(std::env::current_exe()?)
+        .env_remove("WAYLAND_DISPLAY")
+        .env(RETRIED, "1")
+        .status()?;
+    if !status.success() {
+        return Err(format!(
+            "Z3-Launcher: X11/XWayland retry failed ({status}); original Wayland error: {error}"
+        ).into());
+    }
+    Ok(true)
 }
 
 struct Cli {
@@ -172,6 +237,24 @@ mod cli_tests {
         assert!(cli.verbose);
         assert_eq!(cli.rom.as_deref(), Some(std::path::Path::new("My ROM.sfc")));
         assert_eq!(cli.root, PathBuf::from("My Games"));
+    }
+
+    #[cfg(all(target_os = "linux", feature = "gui"))]
+    #[test]
+    fn wayland_x11_fallback_is_narrow_and_only_attempted_once() {
+        const EGL_ERROR: &str = "Found no glutin configs matching the template: \
+            Error: provided display handle is not supported";
+        assert!(should_retry_x11(EGL_ERROR, true, true, true, false, false));
+        assert!(!should_retry_x11(EGL_ERROR, false, true, true, false, false));
+        assert!(!should_retry_x11(EGL_ERROR, true, false, true, false, false));
+        assert!(!should_retry_x11(EGL_ERROR, true, true, false, false, false));
+        assert!(!should_retry_x11(EGL_ERROR, true, true, true, true, false));
+        assert!(!should_retry_x11(EGL_ERROR, true, true, true, false, true));
+        assert!(!should_retry_x11(
+            "Found no glutin configs matching the template: insufficient GPU memory",
+            true, true, true, false, false
+        ));
+        assert!(!should_retry_x11("Unrelated application error", true, true, true, false, false));
     }
 
     #[test]
