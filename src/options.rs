@@ -3,7 +3,7 @@
 use crate::i18n::{tr, tf};
 use crate::{core, ini::Ini};
 use eframe::egui;
-use std::{fs, path::PathBuf, time::{Duration, Instant}};
+use std::{fs, path::{Path, PathBuf}, time::{Duration, Instant}};
 use sdl2::{controller::{Axis, Button, GameController}, event::Event};
 fn control_labels() -> [&'static str;12] { [tr("text.up"), tr("text.down"), tr("text.left"), tr("text.right"), tr("mapping.select"), tr("mapping.start"), "A", "B", "X", "Y", "L", "R"] }
 const KEY_DEFAULT: &str = "Up, Down, Left, Right, Right Shift, Return, x, z, s, a, c, v";
@@ -91,6 +91,11 @@ fn ini_layout(ui: &egui::Ui, text: &str, wrap_width: f32) -> std::sync::Arc<egui
     }
     job.wrap.max_width = wrap_width;
     ui.fonts(|fonts| fonts.layout_job(job))
+}
+/// Z3R prefers a user override file when present; never edit the inactive base.
+fn selected_game_ini(repo: &Path) -> PathBuf {
+    let override_ini = repo.join("zelda3.user.ini");
+    if override_ini.is_file() { override_ini } else { repo.join("zelda3.ini") }
 }
 pub struct Options {
     doc: Option<Ini>, path: Option<PathBuf>, dirty: bool, last_attempt: Option<String>, page: usize,
@@ -279,7 +284,7 @@ impl Options {
         }
     }
     fn load(&mut self, root:&str) -> core::Result<()> {
-        let path=core::Launcher::new(root)?.repo().join("zelda3.ini");
+        let path=selected_game_ini(&core::Launcher::new(root)?.repo());
         let text=fs::read_to_string(&path)?;
         self.doc=Some(Ini::parse(&text)); self.path=Some(path); self.dirty=false; self.last_attempt=None; self.capture=None; self.disk_text=text; Ok(())
     }
@@ -294,7 +299,7 @@ impl Options {
     pub fn show(&mut self, ui:&mut egui::Ui, ctx:&egui::Context, root:&str, busy:bool, status:&mut String) {
         if self.doc.is_none() && !busy { if let Err(e)=self.load(root) { *status=tf("settings.unavailable", &[("error", e.to_string())]); } }
         if let Some(path) = &self.path {
-            let expected = crate::platform::canonicalize(root).ok().map(|p| p.join("zelda3/zelda3.ini"));
+            let expected = crate::platform::canonicalize(root).ok().map(|p| selected_game_ini(&p.join("Z3R")));
             if expected.as_ref() != Some(path) {
                 if self.dirty {
                     ui.colored_label(egui::Color32::YELLOW, tr("settings.workspace_pending"));
@@ -809,6 +814,17 @@ fn validate(doc: &Ini) -> core::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn z3r_user_ini_override_is_used_without_overwriting_base_config() {
+        let dir = tempfile::tempdir().unwrap();
+        let base = dir.path().join("zelda3.ini");
+        let custom = dir.path().join("zelda3.user.ini");
+        fs::write(&base, "[General]\nLanguage=en\n").unwrap();
+        assert_eq!(selected_game_ini(dir.path()), base);
+        fs::write(&custom, "!include zelda3.ini\n[General]\nLanguage=fr\n").unwrap();
+        assert_eq!(selected_game_ini(dir.path()), custom);
+        assert_eq!(fs::read_to_string(&base).unwrap(), "[General]\nLanguage=en\n");
+    }
     #[test] fn ini_editor_saves_on_exit_and_updates_forms_without_losing_invalid_drafts() {
         let dir=std::env::temp_dir().join(format!("ini-editor-test-{}-{}",std::process::id(),std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
         fs::create_dir_all(&dir).unwrap(); let path=dir.join("zelda3.ini");
