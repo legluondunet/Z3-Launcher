@@ -193,10 +193,10 @@ impl eframe::App for App {
                         "https://github.com/legluondunet/Z3-Launcher/releases/latest");
                 }
                 if let Some(version)=&self.updates.game {
-                    let installed=fs::read_to_string(PathBuf::from(&self.root).join("zelda3/.release-version")).ok();
+                    let installed=fs::read_to_string(PathBuf::from(&self.root).join("Z3R/.release-version")).ok();
                     if self.updates.game_available(installed.as_deref()) {
                         ui.hyperlink_to(tf("updates.game", &[("version", version.clone())]),
-                            "https://github.com/legluondunet/zelda3/releases/latest");
+                            "https://github.com/xander-haj/Z3R/releases/latest");
                     }
                 }
             });
@@ -356,7 +356,7 @@ impl eframe::App for App {
                 ui.small(tr("text.full_log_in_working_directory"));
                 ui.horizontal(|ui| {
                     ui.selectable_value(&mut self.journal_view, JournalView::Launcher, "Z3-Launcher");
-                    ui.selectable_value(&mut self.journal_view, JournalView::Game, "Zelda 3");
+                    ui.selectable_value(&mut self.journal_view, JournalView::Game, "Z3R");
                 });
                 // Refresh while the game is running; no polling when idle.
                 if self.journal_view == JournalView::Game && self.rx.is_some() {

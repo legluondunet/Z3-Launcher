@@ -2,12 +2,17 @@
 // Copyright (C) 2026 legluondunet — https://github.com/legluondunet
 //! Line-preserving INI editing. Unknown keys and comments remain untouched.
 #[derive(Clone, Default)]
-pub struct Ini { lines: Vec<String>, newline: &'static str, trailing: bool }
+pub struct Ini { lines: Vec<String>, newline: &'static str, trailing: bool, fallback: Option<Box<Ini>> }
 impl Ini {
     pub fn parse(text: &str) -> Self {
-        Self { lines: text.lines().map(str::to_owned).collect(), newline: if text.contains("\r\n") { "\r\n" } else { "\n" }, trailing: text.ends_with('\n') }
+        Self { lines: text.lines().map(str::to_owned).collect(), newline: if text.contains("\r\n") { "\r\n" } else { "\n" }, trailing: text.ends_with('\n'), fallback: None }
     }
     pub fn text(&self) -> String { let mut s = self.lines.join(self.newline); if self.trailing { s.push_str(self.newline); } s }
+    /// Z3R's shipped defaults remain separate from editable user.ini.
+    pub fn with_fallback(mut self, default: Ini) -> Self {
+        self.fallback = Some(Box::new(default));
+        self
+    }
     pub fn get(&self, section: &str, key: &str) -> Option<String> {
         let mut current = ""; let mut result = None;
         for line in &self.lines {
@@ -17,7 +22,7 @@ impl Ini {
                 if let Some((k,v)) = line.split_once('=') { if k.trim().eq_ignore_ascii_case(key) { result = Some(v.trim().to_owned()); } }
             }
         }
-        result
+        result.or_else(|| self.fallback.as_ref().and_then(|fallback| fallback.get(section, key)))
     }
     pub fn value(&self, section: &str, key: &str, default: &str) -> String { self.get(section,key).unwrap_or_else(|| default.to_owned()) }
     pub fn set(&mut self, section: &str, key: &str, value: &str) {
@@ -52,6 +57,16 @@ mod tests {
         assert_eq!(ini.get("general","autosave").as_deref(),Some("1"));
         assert_eq!(ini.get("KeyMap","Pause").as_deref(),Some("p"));
         assert!(ini.text().find("Language = fr").unwrap()<ini.text().find("[KeyMap]").unwrap());
+    }
+    #[test] fn user_overrides_read_shipped_defaults_without_copying_them() {
+        let shipped = Ini::parse("[Graphics]\nWindowSize=1280x720\nOutputMethod=OpenGL\n");
+        let mut user = Ini::parse("!include zelda3.ini\n[Graphics]\nOutputMethod=SDL\n").with_fallback(shipped);
+        assert_eq!(user.get("Graphics", "WindowSize").as_deref(), Some("1280x720"));
+        assert_eq!(user.get("Graphics", "OutputMethod").as_deref(), Some("SDL"));
+        user.set("Graphics", "WindowSize", "1920x1080");
+        assert_eq!(user.get("Graphics", "WindowSize").as_deref(), Some("1920x1080"));
+        assert!(!user.text().contains("1280x720"));
+        assert!(user.text().starts_with("!include zelda3.ini\n"));
     }
     #[test] fn leaves_commented_defaults_and_updates_duplicate_active_entries() {
         let mut ini=Ini::parse("[KeyMap]\n#Controls = q,w\nControls=a,b\nControls=c,d\n");

@@ -37,7 +37,7 @@ impl Launcher {
         })
     }
     pub fn repo(&self) -> PathBuf {
-        self.root.join("zelda3")
+        self.root.join("Z3R")
     }
     pub fn log(&self, callback: Log) -> Result<Log> {
         let log_path = self.root.join(LOG_FILENAME);
@@ -79,7 +79,7 @@ impl Launcher {
         }))
     }
     /// Find a compatible US ROM next to the launcher without changing the original.
-    /// Installation copies it to zelda3/zelda3.sfc only after assets are generated.
+    /// Installation copies it to Z3R/zelda3.sfc only after assets are generated.
     pub fn adjacent_rom() -> Option<PathBuf> {
         let dir = crate::platform::executable_dir()?;
         let mut candidates: Vec<PathBuf> = fs::read_dir(dir).ok()?
@@ -107,7 +107,7 @@ impl Launcher {
         })
     }
     fn extract(&self, package: &Path, workspace: &Path, args: &[&str], log: &Log) -> Result<()> {
-        let tool = package.join(crate::download::extractor_name());
+        let tool = crate::platform::extractor_path().ok_or(tr("download.extractor_missing"))?;
         if !tool.is_file() {
             return Err(tr("download.extractor_missing").into());
         }
@@ -181,6 +181,16 @@ impl Launcher {
             resources.join("zelda3_assets.dat"),
             staged.join("zelda3_assets.dat"),
         )?;
+        // Z3R's optional user.ini takes priority over shipped defaults.
+        // Keep older customized base INIs intact during migration.
+        if !self.repo().join("zelda3.user.ini").is_file() {
+            let text = if self.repo().join("zelda3.ini").is_file() {
+                fs::read(self.repo().join("zelda3.ini"))?
+            } else {
+                b"!include zelda3.ini\n".to_vec()
+            };
+            fs::write(staged.join("zelda3.user.ini"), text)?;
+        }
         fs::copy(rom, staged.join("zelda3.sfc"))?;
         fs::write(staged.join(".release-version"), version)?;
         crate::download::install(&staged, &self.repo(), &temporary.path().join("backup"))?;

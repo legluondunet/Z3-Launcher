@@ -25,6 +25,11 @@ trap 'rm -rf -- "$build_dir"' EXIT
 appdir="$build_dir/AppDir"
 mkdir -p "$appdir/usr/bin/locales" "$appdir/usr/share/doc/z3-launcher"
 cp -- "$project"/locales/*.json "$appdir/usr/bin/locales/"
+# Bundle the resource builder. No Python installation is needed by end users.
+[[ -x "$project/tools-dist/z3r-extractor/z3r-extractor" ]] || { echo 'Z3R extractor is missing (build it before creating the AppImage).' >&2; exit 1; }
+mkdir -p "$appdir/usr/bin/extractor"
+cp -a "$project/tools-dist/z3r-extractor/." "$appdir/usr/bin/extractor/"
+cp "$project/z3r-upstream/LICENSE.txt" "$appdir/usr/bin/extractor/Z3R-LICENSE.txt"
 cp -- "$project/LICENSE" "$project/LICENSE-MIT-original" "$project/LICENSING.md" "$project/APPIMAGE.md" "$project/assets/DejaVu-LICENSE.txt" "$appdir/usr/share/doc/z3-launcher/"
 # eframe loads these libraries dynamically, so ldd alone cannot discover them.
 cache="$(ldconfig -p)"
