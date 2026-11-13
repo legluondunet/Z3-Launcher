@@ -12,16 +12,28 @@ sudo apt-get install -y build-essential pkg-config cmake curl file python3 libsd
 bash ./build-appimage.sh
 ```
 
-The script tests translation catalogs, builds Z3-Launcher in release mode, bundles the required libraries, translations and licenses, and writes `dist/Z3-Launcher-<version>-x86_64.AppImage` and the matching `.sha256` file. CI stamps the Cargo version with the short commit hash, for example `2.0.0+abcdef0`. The script downloads linuxdeploy from its official release if it is not cached; to use a specific version, set `LINUXDEPLOY` to an existing absolute path.
+The script tests translation catalogs, builds Z3-Launcher in release mode, bundles the required libraries, translations and licenses, and writes `dist/Z3-Launcher-<version>-x86_64.AppImage` and the matching `.sha256` file. CI stamps the Cargo version with the short commit hash, for example `2.0.1+abcdef0`. The script downloads linuxdeploy from its official release if it is not cached; to use a specific version, set `LINUXDEPLOY` to an existing absolute path.
 
 ## Run
 
 ```bash
-chmod +x Z3-Launcher-2.0.0+abcdef0-x86_64.AppImage
-./Z3-Launcher-2.0.0+abcdef0-x86_64.AppImage
+chmod +x Z3-Launcher-2.0.1+abcdef0-x86_64.AppImage
+./Z3-Launcher-2.0.1+abcdef0-x86_64.AppImage
 ```
 
 If FUSE is unavailable, try `--appimage-extract-and-run`. A compatible user-provided ROM is required to generate Z3R resources. The launcher downloads a prebuilt native Z3R Linux package, validates its GitHub SHA-256 digest, and generates resources locally with its bundled Z3R-specific extractor. It does **not** compile the game from source, and its user does **not** need Rust, Python or Make. Z3R's native Linux executable requires a working SDL2 runtime.
+
+## Automatic fallback from Wayland to XWayland
+
+When the native Wayland OpenGL/EGL startup fails with the specific glutin error `provided display handle is not supported`, Z3-Launcher automatically retries **once** under X11/XWayland, provided both `WAYLAND_DISPLAY` and `DISPLAY` are present. Native Wayland remains the default when it works. Other startup errors are not retried, and an X11/XWayland display must be available for the fallback.
+
+This reproduces the workaround confirmed in [issue #34](https://github.com/legluondunet/Z3-Launcher/issues/34):
+
+```bash
+env -u WAYLAND_DISPLAY ./Z3-Launcher-*.AppImage
+```
+
+To disable automatic retry for diagnosis, launch with `Z3_DISABLE_X11_FALLBACK=1`. The retry runs in a separate process because the windowing event loop cannot safely be recreated in the same process. This is a compatibility workaround, not a general correction of the host EGL drivers.
 
 ## Command-line diagnostics
 

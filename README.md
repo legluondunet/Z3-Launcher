@@ -21,6 +21,7 @@ Z3-Launcher is a graphical installer, updater, and configuration manager dedicat
 - **Multilingual interface:** English, French, German, Spanish and Italian, with automatic system-language detection on first launch and English fallback. Importing a supported game-language ROM is a separate feature and does not change the interface language.
 - **Portable installations:** keep game files, preferences, shaders and logs in the executable/AppImage directory when `portable.txt` is present, without an extra nested workspace. Both `Z3-Launcher.log` and `zelda3.log` are stored at the workspace root.
 - **Forest-inspired interface:** pixel-art background, translucent panels, gold-accented controls and scrollbars.
+- **Wayland compatibility:** on Linux, retry once through XWayland if a specific native Wayland EGL startup error occurs and XWayland is available (details in [APPIMAGE.md](APPIMAGE.md)).
 
 ## Supported platforms
 

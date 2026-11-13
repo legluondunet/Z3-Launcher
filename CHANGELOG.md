@@ -16,6 +16,14 @@ Release 1.2.0 consolidated the portable workspace, adjacent-ROM discovery, custo
 
 Release 2.0.0 changes the supported game to Z3R exclusively, while preserving the launcher interface and separating old installations from new ones.
 
+## 2.0.1 — 2026-11-14
+
+- Address [issue #34](https://github.com/legluondunet/Z3-Launcher/issues/34): a native Wayland EGL/OpenGL startup error prevented some users from opening the launcher.
+- Detect the specific glutin error `provided display handle is not supported` and, only when X11 is available, automatically retry the GUI once under X11/XWayland in a new process.
+- Preserve native Wayland on supported systems, avoid retry loops, and permit disabling the fallback using `Z3_DISABLE_X11_FALLBACK=1`.
+- Add tests for the error-specific retry conditions and document the previously confirmed manual workaround.
+- Retain Z3R-only support, user data, settings, downloads, and the existing launcher interface from 2.0.0.
+
 ## 2.0.0 — 2026-11-13
 
 - Change the exclusively supported game from `legluondunet/zelda3` to [Z3R](https://github.com/xander-haj/Z3R). The Z3R v0.2.4 game release is pinned until a newer resource pipeline is validated.

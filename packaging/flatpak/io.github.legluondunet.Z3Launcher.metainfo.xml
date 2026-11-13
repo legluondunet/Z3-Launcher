@@ -19,6 +19,9 @@
   </categories>
   <launchable type="desktop-id">io.github.legluondunet.Z3Launcher.desktop</launchable>
   <releases>
+    <release version="2.0.1" date="2026-11-14">
+      <description><p>Retry the launcher once under X11/XWayland after the specific Wayland EGL display-handle initialization error reported in issue 34, while keeping native Wayland enabled elsewhere.</p></description>
+    </release>
     <release version="2.0.0" date="2026-11-13">
       <description><p>Exclusively install, update and configure Z3R v0.2.4 using verified official archives and a bundled matching ROM resource extractor. Preserve previous installations and user settings.</p></description>
     </release>
