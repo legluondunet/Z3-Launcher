@@ -340,6 +340,7 @@
     "settings.auto_saved_next_launch": "The setting was automatically saved and will take effect the next time you launch the game.",
     "journal.game_started": "Starting Zelda 3 (game log: {path})",
     "journal.game_stopped": "Zelda 3 exited normally.",
-    "journal.game_failed": "Zelda 3 failed: {error}"
+    "journal.game_failed": "Zelda 3 failed: {error}",
+    "text.fill_extended_aspect_ratio_borders": "Fill widescreen side borders"
   }
 }

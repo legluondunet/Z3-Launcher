@@ -340,6 +340,7 @@
     "settings.auto_saved_next_launch": "Die Einstellung wurde automatisch gespeichert und wird beim nächsten Spielstart angewendet.",
     "journal.game_started": "Zelda 3 wird gestartet (Spielprotokoll: {path})",
     "journal.game_stopped": "Zelda 3 wurde normal beendet.",
-    "journal.game_failed": "Zelda 3 ist fehlgeschlagen: {error}"
+    "journal.game_failed": "Zelda 3 ist fehlgeschlagen: {error}",
+    "text.fill_extended_aspect_ratio_borders": "Seitenränder im Breitbild auffüllen"
   }
 }

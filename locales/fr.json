@@ -340,6 +340,7 @@
     "settings.auto_saved_next_launch": "Le réglage a été automatiquement sauvegardé et sera appliqué au prochain lancement du jeu.",
     "journal.game_started": "Lancement de Zelda 3 (journal du jeu : {path})",
     "journal.game_stopped": "Zelda 3 s'est terminé normalement.",
-    "journal.game_failed": "Échec de Zelda 3 : {error}"
+    "journal.game_failed": "Échec de Zelda 3 : {error}",
+    "text.fill_extended_aspect_ratio_borders": "Remplir les bandes latérales en mode panoramique"
   }
 }

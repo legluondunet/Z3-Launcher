@@ -690,6 +690,9 @@ fn graphics(ui:&mut egui::Ui,doc:&mut Ini,dirty:&mut bool) {
                 ui.checkbox(&mut nofix,tr("text.disable_visual_fixes")).on_hover_text(tr("help.aspect.fixes"));
             });
             if old!=(ratio.clone(),extended,unchanged,nofix) {let mut p=Vec::new();if extended {p.push("extend_y".to_owned());}p.push(ratio);if unchanged {p.push("unchanged_sprites".into());}if nofix {p.push("no_visual_fixes".into());}doc.set("General","ExtendedAspectRatio",&p.join(", "));*dirty=true;}
+            // Z3R-specific panoramic border fill (enabled in upstream defaults).
+            flag(ui,doc,dirty,"General","FillExtendedAspectRatioBorders",
+                tr("text.fill_extended_aspect_ratio_borders"),true);
             });
             columns[1].vertical(|ui| {
             text(ui,doc,dirty,"Graphics","WindowSize",tr("text.window_size_auto_or_widthxheight"),"Auto");

@@ -340,6 +340,7 @@
     "settings.auto_saved_next_launch": "L'impostazione è stata salvata automaticamente e verrà applicata al prossimo avvio del gioco.",
     "journal.game_started": "Avvio di Zelda 3 (registro del gioco: {path})",
     "journal.game_stopped": "Zelda 3 è terminato normalmente.",
-    "journal.game_failed": "Errore di Zelda 3: {error}"
+    "journal.game_failed": "Errore di Zelda 3: {error}",
+    "text.fill_extended_aspect_ratio_borders": "Riempire i bordi laterali in formato panoramico"
   }
 }
