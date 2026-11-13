@@ -196,7 +196,7 @@ impl eframe::App for App {
                     let installed=fs::read_to_string(PathBuf::from(&self.root).join("Z3R/.release-version")).ok();
                     if self.updates.game_available(installed.as_deref()) {
                         ui.hyperlink_to(tf("updates.game", &[("version", version.clone())]),
-                            "https://github.com/xander-haj/Z3R/releases/latest");
+                            &format!("https://github.com/xander-haj/Z3R/releases/tag/{}", crate::z3r_source::SUPPORTED_RELEASE));
                     }
                 }
             });
