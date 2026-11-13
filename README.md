@@ -11,7 +11,7 @@ Z3-Launcher is a graphical installer, updater, and configuration manager **dedic
 
 ## Features
 
-- **Install and play:** select a compatible US ROM, download the latest official Z3R release, extract assets locally, and launch Z3R.
+- **Install and play:** select a compatible US ROM, download the latest supported official Z3R release, extract assets locally, and launch Z3R.
 - **Safe game updates:** verify official GitHub Release asset SHA-256 digests, regenerate game resources, and preserve existing configuration, save files, MSU music packs and imported languages. Failed file replacements are rolled back.
 - **Game settings:** configure gameplay, graphics, audio, keyboard/gamepad bindings, and shortcuts through the interface. Valid changes are saved automatically for the next launch; gamepad input capture and default binding restoration are supported.
 - **Built-in INI editor:** edit `zelda3.ini` with syntax highlighting, line numbers, and save/discard prompts.
@@ -96,7 +96,7 @@ With `portable.txt`, both logs are directly next to the launcher executable or o
 
 ## Updating the game
 
-Use **Update game** to download the latest compatible [official Z3R release](https://github.com/xander-haj/Z3R/releases/latest) and regenerate its assets. The updater checks the release package's published SHA-256 digest, preserves user data and protects the existing installation when an update fails.
+Use **Update game** to download the supported [official Z3R release](https://github.com/xander-haj/Z3R/releases/latest) and regenerate its assets. The updater checks the release package's published SHA-256 digest, preserves user data and protects the existing installation when an update fails. Until additional game versions have been tested with the bundled standalone extractor, Z3-Launcher deliberately pins the supported Z3R release to **v0.2.4** rather than installing a potentially incompatible future upstream release.
 
 Public downloads do not require a GitHub account or API token. A game release must be available before installation can proceed.
 
