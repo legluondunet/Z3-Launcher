@@ -6,7 +6,7 @@
 
 Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.com/legluondunet/zelda3), based on the [Zelda 3 Launcher](https://github.com/RadzPrower/Zelda-3-Launcher) project code to manage [snesrev/zelda3](https://github.com/snesrev/zelda3) game. It downloads prebuilt Zelda 3 releases, extracts the required assets from **your own ROM**, and provides a graphical interface for configuring and launching the game.
 
-<img width="1251" height="863" alt="image" src="https://github.com/user-attachments/assets/a6901e13-d0d5-4623-80f5-80348b4523a0" />
+<img width="1251" height="863" alt="image" src="https://github.com/user-attachments/assets/0d97a976-0465-49c0-b5a8-6f93f79b094b" />
 
 
 ### Custom launcher background
