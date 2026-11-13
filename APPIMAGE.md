@@ -23,6 +23,18 @@ chmod +x Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
 
 If FUSE is unavailable, try `--appimage-extract-and-run`. A compatible user-provided ROM is required to generate Zelda 3 resources. The launcher downloads a prebuilt Zelda 3 game package, validates its published SHA-256, and generates resources locally; it does **not** compile the game from source, and its user does **not** need Rust or Make.
 
+## Wayland/OpenGL fallback
+
+On Linux, Z3-Launcher normally starts using the desktop's native display backend. In some environments, `eframe`/`glutin` cannot initialize the OpenGL/EGL context for a Wayland window and reports `provided display handle is not supported`. When that **specific startup error** occurs and `DISPLAY` is available, Z3-Launcher retries **once** under X11/XWayland automatically. Native Wayland remains the preferred backend everywhere it works; other errors are not silently retried.
+
+To force X11 manually or reproduce the workaround for [issue #34](https://github.com/legluondunet/Z3-Launcher/issues/34):
+
+```bash
+env -u WAYLAND_DISPLAY ./Z3-Launcher-*.AppImage
+```
+
+To turn off the automatic fallback for diagnosing native Wayland, set `Z3_DISABLE_X11_FALLBACK=1`. A system without an X11/XWayland display cannot use this fallback. This is a compatibility measure, not proof that the underlying graphics library/driver problem is fixed.
+
 ## Command-line diagnostics
 
 Run `./Z3-Launcher-<version>-x86_64.AppImage --version` to print its embedded version and build commit. Add `--verbose` to an action such as `status`, `setup`, `update` or `run` for additional diagnostics. `run --verbose` also prints game messages to the terminal, while `zelda3.log` stays separate from `Z3-Launcher.log` on disk.
