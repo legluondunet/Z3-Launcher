@@ -19,6 +19,9 @@
   </categories>
   <launchable type="desktop-id">io.github.legluondunet.Z3Launcher.desktop</launchable>
   <releases>
+    <release version="1.2.0" date="2026-11-12">
+      <description><p>Improve portable installations and nearby ROM detection, add an external tiled background override, polish the interface, and migrate the launcher journal to Z3-Launcher.log.</p></description>
+    </release>
     <release version="1.1.0" date="2026-10-13">
       <description><p>Automatically detect the system language on first launch, fall back to English for unsupported languages, and preserve manual language preferences.</p></description>
     </release>

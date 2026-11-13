@@ -1,68 +1,47 @@
-# AppImage Linux x86_64 — 0.11
+# AppImage — Linux x86_64
 
-## Construire
+## Build
 
-Le script compile le launcher, crée un AppDir avec ses traductions, son icône et son fichier desktop, déploie les bibliothèques avec linuxdeploy, puis produit :
+The published AppImage is built on Ubuntu 22.04 to target systems with glibc 2.35 or later. Native host graphics drivers, OpenGL, and a working desktop environment are still required. It is not a universal musl/Alpine package.
 
-```
-dist/Z3-Launcher-0.11.15-x86_64.AppImage
-dist/Z3-Launcher-0.11.15-x86_64.AppImage.sha256
-```
-
-Préférer Ubuntu 22.04 x86_64 pour la construction : un binaire compilé avec une glibc récente (par exemple sur Manjaro) peut ne pas fonctionner sur une distribution plus ancienne. Cette méthode vise Ubuntu 22.04 et des systèmes avec glibc 2.35 ou ultérieure, à valider sur chaque distribution visée. Elle ne couvre pas musl/Alpine ou les anciennes distributions. Les pilotes graphiques restent ceux du système.
-
-Sur Ubuntu 22.04, installer Rust stable avec rustup, puis les paquets de construction :
+To build locally, install Rust (stable) and the necessary native build packages on Ubuntu 22.04:
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y build-essential pkg-config cmake curl file python3 libsdl2-dev libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev libgl1-mesa-dev
-./build-appimage.sh
+bash ./build-appimage.sh
 ```
 
-Le script télécharge linuxdeploy depuis sa publication officielle « continuous » et le conserve dans `tools/appimage`. Pour utiliser une version précise préalablement téléchargée, fournir un chemin absolu :
+The script tests translation catalogs, builds Z3-Launcher in release mode, bundles the required libraries, translations and licenses, and writes `dist/Z3-Launcher-<version>-x86_64.AppImage` and the matching `.sha256` file. CI stamps the Cargo version with the short commit hash, for example `1.2.0+abcdef0`. The script downloads linuxdeploy from its official release if it is not cached; to use a specific version, set `LINUXDEPLOY` to an existing absolute path.
+
+## Run
 
 ```bash
-LINUXDEPLOY=/chemin/linuxdeploy-x86_64.AppImage ./build-appimage.sh
+chmod +x Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
+./Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
 ```
 
-La construction nécessite Internet pour les dépendances Cargo et le téléchargement de linuxdeploy. Pour des versions reproductibles, conserver le Cargo.lock généré et la version exacte de linuxdeploy utilisée. La workflow GitHub `Native builds` inclut désormais un job AppImage sur Ubuntu 22.04 ; elle produit un artefact téléchargeable lorsqu'elle est exécutée dans un dépôt GitHub.
+If FUSE is unavailable, try `--appimage-extract-and-run`. A compatible user-provided ROM is required to generate Zelda 3 resources. The launcher downloads a prebuilt Zelda 3 game package, validates its published SHA-256, and generates resources locally; it does **not** compile the game from source, and its user does **not** need Rust or Make.
 
-## Utiliser et distribuer
+## Command-line diagnostics
 
-Distribuer l'AppImage et, si souhaité, son fichier SHA256. L'utilisateur n'a pas besoin de Rust pour lancer le launcher :
+Run `./Z3-Launcher-<version>-x86_64.AppImage --version` to print its embedded version and build commit. Add `--verbose` to an action such as `status`, `setup`, `update` or `run` for additional diagnostics. `run --verbose` also prints game messages to the terminal, while `zelda3.log` stays separate from `Z3-Launcher.log` on disk.
 
-```bash
-chmod +x Z3-Launcher-0.11.15-x86_64.AppImage
-./Z3-Launcher-0.11.15-x86_64.AppImage
-```
+## Portable mode
 
-En l'absence de FUSE, essayer le mode extraction du runtime :
+- **`portable.txt`:** Create this empty file beside the *original AppImage*. Game files, settings, shaders and `Z3-Launcher.log` are stored beside that file (or in its subdirectories), rather than in an extra `Z3-Launcher/` workspace.
+- **AppImage `.home` mode:** Without `portable.txt`, a folder named exactly `<full AppImage filename>.home` redirects HOME and XDG data/configuration to that folder. Renaming or moving the AppImage requires renaming or moving the matching `.home` directory.
+- If both are present, **`portable.txt` takes priority**. Mode changes require a restart and do not automatically migrate prior data.
 
-```bash
-./Z3-Launcher-0.11.15-x86_64.AppImage --appimage-extract-and-run
-```
+## Custom background and ROM discovery
 
-Les bibliothèques du launcher (dont SDL2 et les bibliothèques X11/Wayland chargées dynamiquement) et les traductions sont embarquées. Un environnement de bureau, ses pilotes OpenGL et un portail XDG avec backend pour le sélecteur de fichiers restent nécessaires. Aucune ROM ni ressource Nintendo n'est incluse.
+- To override the embedded forest image without rebuilding, place `config/background.png` or `background.png` beside the original AppImage. A normal per-user configuration path is a further fallback. Invalid images are skipped, and the embedded image remains the final fallback. The image is tiled (repeated), not stretched.
+- A compatible US `.sfc` or `.smc` beside the original AppImage is detected by SHA-256 and preselected. This does not require `portable.txt`.
 
-Le jeu continue à être téléchargé et construit sur la machine de l'utilisateur. Git, Python/Pillow/PyYAML, Make, le compilateur C, les fichiers de développement SDL2 et sha256sum restent des dépendances système. Le bouton « Vérifier » affiche les éléments manquants et la commande adaptée à la distribution. Les bibliothèques embarquées du launcher ne sont pas imposées aux outils système ni au jeu lancé : le LD_LIBRARY_PATH d'origine est restauré pour ces processus.
+## Separate logs
 
-## Données et traductions
+The launcher writes `Z3-Launcher.log` and saves Zelda 3 runtime output to `zelda3.log` beside it, at the workspace root. With `portable.txt`, both logs are next to the original AppImage. Without portable mode, both stay together in the user's data directory. Use the two journal views inside Z3-Launcher to inspect them.
 
-Créer un dossier portant le nom complet de l'AppImage suivi de `.home` :
+## Validation before publication
 
-```bash
-mkdir -p Z3-Launcher-0.11.15-x86_64.AppImage.home
-```
-
-Au lancement, HOME et les variables XDG de données, configuration, cache et état sont redirigées vers ce dossier. Les données du jeu et le journal vont dans `.home/.local/share/Z3-Launcher`, les préférences et traductions personnalisées dans `.home/.config/Z3-Launcher`. Ce mode force le dossier de travail local : les anciens chemins enregistrés et l'option CLI `--dir` ne le remplacent pas. Le dossier `.home` prend priorité sur `portable.txt` s'ils sont tous deux présents. Aucun fichier existant n'est déplacé automatiquement. Déplacer ou renommer l'AppImage avec son dossier `.home` correspondant ; son nom doit toujours correspondre au nom complet de l'AppImage.
-
-
-Les données restent par défaut dans le répertoire XDG habituel. Un `portable.txt` à côté du fichier **.AppImage** active un répertoire `Z3-Launcher` situé à cet endroit, et non dans le montage temporaire en lecture seule. Redémarrer l'application après changement du marqueur. Ce répertoire doit être accessible en écriture ; les anciennes données ne sont pas déplacées.
-
-Pour ajouter une traduction, placer son JSON dans le dossier `locales` du répertoire de configuration utilisateur, ou dans `Z3-Launcher/config/locales` en mode portable. Les JSON inclus dans l'AppImage sont en lecture seule.
-
-## Validation avant publication
-
-La syntaxe du script, les traductions et le démarrage AppRun avec un exécutable de contrôle ont été vérifiés. Aucun compilateur Rust n'est disponible dans l'environnement où cette archive a été préparée : aucune AppImage réelle n'a été construite ni lancée ici.
-
-Avant publication, construire sur Ubuntu 22.04, puis tester l'AppImage sur Ubuntu/Debian, Fedora et Arch/Manjaro : lancement X11/Wayland, sélection et glisser-déposer de ROM, manettes, langue, installation du jeu, et mode portable dans un chemin avec espaces et accents. Vérifier aussi le lancement sur une machine sans Rust et l'affichage des dépendances manquantes.
+Use the `main` GitHub Actions workflow to verify build and unit tests on Linux, Windows, AppImage and experimental Flatpak. Download the **current commit's** AppImage artifact for Linux runtime checks: launching on X11/Wayland, ROM selection, installation/update, controllers, language changes, window resizing, portable mode, external backgrounds, logging, and paths with spaces or accented characters. For checksum verification, use the adjacent `.sha256` file. A successful compilation alone does not validate runtime behavior on every distribution.

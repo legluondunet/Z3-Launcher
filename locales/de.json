@@ -8,7 +8,7 @@
     "settings.ini_confirm_question": "Sie haben die Konfigurationsdatei zelda3.ini geändert. Möchten Sie diese Änderungen behalten?",
     "settings.ini_keep_changes": "Ja, Änderungen speichern",
     "settings.ini_discard_changes": "Nein, Änderungen verwerfen",
-    "cli.help": "Z3-Launcher\nsetup | update | run | status\n--dir DIRECTORY --rom US_ROM\nz3-launcher setup --rom /path/zelda3.sfc",
+    "cli.help": "Z3-Launcher\nUsage: z3-launcher [setup | update | run | status] [--dir DIRECTORY] [--rom US_ROM] [--verbose]\n       z3-launcher --version | --help\nExample: z3-launcher setup --rom /path/zelda3.sfc --verbose",
     "cli.unknown_argument": "Unbekanntes Argument: {argument}",
     "cli.unknown_command": "Unbekannter Befehl: {action}",
     "settings.ini_unsaved": "Nicht gespeicherte Änderungen",
@@ -90,7 +90,7 @@
     "text.extend_height_to_240_lines": "Bildhöhe auf 240 Zeilen erweitern",
     "text.format": "Format",
     "text.french": "Französisch",
-    "text.full_log_in_working_directory": "Vollständiges Protokoll: Z3-Launcher.log im Arbeitsverzeichnis",
+    "text.full_log_in_working_directory": "Protokolldateien im Arbeitsverzeichnis: Z3-Launcher.log und zelda3.log",
     "text.fullscreen": "Vollbild",
     "text.fullscreen_mode": "Vollbildmodus",
     "text.game_language_matching_assets_required": "Spielsprache (passende Ressourcen erforderlich)",
@@ -337,6 +337,9 @@
     "text.controls": "Steuerung",
     "updates.game": "Zelda3-Update verfügbar ({version})",
     "updates.launcher": "Launcher-Update verfügbar ({version})",
-    "settings.auto_saved_next_launch": "Die Einstellung wurde automatisch gespeichert und wird beim nächsten Spielstart angewendet."
+    "settings.auto_saved_next_launch": "Die Einstellung wurde automatisch gespeichert und wird beim nächsten Spielstart angewendet.",
+    "journal.game_started": "Zelda 3 wird gestartet (Spielprotokoll: {path})",
+    "journal.game_stopped": "Zelda 3 wurde normal beendet.",
+    "journal.game_failed": "Zelda 3 ist fehlgeschlagen: {error}"
   }
 }

@@ -13,6 +13,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + S
 pub const ROM_HASH: &str = "66871d66be19ad2c34c927d6b14cd8eb6fc3181965b6e517cb361f7316009cfb";
 pub const DEFAULT_RENDERER: &str = "OpenGL";
 pub const LOG_FILENAME: &str = "Z3-Launcher.log";
+pub const GAME_LOG_FILENAME: &str = "zelda3.log";
 pub type Log = Arc<dyn Fn(String) + Send + Sync>;
 #[derive(Clone)]
 pub struct Launcher {
@@ -58,6 +59,23 @@ impl Launcher {
                 let _ = writeln!(f, "{line}");
             }
             callback(line);
+        }))
+    }
+    /// Capture the game's own stdout and stderr independently of the launcher journal.
+    fn game_log(&self, callback: Option<Log>) -> Result<Log> {
+        let file = Arc::new(Mutex::new(
+            fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(self.root.join(GAME_LOG_FILENAME))?,
+        ));
+        Ok(Arc::new(move |line| {
+            if let Ok(mut f) = file.lock() {
+                let _ = writeln!(f, "{line}");
+            }
+            if let Some(callback) = &callback {
+                callback(line);
+            }
         }))
     }
     /// Find a compatible US ROM next to the launcher without changing the original.
@@ -221,6 +239,9 @@ impl Launcher {
         Ok(())
     }
     pub fn run(&self, log: &Log) -> Result<()> {
+        self.run_with_verbosity(log, false)
+    }
+    fn run_with_verbosity(&self, log: &Log, verbose: bool) -> Result<()> {
         let bin = self.repo().join(crate::platform::GAME_BINARY);
         if !bin.is_file() || !self.repo().join("zelda3_assets.dat").is_file() {
             return Err(tr("download.install_first").into());
@@ -241,13 +262,28 @@ impl Launcher {
         command.current_dir(self.repo());
         #[cfg(target_os = "linux")]
         command.env("APPIMAGE_EXTRACT_AND_RUN", "1");
-        run_logged(command, crate::platform::GAME_BINARY, log)
+        let terminal_echo: Option<Log> = verbose.then(|| {
+            Arc::new(|line| println!("[zelda3] {line}")) as Log
+        });
+        let game_output = self.game_log(terminal_echo)?;
+        log(tf("journal.game_started", &[("path", self.root.join(GAME_LOG_FILENAME).display().to_string())]));
+        let result = run_logged(command, crate::platform::GAME_BINARY, &game_output);
+        match &result {
+            Ok(()) => log(tr("journal.game_stopped").to_owned()),
+            Err(error) => log(tf("journal.game_failed", &[("error", error.to_string())])),
+        }
+        result
     }
     pub fn action(&self, action: &str, rom: Option<&Path>, log: &Log) -> Result<()> {
+        self.action_with_verbosity(action, rom, log, false)
+    }
+    pub fn action_with_verbosity(
+        &self, action: &str, rom: Option<&Path>, log: &Log, verbose: bool,
+    ) -> Result<()> {
         match action {
             "setup" => self.install_game(rom.ok_or(tr("text.select_a_us_rom"))?, log),
             "update" => self.update(log),
-            "run" => self.run(log),
+            "run" => self.run_with_verbosity(log, verbose),
             "status" => {
                 log(tf(
                     "launcher.status",
@@ -361,6 +397,37 @@ mod tests {
         assert!(contents.contains("Added"));
         assert!(!contents.contains("Old history"));
         assert!(old_path.exists());
+    }
+
+    #[test]
+    fn launcher_and_game_journals_are_separate_and_adjacent() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = Launcher { root: dir.path().to_owned() };
+        let launcher_log = launcher.log(Arc::new(|_| {})).unwrap();
+        let game_log = launcher.game_log(None).unwrap();
+        launcher_log("Launcher event".to_owned());
+        game_log("Game stdout".to_owned());
+        game_log("Game stderr".to_owned());
+        let launcher_contents = fs::read_to_string(dir.path().join(LOG_FILENAME)).unwrap();
+        let game_contents = fs::read_to_string(dir.path().join(GAME_LOG_FILENAME)).unwrap();
+        assert!(launcher_contents.contains("Launcher event"));
+        assert!(!launcher_contents.contains("Game stdout"));
+        assert!(!launcher_contents.contains("Game stderr"));
+        assert!(game_contents.contains("Game stdout"));
+        assert!(game_contents.contains("Game stderr"));
+        assert!(!game_contents.contains("Launcher event"));
+        assert!(!launcher.repo().join(GAME_LOG_FILENAME).exists());
+    }
+
+    #[test]
+    fn game_journal_appends_without_erasing_an_earlier_session() {
+        let dir = tempfile::tempdir().unwrap();
+        let launcher = Launcher { root: dir.path().to_owned() };
+        launcher.game_log(None).unwrap()("First session".to_owned());
+        launcher.game_log(None).unwrap()("Second session".to_owned());
+        let contents = fs::read_to_string(dir.path().join(GAME_LOG_FILENAME)).unwrap();
+        assert!(contents.contains("First session"));
+        assert!(contents.contains("Second session"));
     }
 
     #[test]

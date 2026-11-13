@@ -1,15 +1,32 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 legluondunet — https://github.com/legluondunet
 use crate::i18n::{tr, tf};
-use crate::core::Launcher;
+use crate::core::{Launcher, GAME_LOG_FILENAME};
 use eframe::egui;
 use crate::theme;
-use std::{fs, path::PathBuf, sync::{mpsc::{self, Receiver}, Arc}, thread};
+use std::{fs, io::{Read, Seek, SeekFrom}, path::{Path, PathBuf}, sync::{mpsc::{self, Receiver}, Arc}, thread, time::Duration};
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum JournalView { Launcher, Game }
+/// Show the tail rather than loading an unbounded game log into the GUI.
+fn game_log_tail(root: &Path) -> String {
+    let Ok(mut file) = fs::File::open(root.join(GAME_LOG_FILENAME)) else { return String::new(); };
+    let Ok(length) = file.metadata().map(|m| m.len()) else { return String::new(); };
+    let skip = length.saturating_sub(256 * 1024);
+    if file.seek(SeekFrom::Start(skip)).is_err() { return String::new(); }
+    let mut data = Vec::new();
+    if file.read_to_end(&mut data).is_err() { return String::new(); }
+    let text = String::from_utf8_lossy(&data);
+    if skip > 0 {
+        text.split_once('\n').map(|(_, remainder)| remainder.to_owned()).unwrap_or_default()
+    } else {
+        text.into_owned()
+    }
+}
 enum Event { Line(String), Done(std::result::Result<(), String>), LanguageDone(String, std::result::Result<(), String>) }
 struct App {
     instance: Option<crate::single_instance::Guard>,
     updates_started: bool, updates_rx: Option<Receiver<crate::updates::Updates>>, updates: crate::updates::Updates,
-    root: String, rom: String, lines: Vec<String>, rx: Option<Receiver<Event>>,
+    root: String, rom: String, lines: Vec<String>, journal_view: JournalView, rx: Option<Receiver<Event>>,
     protect_operation: bool, background: Option<egui::TextureHandle>, status: String, options: crate::options::Options, tab: usize, pending_ini_tab: Option<usize>,
 }
 impl Default for App {
@@ -17,7 +34,7 @@ impl Default for App {
         let root = if crate::platform::is_portable() {
             crate::default_root().to_string_lossy().into_owned()
         } else { fs::read_to_string(preferences()).unwrap_or_else(|_| crate::default_root().to_string_lossy().into_owned()) };
-        Self { updates_started: false, updates_rx: None, updates: crate::updates::Updates::default(), instance: None, root, rom: Launcher::adjacent_rom().map(|path| path.to_string_lossy().into_owned()).unwrap_or_default(), lines: crate::i18n::warnings(), rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0, pending_ini_tab: None }
+        Self { updates_started: false, updates_rx: None, updates: crate::updates::Updates::default(), instance: None, root, rom: Launcher::adjacent_rom().map(|path| path.to_string_lossy().into_owned()).unwrap_or_default(), lines: crate::i18n::warnings(), journal_view: JournalView::Launcher, rx: None, protect_operation: false, background: None, status: tr("text.ready").into(), options: crate::options::Options::default(), tab: 0, pending_ini_tab: None }
     }
 }
 fn preferences() -> PathBuf { crate::platform::config_dir().join("workspace.txt") }
@@ -337,6 +354,19 @@ impl eframe::App for App {
                 .inner_margin(egui::Margin::symmetric(16, 16)).show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 ui.small(tr("text.full_log_in_working_directory"));
+                ui.horizontal(|ui| {
+                    ui.selectable_value(&mut self.journal_view, JournalView::Launcher, "Z3-Launcher");
+                    ui.selectable_value(&mut self.journal_view, JournalView::Game, "Zelda 3");
+                });
+                // Refresh while the game is running; no polling when idle.
+                if self.journal_view == JournalView::Game && self.rx.is_some() {
+                    ctx.request_repaint_after(Duration::from_millis(500));
+                }
+                let journal_text = if self.journal_view == JournalView::Launcher {
+                    self.lines.join("\n")
+                } else {
+                    game_log_tail(Path::new(&self.root))
+                };
                 // Start with a shorter journal; users can drag the lower-right
                 // resize handle to expand it without obscuring the controls above.
                 let footer_height = ui.spacing().interact_size.y.max(
@@ -362,13 +392,13 @@ impl eframe::App for App {
                         .show(ui, |ui| {
                         ui.set_width(ui.available_width());
                         theme::gold_scrollbar(ui);
-                        egui::ScrollArea::vertical().id_salt("journal-scroll").stick_to_bottom(true)
+                        egui::ScrollArea::vertical().id_salt(if self.journal_view == JournalView::Launcher { "journal-scroll-launcher" } else { "journal-scroll-game" }).stick_to_bottom(true)
                             .max_height((ui.available_height() - 8.0).max(24.0))
                             .min_scrolled_height(0.0).auto_shrink([false, false]).show(ui, |ui| {
-                        let text = self.lines.join("\n");
+                        let text = journal_text.clone();
                         // An immutable TextBuffer allows selection and Ctrl+C without editing the log.
                         let mut buffer = text.as_str();
-                        let id = ui.make_persistent_id("journal-text");
+                        let id = ui.make_persistent_id(if self.journal_view == JournalView::Launcher { "journal-text-launcher" } else { "journal-text-game" });
                         let previous = egui::text_edit::TextEditState::load(ctx, id)
                             .and_then(|state| state.cursor.char_range());
                         let mut output = egui::TextEdit::multiline(&mut buffer).id(id)
@@ -397,8 +427,8 @@ impl eframe::App for App {
                 });
                 });
                 ui.horizontal(|ui| {
-                    if ui.button(tr("text.copy_log")).clicked() { ctx.copy_text(self.lines.join("\n")); }
-                    if ui.button(tr("text.clear_display")).clicked() { self.lines.clear(); }
+                    if ui.button(tr("text.copy_log")).clicked() { ctx.copy_text(journal_text.clone()); }
+                    if ui.add_enabled(self.journal_view == JournalView::Launcher, egui::Button::new(tr("text.clear_display"))).clicked() { self.lines.clear(); }
                 });
                 });
             }
