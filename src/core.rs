@@ -432,6 +432,20 @@ mod tests {
     }
 
     #[test]
+    fn z3r_installation_is_isolated_from_a_legacy_zelda3_directory() {
+        let t = tempfile::tempdir().unwrap();
+        let legacy = t.path().join("zelda3");
+        fs::create_dir(&legacy).unwrap();
+        fs::write(legacy.join("save.srm"), b"legacy-save").unwrap();
+        fs::write(legacy.join(".release-version"), b"old-fork").unwrap();
+        let launcher = Launcher::new(t.path()).unwrap();
+        assert_eq!(launcher.repo(), t.path().join("Z3R"));
+        assert!(!launcher.repo().exists());
+        assert_eq!(fs::read(legacy.join("save.srm")).unwrap(), b"legacy-save");
+        assert_eq!(fs::read(legacy.join(".release-version")).unwrap(), b"old-fork");
+    }
+
+    #[test]
     fn rejects_invalid_rom_before_network_access() {
         let t = tempfile::tempdir().unwrap();
         let rom = t.path().join("bad.sfc");
