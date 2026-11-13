@@ -6,7 +6,7 @@
 
 Z3-Launcher is a graphical installer, updater, and configuration manager dedicated to [Z3R (Zelda 3 Reborn)](https://github.com/xander-haj/Z3R), a fork of [snesrev/zelda3](https://github.com/snesrev/zelda3). The launcher itself builds on the original [Zelda 3 Launcher](https://github.com/RadzPrower/Zelda-3-Launcher) by RadzPrower. It downloads verified prebuilt Z3R releases, extracts resources locally from **your own compatible ROM**, and configures and launches Z3R on Linux and Windows.
 
-**Development note:** This branch is preparing the Z3R migration. The public v1.2.0 release still supports legluondunet/zelda3. This migration has not yet passed ROM-based runtime tests.
+**Version 2.0.0 exclusively supports Z3R v0.2.4.** Older Z3-Launcher 1.x releases use the previous game fork; existing `zelda3/` installations are left untouched when installing Z3R in `Z3R/`.
 
 <img width="1251" height="863" alt="Z3-Launcher main window with game installation controls, configuration tabs, and journal panel" src="https://github.com/user-attachments/assets/0d97a976-0465-49c0-b5a8-6f93f79b094b" />
 
@@ -97,7 +97,7 @@ With `portable.txt`, both logs are directly next to the launcher executable or o
 
 ## Updating the game
 
-Use **Update game** to download the latest **supported** [Z3R release](https://github.com/xander-haj/Z3R/releases/latest) and regenerate its assets. The updater verifies the SHA-256 digest published by GitHub for the selected archive, preserves user data, and rolls back a failed installation. This development branch currently supports **v0.2.4 only** because its embedded extractor comes from that version. New releases require compatibility testing before being enabled.
+Use **Update game** to download the latest **supported** [Z3R release](https://github.com/xander-haj/Z3R/releases/latest) and regenerate its assets. The updater verifies the SHA-256 digest published by GitHub for the selected archive, preserves user data, and rolls back a failed installation. Version **2.0.0 supports Z3R v0.2.4 only** because its bundled extractor is built from that exact upstream release. New releases require compatibility testing before being enabled.
 
 Public downloads do not require a GitHub account or API token. A game release must be available before installation can proceed.
 
