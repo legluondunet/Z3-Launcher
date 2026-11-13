@@ -9,7 +9,9 @@ use sha2::{Digest, Sha256};
 use std::{io::Read, time::Duration};
 
 pub const REPOSITORY: &str = "xander-haj/Z3R";
-pub const RELEASES_API: &str = "https://api.github.com/repos/xander-haj/Z3R/releases/latest";
+// Keep the game paired with the upstream source revision used to bundle its extractor.
+pub const SUPPORTED_RELEASE: &str = "v0.2.4";
+pub const RELEASES_API: &str = "https://api.github.com/repos/xander-haj/Z3R/releases/tags/v0.2.4";
 const MAX_PACKAGE: u64 = 128 * 1024 * 1024;
 
 #[derive(Debug, Deserialize)]
@@ -52,6 +54,9 @@ pub fn latest(client: &Client) -> Result<Release> {
 }
 
 pub fn select_asset<'a>(release: &'a Release, name: &str) -> Result<&'a Asset> {
+    if release.tag_name != SUPPORTED_RELEASE {
+        return Err(format!("Unsupported Z3R release: {}", release.tag_name).into());
+    }
     let asset = release.assets.iter().find(|asset| asset.name == name)
         .ok_or_else(|| format!("Z3R release {} lacks {}", release.tag_name, name))?;
     // Only the official GitHub Release attachment is eligible for download.
