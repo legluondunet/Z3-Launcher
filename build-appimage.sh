@@ -23,7 +23,15 @@ chmod +x -- "$linuxdeploy"
 build_dir="$(mktemp -d "$project/dist/appimage-build.XXXXXX")"
 trap 'rm -rf -- "$build_dir"' EXIT
 appdir="$build_dir/AppDir"
-mkdir -p "$appdir/usr/bin/locales" "$appdir/usr/share/doc/z3-launcher"
+mkdir -p "$appdir/usr/bin/locales" "$appdir/usr/bin/extractor" "$appdir/usr/share/doc/z3-launcher"
+# Z3R game releases do not bundle an asset generator; supply our pinned
+# standalone tool alongside the launcher (works offline at game setup time).
+[[ -s "$project/target/release/extractor/zelda3-extractor" ]] || {
+  echo 'Missing Z3R resource extractor; build it before the AppImage.' >&2
+  exit 1
+}
+cp -- "$project/target/release/extractor/zelda3-extractor" "$appdir/usr/bin/extractor/"
+cp -- "$project/target/release/extractor/Z3R-LICENSE.txt" "$appdir/usr/share/doc/z3-launcher/"
 cp -- "$project"/locales/*.json "$appdir/usr/bin/locales/"
 cp -- "$project/LICENSE" "$project/LICENSE-MIT-original" "$project/LICENSING.md" "$project/APPIMAGE.md" "$project/assets/DejaVu-LICENSE.txt" "$appdir/usr/share/doc/z3-launcher/"
 # eframe loads these libraries dynamically, so ldd alone cannot discover them.

@@ -35,11 +35,36 @@ jobs:
           PY
       - run: cargo test --no-default-features
       - run: cargo build --release
+      - uses: actions/checkout@v4
+        with:
+          repository: xander-haj/Z3R
+          ref: dd44234a6baaaafa1bdee0a71e1006fc8877ab20
+          path: z3r
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build pinned Z3R extractor
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0 Pillow==11.3.0 PyYAML==6.0.3
+          python -m PyInstaller --noconfirm --clean --onefile \
+            --name zelda3-extractor \
+            --add-data "z3r/assets:assets" \
+            --add-data "z3r/other/3x5_font.png:other" \
+            --collect-submodules PIL --collect-submodules yaml \
+            tools/z3r-extractor.py
+      - name: Stage standalone Z3R extractor
+        shell: bash
+        run: |
+          mkdir -p target/release/extractor
+          cp "dist/zelda3-extractor.exe" "target/release/extractor/zelda3-extractor.exe"
+          cp z3r/LICENSE.txt target/release/extractor/Z3R-LICENSE.txt
       - uses: actions/upload-artifact@v4
         with:
           name: z3-launcher-windows
           path: |
             target/release/z3-launcher.exe
+            target/release/extractor/
             locales/
             WINDOWS.md
             LICENSE
@@ -72,11 +97,35 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libxkbcommon-dev libwayland-dev libgl1-mesa-dev
       - run: cargo test
       - run: cargo build --release
+      - uses: actions/checkout@v4
+        with:
+          repository: xander-haj/Z3R
+          ref: dd44234a6baaaafa1bdee0a71e1006fc8877ab20
+          path: z3r
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build pinned Z3R extractor
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0 Pillow==11.3.0 PyYAML==6.0.3
+          python -m PyInstaller --noconfirm --clean --onefile \
+            --name zelda3-extractor \
+            --add-data "z3r/assets:assets" \
+            --add-data "z3r/other/3x5_font.png:other" \
+            --collect-submodules PIL --collect-submodules yaml \
+            tools/z3r-extractor.py
+      - name: Stage standalone Z3R extractor
+        shell: bash
+        run: |
+          mkdir -p target/release/extractor
+          cp "dist/zelda3-extractor" "target/release/extractor/zelda3-extractor"
+          cp z3r/LICENSE.txt target/release/extractor/Z3R-LICENSE.txt
       - name: Package native Linux build
         run: |
           mkdir -p dist
           tar -czf dist/Z3-Launcher-1.2.0-linux-x86_64.tar.gz \
-            -C target/release z3-launcher -C "$GITHUB_WORKSPACE" \
+            -C target/release z3-launcher extractor -C "$GITHUB_WORKSPACE" \
             locales LICENSE LICENSE-MIT-original LICENSING.md assets/DejaVu-LICENSE.txt
       - uses: actions/upload-artifact@v4
         with:
@@ -107,6 +156,30 @@ jobs:
           PY
       - run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config cmake curl file python3 libsdl2-dev libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev libgl1-mesa-dev
       - run: cargo test
+      - uses: actions/checkout@v4
+        with:
+          repository: xander-haj/Z3R
+          ref: dd44234a6baaaafa1bdee0a71e1006fc8877ab20
+          path: z3r
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build pinned Z3R extractor
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0 Pillow==11.3.0 PyYAML==6.0.3
+          python -m PyInstaller --noconfirm --clean --onefile \
+            --name zelda3-extractor \
+            --add-data "z3r/assets:assets" \
+            --add-data "z3r/other/3x5_font.png:other" \
+            --collect-submodules PIL --collect-submodules yaml \
+            tools/z3r-extractor.py
+      - name: Stage standalone Z3R extractor
+        shell: bash
+        run: |
+          mkdir -p target/release/extractor
+          cp dist/zelda3-extractor target/release/extractor/
+          cp z3r/LICENSE.txt target/release/extractor/Z3R-LICENSE.txt
       - run: |
           chmod +x packaging/AppRun
           bash ./build-appimage.sh
