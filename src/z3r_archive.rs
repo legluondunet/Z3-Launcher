@@ -236,6 +236,40 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "Requires official release archives supplied by the CI workflow"]
+    fn official_z3r_release_archives_are_valid_and_extractable() {
+        let linux = fs::read(std::env::var("Z3R_TEST_LINUX_TAR_GZ").unwrap()).unwrap();
+        let windows = fs::read(std::env::var("Z3R_TEST_WINDOWS_ZIP").unwrap()).unwrap();
+        let asset = |name: &str, sha256: &str| crate::z3r_source::Asset {
+            name: name.into(),
+            browser_download_url: format!(
+                "https://github.com/xander-haj/Z3R/releases/download/v0.2.4/{name}"
+            ),
+            digest: Some(format!("sha256:{sha256}")),
+        };
+        crate::z3r_source::verify_package(
+            &linux,
+            &asset(
+                "Z3R-linux-x64.tar.gz",
+                "e5ccc6eab9732c9bc3d022b938b46a6cd891ad4c85b817477346e6f8f1a71321",
+            ),
+        ).unwrap();
+        crate::z3r_source::verify_package(
+            &windows,
+            &asset(
+                "Z3R-windows-x64.zip",
+                "3a44ee3688ffe4e78ed51af25b547f70428d53388394aa032a079a4d45b7ceb7",
+            ),
+        ).unwrap();
+        let linux_dir = tempfile::tempdir().unwrap();
+        unpack_tar_gz(&linux, linux_dir.path()).unwrap();
+        assert!(linux_dir.path().join("zelda3").is_file());
+        let windows_dir = tempfile::tempdir().unwrap();
+        unpack_zip(&windows, windows_dir.path()).unwrap();
+        assert!(windows_dir.path().join("zelda3.exe").is_file());
+    }
+
+    #[test]
     fn mismatched_or_invalid_archives_are_rejected() {
         let a = tempfile::tempdir().unwrap();
         assert!(unpack_tar_gz(b"not gzip", a.path()).is_err());

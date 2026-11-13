@@ -99,6 +99,18 @@ jobs:
           PY
       - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libxkbcommon-dev libwayland-dev libgl1-mesa-dev
       - run: cargo test
+      - name: Smoke-test official Z3R v0.2.4 Linux and Windows archives
+        run: |
+          mkdir -p "$RUNNER_TEMP/z3r-package-check"
+          curl --fail --location --retry 3 --silent --show-error \
+            https://github.com/xander-haj/Z3R/releases/download/v0.2.4/Z3R-linux-x64.tar.gz \
+            -o "$RUNNER_TEMP/z3r-package-check/Z3R-linux-x64.tar.gz"
+          curl --fail --location --retry 3 --silent --show-error \
+            https://github.com/xander-haj/Z3R/releases/download/v0.2.4/Z3R-windows-x64.zip \
+            -o "$RUNNER_TEMP/z3r-package-check/Z3R-windows-x64.zip"
+          Z3R_TEST_LINUX_TAR_GZ="$RUNNER_TEMP/z3r-package-check/Z3R-linux-x64.tar.gz" \
+          Z3R_TEST_WINDOWS_ZIP="$RUNNER_TEMP/z3r-package-check/Z3R-windows-x64.zip" \
+            cargo test official_z3r_release_archives_are_valid_and_extractable -- --ignored
       - run: cargo build --release
       - uses: actions/checkout@v4
         with:
