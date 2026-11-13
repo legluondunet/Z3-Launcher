@@ -11,6 +11,7 @@ mod i18n;
 mod platform;
 mod download;
 mod z3r_source;
+mod z3r_archive;
 mod updates;
 mod ini;
 #[cfg(feature = "gui")]

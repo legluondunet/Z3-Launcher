@@ -4286,6 +4286,7 @@ version = "1.2.0"
 dependencies = [
  "dunce",
  "eframe",
+ "flate2",
  "image",
  "reqwest",
  "rfd",
