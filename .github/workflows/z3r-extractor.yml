@@ -1,0 +1,53 @@
+name: Z3R resource extractor (experimental)
+# No ROM or generated copyrighted assets enter GitHub Actions.
+on:
+  pull_request:
+    paths:
+      - "tools/z3r-extractor.py"
+      - ".github/workflows/z3r-extractor.yml"
+  workflow_dispatch:
+jobs:
+  extractor:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+            executable: zelda3-extractor
+          - os: windows-latest
+            platform: windows
+            executable: zelda3-extractor.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: xander-haj/Z3R
+          ref: dd44234a6baaaafa1bdee0a71e1006fc8877ab20
+          path: z3r
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build dependencies
+        run: python -m pip install --disable-pip-version-check pyinstaller==6.16.0 Pillow==11.3.0 PyYAML==6.0.3
+      - name: Package pinned Z3R scripts
+        shell: bash
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile \
+            --name zelda3-extractor \
+            --add-data "z3r/assets:assets" \
+            --add-data "z3r/other/3x5_font.png:other" \
+            --collect-submodules PIL \
+            --collect-submodules yaml \
+            tools/z3r-extractor.py
+      - name: Validate extractor starts without a ROM
+        shell: bash
+        run: |
+          ./dist/${{ matrix.executable }} --help
+      - uses: actions/upload-artifact@v4
+        with:
+          name: z3r-extractor-${{ matrix.platform }}-x86_64
+          path: dist/${{ matrix.executable }}
+          if-no-files-found: error
+          retention-days: 7
