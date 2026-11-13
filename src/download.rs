@@ -12,7 +12,7 @@ use std::{
     time::Duration,
 };
 
-const API: &str = "https://api.github.com/repos/legluondunet/zelda3/releases/latest";
+const API: &str = "https://api.github.com/repos/xander-haj/Z3R/releases/latest";
 const MAX_DOWNLOAD: u64 = 512 * 1024 * 1024;
 #[derive(Deserialize)]
 struct Release {
@@ -23,6 +23,7 @@ struct Release {
 struct Asset {
     name: String,
     browser_download_url: String,
+    digest: Option<String>,
 }
 fn client() -> Result<Client> {
     Ok(Client::builder()
@@ -51,24 +52,20 @@ fn package_name() -> Result<&'static str> {
         return Err(tr("download.unsupported").into());
     }
     if cfg!(windows) {
-        Ok("zelda3-windows-x86_64.zip")
+        Ok("Z3R-windows-x64.zip")
     } else if cfg!(target_os = "linux") {
-        Ok("zelda3-linux-x86_64.zip")
+        Ok("Z3R-linux-x64.tar.gz")
     } else {
         Err(tr("download.unsupported").into())
     }
 }
-fn verify(bytes: &[u8], sums: &str, name: &str) -> Result<()> {
-    let expected = sums
-        .lines()
-        .find_map(|line| {
-            let mut parts = line.split_whitespace();
-            let hash = parts.next()?;
-            let file = parts.next()?.trim_start_matches('*');
-            (file == name).then_some(hash)
-        })
+/// GitHub release assets include a SHA-256 digest; never install an unverifiable asset.
+fn verify_digest(bytes: &[u8], digest: Option<&str>) -> Result<()> {
+    let expected = digest
+        .and_then(|value| value.strip_prefix("sha256:"))
+        .filter(|hash| hash.len() == 64 && hash.bytes().all(|b| b.is_ascii_hexdigit()))
         .ok_or(tr("download.checksum_missing"))?;
-    if expected != format!("{:x}", Sha256::digest(bytes)) {
+    if !format!("{:x}", Sha256::digest(bytes)).eq_ignore_ascii_case(expected) {
         return Err(tr("download.checksum_failed").into());
     }
     Ok(())
@@ -87,60 +84,74 @@ pub fn game(destination: &Path, log: &Log) -> Result<String> {
         .iter()
         .find(|a| a.name == name)
         .ok_or(tr("download.no_package"))?;
-    let sums = release
-        .assets
-        .iter()
-        .find(|a| a.name == "SHA256SUMS")
-        .ok_or(tr("download.checksum_missing"))?;
     log(tf(
         "download.package",
         &[("version", release.tag_name.clone()), ("name", name.into())],
     ));
+    // Only fetch the selected asset from the official Z3R release namespace.
+    if !asset.browser_download_url.starts_with(
+        "https://github.com/xander-haj/Z3R/releases/download/"
+    ) {
+        return Err(tr("download.invalid_url").into());
+    }
     let package = bytes(&client, &asset.browser_download_url)?;
-    let checksums = bytes(&client, &sums.browser_download_url)?;
-    verify(&package, std::str::from_utf8(&checksums)?, name)?;
+    verify_digest(&package, asset.digest.as_deref())?;
+    #[cfg(target_os = "linux")]
+    unpack_linux_tar(&package, destination)?;
+    #[cfg(windows)]
     unpack(&package, destination, false)?;
     validate_package(destination)?;
     executable(&destination.join(crate::platform::GAME_BINARY))?;
-    executable(&destination.join(extractor_name()))?;
-    // PyInstaller shared libraries also need executable mode; upload-artifact drops modes.
     Ok(release.tag_name)
 }
 fn validate_package(destination: &Path) -> Result<()> {
-    // A release may only replace the executable, DLLs, extractor and package notices.
-    // Reject unexpected top-level entries before touching an existing installation.
+    // Z3R's native releases contain only the game, its configuration and notices.
     for entry in fs::read_dir(destination)? {
         let entry = entry?;
+        if !entry.file_type()?.is_file() {
+            return Err(tr("download.invalid_archive").into());
+        }
         let name = entry.file_name().to_string_lossy().into_owned();
         let allowed = name == crate::platform::GAME_BINARY
-            || name == "extractor"
             || name == "zelda3.ini"
             || name == "LICENSE.txt"
-            || name == "LICENSE.upstream.txt"
-            || name == "COPYING"
-            || name == "VERSION"
-            || name == "BUILD-INFO.txt"
-            || name == "README.txt"
-            || name == "APPIMAGE-README.txt"
-            || (cfg!(windows) && name.ends_with(".dll"));
+            || name == "readme.md"
+            || (cfg!(windows) && name == "SDL2.dll");
         if !allowed {
             return Err(tr("download.invalid_archive").into());
         }
     }
-    for required in [crate::platform::GAME_BINARY, extractor_name(), "zelda3.ini"] {
+    for required in [crate::platform::GAME_BINARY, "zelda3.ini", "LICENSE.txt"] {
         if !destination.join(required).is_file() {
             return Err(tf("download.missing_file", &[("name", required.into())]).into());
         }
     }
     Ok(())
 }
-pub fn extractor_name() -> &'static str {
-    if cfg!(windows) {
-        "extractor/zelda3-extractor.exe"
-    } else {
-        "extractor/zelda3-extractor"
+
+/// The Linux Z3R release uses a native .tar.gz, not our old ZIP or an AppImage.
+/// Read only known file members directly to memory (tar -xO). This cannot create
+/// symlinks or paths outside our staging directory, even for a malicious archive.
+#[cfg(target_os = "linux")]
+fn unpack_linux_tar(data: &[u8], destination: &Path) -> Result<()> {
+    use std::process::Command;
+    let temporary = tempfile::tempdir()?;
+    let archive = temporary.path().join("Z3R.tar.gz");
+    fs::write(&archive, data)?;
+    for member in ["zelda3", "zelda3.ini", "LICENSE.txt", "readme.md"] {
+        let output = Command::new("tar")
+            .arg("-xOzf")
+            .arg(&archive)
+            .arg(format!("./{member}"))
+            .output()?;
+        if !output.status.success() || output.stdout.is_empty() || output.stdout.len() > 64 * 1024 * 1024 {
+            return Err(tr("download.invalid_archive").into());
+        }
+        fs::write(destination.join(member), &output.stdout)?;
     }
+    Ok(())
 }
+
 pub fn executable(path: &Path) -> Result<()> {
     #[cfg(unix)]
     {
@@ -306,12 +317,9 @@ pub fn install(staged: &Path, destination: &Path, backup: &Path) -> Result<()> {
 mod tests {
     use super::*;
     #[test]
-    fn release_notices_are_accepted_but_unexpected_files_are_rejected() {
+    fn z3r_package_validation_rejects_unknown_files() {
         let dir = tempfile::tempdir().unwrap();
-        fs::create_dir(dir.path().join("extractor")).unwrap();
-        for name in [crate::platform::GAME_BINARY, extractor_name(), "zelda3.ini",
-            "LICENSE.txt", "LICENSE.upstream.txt", "COPYING", "VERSION", "BUILD-INFO.txt",
-            "README.txt", "APPIMAGE-README.txt"] {
+        for name in [crate::platform::GAME_BINARY, "zelda3.ini", "LICENSE.txt", "readme.md"] {
             fs::write(dir.path().join(name), "test").unwrap();
         }
         assert!(validate_package(dir.path()).is_ok());
@@ -320,18 +328,11 @@ mod tests {
     }
     #[test]
     fn checksum_and_paths_are_validated() {
-        assert!(verify(
-            b"ok",
-            &format!("{:x}  p.zip\n", Sha256::digest(b"ok")),
-            "p.zip"
-        )
-        .is_ok());
-        assert!(verify(
-            b"bad",
-            &format!("{:x}  p.zip\n", Sha256::digest(b"ok")),
-            "p.zip"
-        )
-        .is_err());
+        let digest = format!("sha256:{:x}", Sha256::digest(b"ok"));
+        assert!(verify_digest(b"ok", Some(&digest)).is_ok());
+        assert!(verify_digest(b"bad", Some(&digest)).is_err());
+        assert!(verify_digest(b"ok", None).is_err());
+        assert!(verify_digest(b"ok", Some("sha256:not-a-valid-hash")).is_err());
         for p in ["../escape", "/escape", "a/../b", "C:/file", "a\\b"] {
             assert!(relative(p).is_err());
         }
@@ -371,6 +372,26 @@ mod tests {
         for name in ["a", "b"] {
             assert_eq!(fs::read_to_string(dest.join(name)).unwrap(), "old");
         }
+    }
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_archive_extracts_only_allowlisted_members() {
+        use std::process::Command;
+        let dir = tempfile::tempdir().unwrap();
+        let src = dir.path().join("source");
+        fs::create_dir(&src).unwrap();
+        for name in ["zelda3", "zelda3.ini", "LICENSE.txt", "readme.md"] {
+            fs::write(src.join(name), format!("content: {name}")).unwrap();
+        }
+        let archive = dir.path().join("test.tar.gz");
+        let result = Command::new("tar").args(["-czf"])
+            .arg(&archive).arg("-C").arg(&src).arg(".").status().unwrap();
+        assert!(result.success());
+        let dest = dir.path().join("output");
+        fs::create_dir(&dest).unwrap();
+        unpack_linux_tar(&fs::read(&archive).unwrap(), &dest).unwrap();
+        assert!(validate_package(&dest).is_ok());
+        assert_eq!(fs::read_to_string(dest.join("zelda3")).unwrap(), "content: zelda3");
     }
     #[test]
     fn zip_traversal_is_rejected() {

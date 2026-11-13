@@ -14,6 +14,15 @@ jobs:
       CMAKE_POLICY_VERSION_MINIMUM: "3.5"
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: xander-haj/Z3R
+          ref: dd44234a6baaaafa1bdee0a71e1006fc8877ab20 # v0.2.4, pinned asset tool sources
+          path: z3r-upstream
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
       - name: Stamp Cargo version with commit
         shell: bash
@@ -35,21 +44,39 @@ jobs:
           PY
       - run: cargo test --no-default-features
       - run: cargo build --release
+      - name: Build standalone Z3R resource extractor
+        shell: pwsh
+        run: |
+          python -m pip install pyinstaller==6.16.0 Pillow==11.3.0 PyYAML==6.0.2
+          python -m PyInstaller --noconfirm --onedir --distpath tools-dist --name z3r-extractor --add-data "z3r-upstream/assets;assets" --add-data "z3r-upstream/other/3x5_font.png;other" --paths z3r-upstream/assets --hidden-import compile_resources --hidden-import extract_resources --hidden-import PIL.Image --hidden-import yaml tools/extract-z3r.py
+          tools-dist/z3r-extractor/z3r-extractor.exe --help
+      - name: Stage standalone Windows launcher
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/windows/extractor,dist/windows/assets | Out-Null
+          Copy-Item target/release/z3-launcher.exe dist/windows/
+          Copy-Item -Recurse locales dist/windows/
+          Copy-Item WINDOWS.md,LICENSE,LICENSE-MIT-original,LICENSING.md dist/windows/
+          Copy-Item assets/DejaVu-LICENSE.txt dist/windows/assets/
+          Copy-Item -Recurse tools-dist/z3r-extractor/* dist/windows/extractor/
+          Copy-Item z3r-upstream/LICENSE.txt dist/windows/extractor/Z3R-LICENSE.txt
       - uses: actions/upload-artifact@v4
         with:
           name: z3-launcher-windows
-          path: |
-            target/release/z3-launcher.exe
-            locales/
-            WINDOWS.md
-            LICENSE
-            LICENSE-MIT-original
-            LICENSING.md
-            assets/DejaVu-LICENSE.txt
+          path: dist/windows/
   linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: xander-haj/Z3R
+          ref: dd44234a6baaaafa1bdee0a71e1006fc8877ab20 # v0.2.4, pinned asset tool sources
+          path: z3r-upstream
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
       - name: Stamp Cargo version with commit
         shell: bash
@@ -72,12 +99,21 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y libsdl2-dev libxkbcommon-dev libwayland-dev libgl1-mesa-dev
       - run: cargo test
       - run: cargo build --release
+      - name: Build standalone Z3R resource extractor
+        run: |
+          python -m pip install pyinstaller==6.16.0 Pillow==11.3.0 PyYAML==6.0.2
+          python -m PyInstaller --noconfirm --onedir --distpath tools-dist --name z3r-extractor --add-data "z3r-upstream/assets:assets" --add-data "z3r-upstream/other/3x5_font.png:other" --paths z3r-upstream/assets --hidden-import compile_resources --hidden-import extract_resources --hidden-import PIL.Image --hidden-import yaml tools/extract-z3r.py
+          tools-dist/z3r-extractor/z3r-extractor --help
       - name: Package native Linux build
         run: |
-          mkdir -p dist
-          tar -czf dist/Z3-Launcher-1.2.0-linux-x86_64.tar.gz \
-            -C target/release z3-launcher -C "$GITHUB_WORKSPACE" \
-            locales LICENSE LICENSE-MIT-original LICENSING.md assets/DejaVu-LICENSE.txt
+          mkdir -p dist/native/extractor dist/native/assets
+          cp target/release/z3-launcher dist/native/
+          cp -a tools-dist/z3r-extractor/. dist/native/extractor/
+          cp z3r-upstream/LICENSE.txt dist/native/extractor/Z3R-LICENSE.txt
+          cp -r locales dist/native/
+          cp LICENSE LICENSE-MIT-original LICENSING.md dist/native/
+          cp assets/DejaVu-LICENSE.txt dist/native/assets/
+          tar -czf dist/Z3-Launcher-1.2.0-linux-x86_64.tar.gz -C dist/native .
       - uses: actions/upload-artifact@v4
         with:
           name: z3-launcher-linux-x86_64
@@ -86,6 +122,15 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: xander-haj/Z3R
+          ref: dd44234a6baaaafa1bdee0a71e1006fc8877ab20 # v0.2.4, pinned asset tool sources
+          path: z3r-upstream
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
       - name: Stamp Cargo version with commit
         shell: bash
@@ -107,6 +152,11 @@ jobs:
           PY
       - run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config cmake curl file python3 libsdl2-dev libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev libxi-dev libxrandr-dev libgl1-mesa-dev
       - run: cargo test
+      - name: Build standalone Z3R resource extractor
+        run: |
+          python -m pip install pyinstaller==6.16.0 Pillow==11.3.0 PyYAML==6.0.2
+          python -m PyInstaller --noconfirm --onedir --distpath tools-dist --name z3r-extractor --add-data "z3r-upstream/assets:assets" --add-data "z3r-upstream/other/3x5_font.png:other" --paths z3r-upstream/assets --hidden-import compile_resources --hidden-import extract_resources --hidden-import PIL.Image --hidden-import yaml tools/extract-z3r.py
+          tools-dist/z3r-extractor/z3r-extractor --help
       - run: |
           chmod +x packaging/AppRun
           bash ./build-appimage.sh
