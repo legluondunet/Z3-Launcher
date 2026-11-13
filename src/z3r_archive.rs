@@ -173,6 +173,69 @@ mod tests {
         assert_eq!(fs::read(dir.path().join("existing")).unwrap(), b"preserve");
     }
     #[test]
+    fn extracts_expected_windows_zip_files() {
+        use zip::write::SimpleFileOptions;
+        let mut cursor = io::Cursor::new(Vec::new());
+        {
+            let mut writer = zip::ZipWriter::new(&mut cursor);
+            for (name, contents) in [
+                ("zelda3.exe", b"exe".as_slice()),
+                ("zelda3.ini", b"[General]".as_slice()),
+                ("LICENSE.txt", b"MIT".as_slice()),
+                ("SDL2.dll", b"dll".as_slice()),
+            ] {
+                writer.start_file(name, SimpleFileOptions::default()).unwrap();
+                writer.write_all(contents).unwrap();
+            }
+            writer.finish().unwrap();
+        }
+        let dir = tempfile::tempdir().unwrap();
+        unpack_zip(cursor.get_ref(), dir.path()).unwrap();
+        assert_eq!(fs::read(dir.path().join("zelda3.exe")).unwrap(), b"exe");
+        assert!(dir.path().join("SDL2.dll").exists());
+    }
+
+    fn append_tar_file(tar: &mut Vec<u8>, name: &str, bytes: &[u8]) {
+        let mut header = [0u8; 512];
+        header[..name.len()].copy_from_slice(name.as_bytes());
+        header[100..108].copy_from_slice(b"0000755\0");
+        header[108..116].copy_from_slice(b"0000000\0");
+        header[116..124].copy_from_slice(b"0000000\0");
+        header[124..136].copy_from_slice(format!("{:011o}\0", bytes.len()).as_bytes());
+        header[136..148].copy_from_slice(b"00000000000\0");
+        header[148..156].fill(b' ');
+        header[156] = b'0';
+        header[257..263].copy_from_slice(b"ustar\0");
+        header[263..265].copy_from_slice(b"00");
+        let checksum: u32 = header.iter().map(|&v| v as u32).sum();
+        header[148..156].copy_from_slice(format!("{:06o}\0 ", checksum).as_bytes());
+        tar.extend_from_slice(&header);
+        tar.extend_from_slice(bytes);
+        tar.resize((tar.len() + 511) & !511, 0);
+    }
+
+    #[test]
+    fn extracts_expected_linux_tar_gz_files() {
+        use flate2::{Compression, write::GzEncoder};
+        let mut tar = Vec::new();
+        for (name, bytes) in [
+            ("./zelda3", b"elf".as_slice()),
+            ("./zelda3.ini", b"[General]".as_slice()),
+            ("./LICENSE.txt", b"MIT".as_slice()),
+        ] {
+            append_tar_file(&mut tar, name, bytes);
+        }
+        tar.extend_from_slice(&[0u8; 1024]);
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(&tar).unwrap();
+        let package = encoder.finish().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        unpack_tar_gz(&package, dir.path()).unwrap();
+        assert_eq!(fs::read(dir.path().join("zelda3")).unwrap(), b"elf");
+        assert!(dir.path().join("zelda3.ini").exists());
+    }
+
+    #[test]
     fn mismatched_or_invalid_archives_are_rejected() {
         let a = tempfile::tempdir().unwrap();
         assert!(unpack_tar_gz(b"not gzip", a.path()).is_err());
