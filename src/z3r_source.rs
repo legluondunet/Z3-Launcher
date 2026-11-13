@@ -119,7 +119,7 @@ const ASSET_SIGNATURE: [u8; 48] = [
 
 pub fn validate_assets_file(data: &[u8]) -> Result<()> {
     let header_len = 88usize + ASSET_COUNT * 4;
-    if data.len() < header_len || data.get(..48) != Some(&ASSET_SIGNATURE) {
+    if data.len() < header_len || data.get(..48) != Some(ASSET_SIGNATURE.as_slice()) {
         return Err("Z3R resource file has an incompatible signature".into());
     }
     let read_u32 = |offset: usize| -> Result<usize> {
