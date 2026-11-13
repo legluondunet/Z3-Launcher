@@ -352,35 +352,59 @@ pub fn install(staged: &Path, destination: &Path, backup: &Path) -> Result<()> {
 mod tests {
     use super::*;
     #[test]
-    fn release_notices_are_accepted_but_unexpected_files_are_rejected() {
+    fn z3r_package_accepts_only_expected_files() {
         let dir = tempfile::tempdir().unwrap();
-        fs::create_dir(dir.path().join("extractor")).unwrap();
-        for name in [crate::platform::GAME_BINARY, extractor_name(), "zelda3.ini",
-            "LICENSE.txt", "LICENSE.upstream.txt", "COPYING", "VERSION", "BUILD-INFO.txt",
-            "README.txt", "APPIMAGE-README.txt"] {
+        for name in [crate::platform::GAME_BINARY, "zelda3.ini", "LICENSE.txt", "readme.md"] {
             fs::write(dir.path().join(name), "test").unwrap();
         }
-        assert!(validate_package(dir.path()).is_ok());
+        assert!(validate_game_package(dir.path()).is_ok());
         fs::write(dir.path().join("zelda3_assets.dat"), "unexpected").unwrap();
-        assert!(validate_package(dir.path()).is_err());
+        assert!(validate_game_package(dir.path()).is_err());
     }
     #[test]
-    fn checksum_and_paths_are_validated() {
-        assert!(verify(
-            b"ok",
-            &format!("{:x}  p.zip\n", Sha256::digest(b"ok")),
-            "p.zip"
-        )
-        .is_ok());
-        assert!(verify(
-            b"bad",
-            &format!("{:x}  p.zip\n", Sha256::digest(b"ok")),
-            "p.zip"
-        )
-        .is_err());
+    fn github_digest_and_paths_are_validated() {
+        let digest = format!("sha256:{:x}", Sha256::digest(b"ok"));
+        assert!(verify_github_digest(b"ok", Some(&digest)).is_ok());
+        assert!(verify_github_digest(b"bad", Some(&digest)).is_err());
+        assert!(verify_github_digest(b"ok", None).is_err());
+        assert!(verify_github_digest(b"ok", Some("sha256:invalid")).is_err());
         for p in ["../escape", "/escape", "a/../b", "C:/file", "a\\b"] {
             assert!(relative(p).is_err());
         }
+    }
+    #[test]
+    fn z3r_tarball_is_extracted_without_allowing_unknown_files() {
+        let temp = tempfile::tempdir().unwrap();
+        let output = temp.path().join("game");
+        fs::create_dir(&output).unwrap();
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        {
+            let mut builder = tar::Builder::new(&mut encoder);
+            for (name, data) in [("zelda3", &b"game"[..]), ("zelda3.ini", &b"ini"[..])] {
+                let mut header = tar::Header::new_gnu();
+                header.set_size(data.len() as u64);
+                header.set_mode(0o644);
+                header.set_cksum();
+                builder.append_data(&mut header, name, data).unwrap();
+            }
+            builder.finish().unwrap();
+        }
+        let compressed = encoder.finish().unwrap();
+        unpack_tar_gz(&compressed, &output).unwrap();
+        assert_eq!(fs::read(output.join("zelda3")).unwrap(), b"game");
+        assert_eq!(fs::read(output.join("zelda3.ini")).unwrap(), b"ini");
+        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        {
+            let mut builder = tar::Builder::new(&mut encoder);
+            let mut header = tar::Header::new_gnu();
+            header.set_size(3);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder.append_data(&mut header, "unexpected", &b"bad"[..]).unwrap();
+            builder.finish().unwrap();
+        }
+        let bad_tar = encoder.finish().unwrap();
+        assert!(unpack_tar_gz(&bad_tar, &output).is_err());
     }
     #[test]
     fn installation_preserves_configuration_saves_and_resources() {
