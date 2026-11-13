@@ -154,36 +154,55 @@ pub fn extractor_name() -> &'static str {
     if cfg!(windows) { "extractor/zelda3-extractor.exe" }
     else { "extractor/zelda3-extractor" }
 }
-/// Reject links, devices, nested paths and unknown entries in a Z3R tarball.
+/// Extract only the expected root-level files of the upstream Z3R tar.gz.
+/// Reject unexpected members, links, devices, duplicates, and unsafe paths.
 fn unpack_tar_gz(data: &[u8], destination: &Path) -> Result<()> {
-    use std::path::Component;
-    let decoder = flate2::read::GzDecoder::new(data);
-    let mut archive = tar::Archive::new(decoder);
-    let mut sum = 0_u64;
-    for file in archive.entries()? {
-        let mut file = file?;
-        let path = file.path()?;
-        let parts: Vec<_> = path.components()
-            .filter(|component| *component != Component::CurDir).collect();
-        if parts.is_empty() { continue; }
-        if parts.len() != 1 || !matches!(parts[0], Component::Normal(_)) {
+    let mut stream = flate2::read::GzDecoder::new(data);
+    let mut total = 0u64;
+    let mut seen = std::collections::HashSet::new();
+    loop {
+        let mut header = [0u8; 512];
+        stream.read_exact(&mut header)?;
+        if header.iter().all(|&byte| byte == 0) { break; }
+        let octal = |field: &[u8]| -> Result<u64> {
+            let text = std::str::from_utf8(field)?
+                .trim_matches(|c: char| c == '\0' || c == ' ');
+            Ok(u64::from_str_radix(text, 8)?)
+        };
+        let expected = octal(&header[148..156])?;
+        let checksum: u64 = header.iter().enumerate().map(|(i, &b)| {
+            if (148..156).contains(&i) { b' ' as u64 } else { b as u64 }
+        }).sum();
+        if checksum != expected { return Err(tr("download.invalid_archive").into()); }
+        let name_bytes = header[..100].split(|&b| b == 0).next().unwrap_or_default();
+        let raw_name = std::str::from_utf8(name_bytes)?;
+        let name = raw_name.strip_prefix("./").unwrap_or(raw_name);
+        let size = octal(&header[124..136])?;
+        let kind = header[156];
+        if (name.is_empty() || name == ".") && kind == b'5' && size == 0 {
+            continue;
+        }
+        if kind != b'0' && kind != 0 {
             return Err(tr("download.invalid_archive").into());
         }
-        if file.header().entry_type().is_dir() { continue; }
-        if !file.header().entry_type().is_file() {
+        if !["zelda3", "zelda3.ini", "LICENSE.txt", "readme.md"].contains(&name)
+            || !seen.insert(name.to_owned())
+        {
             return Err(tr("download.invalid_archive").into());
         }
-        let name = parts[0].as_os_str().to_string_lossy();
-        if !["zelda3", "zelda3.ini", "LICENSE.txt", "readme.md"].contains(&name.as_ref()) {
-            return Err(tr("download.invalid_archive").into());
-        }
-        sum = sum.checked_add(file.size()).ok_or(tr("download.too_large"))?;
-        if sum > 2 * 1024 * 1024 * 1024 {
+        total = total.checked_add(size).ok_or(tr("download.too_large"))?;
+        if total > 2 * 1024 * 1024 * 1024 {
             return Err(tr("download.too_large").into());
         }
-        let target = destination.join(name.as_ref());
-        let mut output = fs::File::create(target)?;
-        std::io::copy(&mut file, &mut output)?;
+        let mut output = fs::File::create(destination.join(name))?;
+        if std::io::copy(&mut stream.by_ref().take(size), &mut output)? != size {
+            return Err(tr("download.invalid_archive").into());
+        }
+        let padding = (512 - size % 512) % 512;
+        if padding > 0 {
+            let mut padding_bytes = [0u8; 512];
+            stream.read_exact(&mut padding_bytes[..padding as usize])?;
+        }
     }
     Ok(())
 }
@@ -374,37 +393,40 @@ mod tests {
     }
     #[test]
     fn z3r_tarball_is_extracted_without_allowing_unknown_files() {
-        let temp = tempfile::tempdir().unwrap();
-        let output = temp.path().join("game");
-        fs::create_dir(&output).unwrap();
-        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
-        {
-            let mut builder = tar::Builder::new(&mut encoder);
-            for (name, data) in [("zelda3", &b"game"[..]), ("zelda3.ini", &b"ini"[..])] {
-                let mut header = tar::Header::new_gnu();
-                header.set_size(data.len() as u64);
-                header.set_mode(0o644);
-                header.set_cksum();
-                builder.append_data(&mut header, name, data).unwrap();
+        fn tar_member(name: &str, data: &[u8]) -> Vec<u8> {
+            let mut header = [0u8; 512];
+            header[..name.len()].copy_from_slice(name.as_bytes());
+            header[124..136].copy_from_slice(format!("{:011o}\0", data.len()).as_bytes());
+            header[148..156].fill(b' ');
+            header[156] = b'0';
+            let checksum: u64 = header.iter().map(|&b| b as u64).sum();
+            header[148..156].copy_from_slice(format!("{:06o}\0 ", checksum).as_bytes());
+            let mut result = header.to_vec();
+            result.extend_from_slice(data);
+            result.resize((result.len() + 511) / 512 * 512, 0);
+            result
+        }
+        fn gz(items: &[(&str, &[u8])]) -> Vec<u8> {
+            let mut plain = Vec::new();
+            for (name, data) in items {
+                plain.extend(tar_member(name, data));
             }
-            builder.finish().unwrap();
+            plain.extend([0u8; 1024]);
+            let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+            encoder.write_all(&plain).unwrap();
+            encoder.finish().unwrap()
         }
-        let compressed = encoder.finish().unwrap();
-        unpack_tar_gz(&compressed, &output).unwrap();
-        assert_eq!(fs::read(output.join("zelda3")).unwrap(), b"game");
-        assert_eq!(fs::read(output.join("zelda3.ini")).unwrap(), b"ini");
-        let mut encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
-        {
-            let mut builder = tar::Builder::new(&mut encoder);
-            let mut header = tar::Header::new_gnu();
-            header.set_size(3);
-            header.set_mode(0o644);
-            header.set_cksum();
-            builder.append_data(&mut header, "unexpected", &b"bad"[..]).unwrap();
-            builder.finish().unwrap();
+        let root = tempfile::tempdir().unwrap();
+        let good = gz(&[("./zelda3", b"game"), ("./zelda3.ini", b"ini")]);
+        unpack_tar_gz(&good, root.path()).unwrap();
+        assert_eq!(fs::read(root.path().join("zelda3")).unwrap(), b"game");
+        assert_eq!(fs::read(root.path().join("zelda3.ini")).unwrap(), b"ini");
+        for bad_name in ["../escape", "/escape", "unexpected", "nested/file"] {
+            let bad = gz(&[(bad_name, b"bad")]);
+            assert!(unpack_tar_gz(&bad, root.path()).is_err());
         }
-        let bad_tar = encoder.finish().unwrap();
-        assert!(unpack_tar_gz(&bad_tar, &output).is_err());
+        let duplicate = gz(&[("zelda3", b"one"), ("zelda3", b"two")]);
+        assert!(unpack_tar_gz(&duplicate, root.path()).is_err());
     }
     #[test]
     fn installation_preserves_configuration_saves_and_resources() {
