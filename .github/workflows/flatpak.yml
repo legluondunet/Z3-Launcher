@@ -17,6 +17,26 @@ jobs:
         run: python3 tools/sync-flatpak-version.py --check
       - name: Embed build commit
         run: printf '%s\n' "${GITHUB_SHA::7}" > .build-commit
+      - uses: actions/checkout@v4
+        with:
+          repository: xander-haj/Z3R
+          ref: dd44234a6baaaafa1bdee0a71e1006fc8877ab20
+          path: z3r
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Bundle pinned Z3R extractor for Flatpak
+        run: |
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0 Pillow==11.3.0 PyYAML==6.0.3
+          python -m PyInstaller --noconfirm --clean --onefile \
+            --name zelda3-extractor \
+            --add-data "z3r/assets:assets" \
+            --add-data "z3r/other/3x5_font.png:other" \
+            --collect-submodules PIL --collect-submodules yaml \
+            tools/z3r-extractor.py
+          mkdir -p packaging/flatpak/extractor
+          cp dist/zelda3-extractor packaging/flatpak/extractor/
+          cp z3r/LICENSE.txt packaging/flatpak/extractor/Z3R-LICENSE.txt
       - name: Build Flatpak
         run: |
           flatpak-builder --force-clean --default-branch=stable --repo=flatpak-repo flatpak-build packaging/flatpak/io.github.legluondunet.Z3Launcher.yml

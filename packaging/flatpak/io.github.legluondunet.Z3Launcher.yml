@@ -27,6 +27,8 @@ modules:
     build-commands:
       - cargo build --release --locked
       - install -Dm755 target/release/z3-launcher /app/bin/z3-launcher
+      - install -Dm755 packaging/flatpak/extractor/zelda3-extractor /app/bin/extractor/zelda3-extractor
+      - install -Dm644 packaging/flatpak/extractor/Z3R-LICENSE.txt /app/share/doc/z3-launcher/Z3R-LICENSE.txt
       - install -Dm644 packaging/z3-launcher.svg /app/share/icons/hicolor/scalable/apps/io.github.legluondunet.Z3Launcher.svg
       - install -Dm644 packaging/flatpak/io.github.legluondunet.Z3Launcher.desktop /app/share/applications/io.github.legluondunet.Z3Launcher.desktop
       - install -Dm644 packaging/flatpak/io.github.legluondunet.Z3Launcher.metainfo.xml /app/share/metainfo/io.github.legluondunet.Z3Launcher.metainfo.xml
