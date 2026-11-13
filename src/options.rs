@@ -294,7 +294,7 @@ impl Options {
     pub fn show(&mut self, ui:&mut egui::Ui, ctx:&egui::Context, root:&str, busy:bool, status:&mut String) {
         if self.doc.is_none() && !busy { if let Err(e)=self.load(root) { *status=tf("settings.unavailable", &[("error", e.to_string())]); } }
         if let Some(path) = &self.path {
-            let expected = crate::platform::canonicalize(root).ok().map(|p| p.join("zelda3/zelda3.ini"));
+            let expected = crate::platform::canonicalize(root).ok().map(|p| p.join("Z3R/zelda3.ini"));
             if expected.as_ref() != Some(path) {
                 if self.dirty {
                     ui.colored_label(egui::Color32::YELLOW, tr("settings.workspace_pending"));

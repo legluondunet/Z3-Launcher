@@ -58,7 +58,7 @@ pub fn config_dir() -> PathBuf {
     portable_dir().map(|root|root.join("config")).unwrap_or_else(||std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).unwrap_or_else(|| home().join(".config")).join("Z3-Launcher"))
 }
 #[cfg(not(windows))]
-pub const GAME_BINARY: &str = "zelda3.AppImage";
+pub const GAME_BINARY: &str = "zelda3";
 #[cfg(windows)]
 pub const GAME_BINARY: &str = "zelda3.exe";
 #[cfg(test)]

@@ -12,7 +12,9 @@ use std::{
     time::Duration,
 };
 
-const API: &str = "https://api.github.com/repos/legluondunet/zelda3/releases/latest";
+const GAME_API: &str = "https://api.github.com/repos/xander-haj/Z3R/releases/latest";
+const EXTRACTOR_API: &str =
+    "https://api.github.com/repos/legluondunet/zelda3/releases/tags/v0.1.0-dad1b14";
 const MAX_DOWNLOAD: u64 = 512 * 1024 * 1024;
 #[derive(Deserialize)]
 struct Release {
@@ -23,6 +25,7 @@ struct Release {
 struct Asset {
     name: String,
     browser_download_url: String,
+    digest: Option<String>,
 }
 fn client() -> Result<Client> {
     Ok(Client::builder()
@@ -32,7 +35,9 @@ fn client() -> Result<Client> {
         .build()?)
 }
 fn bytes(client: &Client, url: &str) -> Result<Vec<u8>> {
-    if !url.starts_with("https://github.com/") && !url.starts_with("https://api.github.com/") {
+    if !url.starts_with("https://github.com/")
+        && !url.starts_with("https://api.github.com/")
+    {
         return Err(tr("download.invalid_url").into());
     }
     let response = client.get(url).send()?.error_for_status()?;
@@ -46,88 +51,99 @@ fn bytes(client: &Client, url: &str) -> Result<Vec<u8>> {
     }
     Ok(output)
 }
+fn release(client: &Client, api: &str) -> Result<Release> {
+    let response = client.get(api).send()?;
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
+        return Err(tr("download.no_release").into());
+    }
+    Ok(response.error_for_status()?.json()?)
+}
+fn select_asset<'a>(release: &'a Release, name: &str) -> Result<&'a Asset> {
+    release.assets.iter().find(|a| a.name == name)
+        .ok_or_else(|| tr("download.no_package").into())
+}
+fn verify_github_digest(data: &[u8], digest: Option<&str>) -> Result<()> {
+    let digest = digest.and_then(|d| d.strip_prefix("sha256:"))
+        .ok_or(tr("download.checksum_missing"))?;
+    if digest.len() != 64 || !digest.bytes().all(|c| c.is_ascii_hexdigit()) {
+        return Err(tr("download.checksum_missing").into());
+    }
+    if !format!("{:x}", Sha256::digest(data)).eq_ignore_ascii_case(digest) {
+        return Err(tr("download.checksum_failed").into());
+    }
+    Ok(())
+}
 fn package_name() -> Result<&'static str> {
     if std::env::consts::ARCH != "x86_64" {
         return Err(tr("download.unsupported").into());
     }
     if cfg!(windows) {
-        Ok("zelda3-windows-x86_64.zip")
+        Ok("Z3R-windows-x64.zip")
     } else if cfg!(target_os = "linux") {
-        Ok("zelda3-linux-x86_64.zip")
+        Ok("Z3R-linux-x64.tar.gz")
     } else {
         Err(tr("download.unsupported").into())
     }
-}
-fn verify(bytes: &[u8], sums: &str, name: &str) -> Result<()> {
-    let expected = sums
-        .lines()
-        .find_map(|line| {
-            let mut parts = line.split_whitespace();
-            let hash = parts.next()?;
-            let file = parts.next()?.trim_start_matches('*');
-            (file == name).then_some(hash)
-        })
-        .ok_or(tr("download.checksum_missing"))?;
-    if expected != format!("{:x}", Sha256::digest(bytes)) {
-        return Err(tr("download.checksum_failed").into());
-    }
-    Ok(())
 }
 pub fn game(destination: &Path, log: &Log) -> Result<String> {
     let name = package_name()?;
     log(tr("download.lookup").into());
     let client = client()?;
-    let response = client.get(API).send()?;
-    if response.status() == reqwest::StatusCode::NOT_FOUND {
-        return Err(tr("download.no_release").into());
-    }
-    let release: Release = response.error_for_status()?.json()?;
-    let asset = release
-        .assets
-        .iter()
-        .find(|a| a.name == name)
-        .ok_or(tr("download.no_package"))?;
-    let sums = release
-        .assets
-        .iter()
-        .find(|a| a.name == "SHA256SUMS")
-        .ok_or(tr("download.checksum_missing"))?;
-    log(tf(
-        "download.package",
-        &[("version", release.tag_name.clone()), ("name", name.into())],
-    ));
+    let release = release(&client, GAME_API)?;
+    let asset = select_asset(&release, name)?;
+    log(tf("download.package",
+        &[("version", release.tag_name.clone()), ("name", name.into())]));
     let package = bytes(&client, &asset.browser_download_url)?;
-    let checksums = bytes(&client, &sums.browser_download_url)?;
-    verify(&package, std::str::from_utf8(&checksums)?, name)?;
-    unpack(&package, destination, false)?;
-    validate_package(destination)?;
+    verify_github_digest(&package, asset.digest.as_deref())?;
+    if cfg!(windows) {
+        unpack(&package, destination, false)?;
+    } else {
+        unpack_tar_gz(&package, destination)?;
+    }
+    validate_game_package(destination)?;
     executable(&destination.join(crate::platform::GAME_BINARY))?;
-    executable(&destination.join(extractor_name()))?;
-    // PyInstaller shared libraries also need executable mode; upload-artifact drops modes.
     Ok(release.tag_name)
 }
-fn validate_package(destination: &Path) -> Result<()> {
-    // A release may only replace the executable, DLLs, extractor and package notices.
-    // Reject unexpected top-level entries before touching an existing installation.
+/// Z3R's published binary archives have no extractor. Until the Z3R
+/// extractor is independently packaged, use the verified standalone
+/// legacy extractor as a compatibility bridge, never the legacy game binary.
+pub fn extractor(destination: &Path, log: &Log) -> Result<()> {
+    let name = if cfg!(windows) {
+        "zelda3-windows-x86_64.zip"
+    } else {
+        "zelda3-linux-x86_64.zip"
+    };
+    log(tr("download.lookup").into());
+    let client = client()?;
+    let source = release(&client, EXTRACTOR_API)?;
+    let asset = select_asset(&source, name)?;
+    let package = bytes(&client, &asset.browser_download_url)?;
+    verify_github_digest(&package, asset.digest.as_deref())?;
+    let scratch = tempfile::tempdir_in(destination.parent().ok_or(tr("download.invalid_archive"))?)?;
+    unpack(&package, scratch.path(), false)?;
+    let tool_dir = scratch.path().join("extractor");
+    let tool = tool_dir.join(if cfg!(windows) { "zelda3-extractor.exe" } else { "zelda3-extractor" });
+    if !tool.is_file() {
+        return Err(tr("download.extractor_missing").into());
+    }
+    copy_tree(&tool_dir, &destination.join("extractor"))?;
+    executable(&destination.join(extractor_name()))?;
+    Ok(())
+}
+fn validate_game_package(destination: &Path) -> Result<()> {
     for entry in fs::read_dir(destination)? {
         let entry = entry?;
         let name = entry.file_name().to_string_lossy().into_owned();
         let allowed = name == crate::platform::GAME_BINARY
-            || name == "extractor"
             || name == "zelda3.ini"
             || name == "LICENSE.txt"
-            || name == "LICENSE.upstream.txt"
-            || name == "COPYING"
-            || name == "VERSION"
-            || name == "BUILD-INFO.txt"
-            || name == "README.txt"
-            || name == "APPIMAGE-README.txt"
-            || (cfg!(windows) && name.ends_with(".dll"));
-        if !allowed {
+            || name == "readme.md"
+            || (cfg!(windows) && name == "SDL2.dll");
+        if !allowed || !entry.file_type()?.is_file() {
             return Err(tr("download.invalid_archive").into());
         }
     }
-    for required in [crate::platform::GAME_BINARY, extractor_name(), "zelda3.ini"] {
+    for required in [crate::platform::GAME_BINARY, "zelda3.ini"] {
         if !destination.join(required).is_file() {
             return Err(tf("download.missing_file", &[("name", required.into())]).into());
         }
@@ -135,11 +151,41 @@ fn validate_package(destination: &Path) -> Result<()> {
     Ok(())
 }
 pub fn extractor_name() -> &'static str {
-    if cfg!(windows) {
-        "extractor/zelda3-extractor.exe"
-    } else {
-        "extractor/zelda3-extractor"
+    if cfg!(windows) { "extractor/zelda3-extractor.exe" }
+    else { "extractor/zelda3-extractor" }
+}
+/// Reject links, devices, nested paths and unknown entries in a Z3R tarball.
+fn unpack_tar_gz(data: &[u8], destination: &Path) -> Result<()> {
+    use std::path::Component;
+    let decoder = flate2::read::GzDecoder::new(data);
+    let mut archive = tar::Archive::new(decoder);
+    let mut sum = 0_u64;
+    for file in archive.entries()? {
+        let mut file = file?;
+        let path = file.path()?;
+        let parts: Vec<_> = path.components()
+            .filter(|component| *component != Component::CurDir).collect();
+        if parts.is_empty() { continue; }
+        if parts.len() != 1 || !matches!(parts[0], Component::Normal(_)) {
+            return Err(tr("download.invalid_archive").into());
+        }
+        if file.header().entry_type().is_dir() { continue; }
+        if !file.header().entry_type().is_file() {
+            return Err(tr("download.invalid_archive").into());
+        }
+        let name = parts[0].as_os_str().to_string_lossy();
+        if !["zelda3", "zelda3.ini", "LICENSE.txt", "readme.md"].contains(&name.as_ref()) {
+            return Err(tr("download.invalid_archive").into());
+        }
+        sum = sum.checked_add(file.size()).ok_or(tr("download.too_large"))?;
+        if sum > 2 * 1024 * 1024 * 1024 {
+            return Err(tr("download.too_large").into());
+        }
+        let target = destination.join(name.as_ref());
+        let mut output = fs::File::create(target)?;
+        std::io::copy(&mut file, &mut output)?;
     }
+    Ok(())
 }
 pub fn executable(path: &Path) -> Result<()> {
     #[cfg(unix)]

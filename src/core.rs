@@ -37,7 +37,7 @@ impl Launcher {
         })
     }
     pub fn repo(&self) -> PathBuf {
-        self.root.join("zelda3")
+        self.root.join("Z3R")
     }
     pub fn log(&self, callback: Log) -> Result<Log> {
         let log_path = self.root.join(LOG_FILENAME);
@@ -163,6 +163,7 @@ impl Launcher {
         let staged = temporary.path().join("package");
         fs::create_dir(&staged)?;
         let version = crate::download::game(&staged, log)?;
+        crate::download::extractor(&staged, log)?;
         // New installations use OpenGL; the installer preserves existing user settings.
         let ini_path = staged.join("zelda3.ini");
         let mut ini = crate::ini::Ini::parse(&fs::read_to_string(&ini_path)?);
@@ -183,6 +184,7 @@ impl Launcher {
         )?;
         fs::copy(rom, staged.join("zelda3.sfc"))?;
         fs::write(staged.join(".release-version"), version)?;
+        fs::write(staged.join(".source-repository"), "xander-haj/Z3R\n")?;
         crate::download::install(&staged, &self.repo(), &temporary.path().join("backup"))?;
         if let Err(error) = crate::download::shaders(&crate::platform::shaders_dir(), log) {
             log(tf(
@@ -260,8 +262,7 @@ impl Launcher {
                 .ok_or(tr("text.the_executable_path_is_not_utf_8"))?,
         );
         command.current_dir(self.repo());
-        #[cfg(target_os = "linux")]
-        command.env("APPIMAGE_EXTRACT_AND_RUN", "1");
+
         let terminal_echo: Option<Log> = verbose.then(|| {
             Arc::new(|line| println!("[zelda3] {line}")) as Log
         });

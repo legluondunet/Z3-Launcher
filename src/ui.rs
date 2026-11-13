@@ -193,7 +193,7 @@ impl eframe::App for App {
                         "https://github.com/legluondunet/Z3-Launcher/releases/latest");
                 }
                 if let Some(version)=&self.updates.game {
-                    let installed=fs::read_to_string(PathBuf::from(&self.root).join("zelda3/.release-version")).ok();
+                    let installed=fs::read_to_string(PathBuf::from(&self.root).join("Z3R/.release-version")).ok();
                     if self.updates.game_available(installed.as_deref()) {
                         ui.hyperlink_to(tf("updates.game", &[("version", version.clone())]),
                             "https://github.com/legluondunet/zelda3/releases/latest");
