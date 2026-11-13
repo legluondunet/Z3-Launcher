@@ -181,6 +181,16 @@ impl Launcher {
             resources.join("zelda3_assets.dat"),
             staged.join("zelda3_assets.dat"),
         )?;
+        // Z3R's optional user.ini takes priority over shipped defaults.
+        // Keep older customized base INIs intact during migration.
+        if !self.repo().join("zelda3.user.ini").is_file() {
+            let text = if self.repo().join("zelda3.ini").is_file() {
+                fs::read(self.repo().join("zelda3.ini"))?
+            } else {
+                b"!include zelda3.ini\n".to_vec()
+            };
+            fs::write(staged.join("zelda3.user.ini"), text)?;
+        }
         fs::copy(rom, staged.join("zelda3.sfc"))?;
         fs::write(staged.join(".release-version"), version)?;
         crate::download::install(&staged, &self.repo(), &temporary.path().join("backup"))?;

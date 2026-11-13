@@ -124,8 +124,13 @@ impl Options {
     }
     fn save_raw(&mut self, status: &mut String) -> bool {
         if !self.raw_dirty { return true; }
-        let doc=Ini::parse(&self.raw_text);
         let Some(path)=self.path.as_ref() else { return false; };
+        let mut doc=Ini::parse(&self.raw_text);
+        if let Some(parent) = path.parent() {
+            if let Ok(defaults) = fs::read_to_string(parent.join("zelda3.ini")) {
+                doc = doc.with_fallback(Ini::parse(&defaults));
+            }
+        }
         match validate(&doc).and_then(|_| core::save_ini(path, &self.raw_text)) {
             Ok(()) => {
                 self.doc=Some(doc); self.disk_text=self.raw_text.clone();
@@ -279,9 +284,14 @@ impl Options {
         }
     }
     fn load(&mut self, root:&str) -> core::Result<()> {
-        let path=core::Launcher::new(root)?.repo().join("zelda3.ini");
+        let game=core::Launcher::new(root)?.repo();
+        let defaults=fs::read_to_string(game.join("zelda3.ini"))?;
+        let path=game.join("zelda3.user.ini");
+        // Preserve a pre-existing customized default INI on first use.
+        if !path.is_file() { fs::write(&path, &defaults)?; }
         let text=fs::read_to_string(&path)?;
-        self.doc=Some(Ini::parse(&text)); self.path=Some(path); self.dirty=false; self.last_attempt=None; self.capture=None; self.disk_text=text; Ok(())
+        self.doc=Some(Ini::parse(&text).with_fallback(Ini::parse(&defaults)));
+        self.path=Some(path); self.dirty=false; self.last_attempt=None; self.capture=None; self.disk_text=text; Ok(())
     }
     fn apply_capture(&mut self, value:String) {
         if let Some(mut capture)=self.capture.take() {
@@ -294,7 +304,7 @@ impl Options {
     pub fn show(&mut self, ui:&mut egui::Ui, ctx:&egui::Context, root:&str, busy:bool, status:&mut String) {
         if self.doc.is_none() && !busy { if let Err(e)=self.load(root) { *status=tf("settings.unavailable", &[("error", e.to_string())]); } }
         if let Some(path) = &self.path {
-            let expected = crate::platform::canonicalize(root).ok().map(|p| p.join("Z3R/zelda3.ini"));
+            let expected = crate::platform::canonicalize(root).ok().map(|p| p.join("Z3R/zelda3.user.ini"));
             if expected.as_ref() != Some(path) {
                 if self.dirty {
                     ui.colored_label(egui::Color32::YELLOW, tr("settings.workspace_pending"));

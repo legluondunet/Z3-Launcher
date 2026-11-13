@@ -17,6 +17,9 @@ v1.2.0 continues to manage legluondunet/zelda3. This branch switches to
 - Installations are isolated under `<workspace>/Z3R/`. An existing
   `<workspace>/zelda3/` directory is not modified or migrated.
 - Keep existing Z3R saves, configuration and resource data on updates.
+  `zelda3.user.ini` stores user overrides, with `zelda3.ini` as
+  the upstream default fallback. The launcher editor edits the user file and
+  preserves a pre-existing customized base file when migrating.
 - The launcher and game journals remain `Z3-Launcher.log` and
   `zelda3.log` in the workspace root.
 

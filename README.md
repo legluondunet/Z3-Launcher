@@ -16,7 +16,7 @@ Z3-Launcher is a graphical installer, updater, and configuration manager dedicat
 - **Install and play:** select a compatible US ROM, download the tested Z3R release, extract assets locally, and launch Z3R.
 - **Safe game updates:** verify downloads with SHA-256 checksums, regenerate game resources, and preserve existing configuration, save files, MSU music packs and imported languages. Failed file replacements are rolled back.
 - **Game settings:** configure gameplay, graphics, audio, keyboard/gamepad bindings, and shortcuts through the interface. Valid changes are saved automatically for the next launch; gamepad input capture and default binding restoration are supported.
-- **Built-in INI editor:** edit `zelda3.ini` with syntax highlighting, line numbers, and save/discard prompts.
+- **Built-in INI editor:** edit `zelda3.user.ini` with syntax highlighting, line numbers, and save/discard prompts; Z3R's shipped `zelda3.ini` remains separate.
 - **Advanced graphics:** select window and fullscreen modes, rendering options, Link sprites, and compatible OpenGL `.glsl` / `.glslp` shaders.
 - **Multilingual interface:** English, French, German, Spanish and Italian, with automatic system-language detection on first launch and English fallback. Importing a supported game-language ROM is a separate feature and does not change the interface language.
 - **Portable installations:** keep game files, preferences, shaders and logs in the executable/AppImage directory when `portable.txt` is present, without an extra nested workspace. Both `Z3-Launcher.log` and `zelda3.log` are stored at the workspace root.
@@ -40,7 +40,7 @@ Download the published **[latest Z3-Launcher release](https://github.com/legluon
 2. Start the launcher. A matching ROM beside the executable/AppImage is selected automatically; otherwise select your **headerless US Zelda: A Link to the Past ROM** (`.sfc` or `.smc`).
 3. Select **Download and install**. The launcher retrieves the game package and generates `zelda3_assets.dat` locally.
 4. Select **Play Z3R**.
-5. Customize the game in the **Game**, **Graphics**, **Audio**, **Controls**, **Shortcuts**, or **zelda3.ini** tabs.
+5. Customize the game in the **Game**, **Graphics**, **Audio**, **Controls**, **Shortcuts**, or **zelda3.user.ini** tabs.
 
 ### ROM requirements
 
@@ -52,7 +52,7 @@ The supported US ROM has SHA-256:
 
 The ROM is processed **on your computer** and is never uploaded. This repository and its releases do not contain Nintendo ROMs or copyrighted game assets.
 
-The launcher packages a standalone resource extractor built from Z3R's source (Python, Pillow and PyYAML are bundled). No Python installation is required. It creates `zelda3_assets.dat` in `Z3R/` and retains the ROM there for subsequent resource regeneration.
+The launcher packages a standalone resource extractor built from Z3R's source (Python, Pillow and PyYAML are bundled). No Python installation is required. It creates `zelda3_assets.dat` in `Z3R/` and retains the ROM there for subsequent resource regeneration. Personal settings are stored in `zelda3.user.ini`, which can include upstream defaults from `zelda3.ini`, and survive updates.
 
 ## Installation and portable mode
 

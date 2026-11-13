@@ -310,7 +310,7 @@
     "settings.external_reloaded": "Ajustes recargados desde el INI editado externamente.",
     "settings.external_invalid": "El INI editado externamente contiene ajustes no válidos: {error}",
     "shaders.requires_opengl": "Elige OpenGL u OpenGL ES como renderizador para configurar shaders.",
-    "text.ini_tab": "zelda3.ini",
+    "text.ini_tab": "zelda3.user.ini",
     "settings.ini_hint": "Al salir de esta pestaña después de modificar zelda3.ini, puedes guardar o descartar los cambios.",
     "settings.ini_saved": "Archivo INI guardado; ajustes del launcher actualizados.",
     "download.install_button": "Descargar e instalar",

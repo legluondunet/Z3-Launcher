@@ -298,7 +298,7 @@ pub fn install(staged: &Path, destination: &Path, backup: &Path) -> Result<()> {
         entries.sort_by_key(|entry| entry.file_name());
         for entry in entries {
             let name = entry.file_name();
-            if name == "zelda3.ini" && destination.join(&name).exists() {
+            if name == "zelda3.user.ini" && destination.join(&name).exists() {
                 continue;
             }
             let exists = destination.join(&name).exists();
@@ -359,15 +359,15 @@ mod tests {
         let dest = temp.path().join("game");
         fs::create_dir(&staged).unwrap();
         fs::create_dir(&dest).unwrap();
-        fs::write(staged.join("zelda3.ini"), "default").unwrap();
+        fs::write(staged.join("zelda3.ini"), "upstream updated").unwrap();
+        fs::write(staged.join("zelda3.user.ini"), "!include zelda3.ini\n").unwrap();
         fs::write(staged.join("program"), "new").unwrap();
-        fs::write(dest.join("zelda3.ini"), "custom").unwrap();
+        fs::write(dest.join("zelda3.ini"), "upstream old").unwrap();
+        fs::write(dest.join("zelda3.user.ini"), "!include zelda3.ini\n[Graphics]\nFullscreen=1\n").unwrap();
         fs::write(dest.join("save.srm"), "save").unwrap();
         install(&staged, &dest, &temp.path().join("backup")).unwrap();
-        assert_eq!(
-            fs::read_to_string(dest.join("zelda3.ini")).unwrap(),
-            "custom"
-        );
+        assert_eq!(fs::read_to_string(dest.join("zelda3.ini")).unwrap(), "upstream updated");
+        assert!(fs::read_to_string(dest.join("zelda3.user.ini")).unwrap().contains("Fullscreen=1"));
         assert_eq!(fs::read_to_string(dest.join("save.srm")).unwrap(), "save");
     }
     #[test]
