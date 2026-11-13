@@ -26,6 +26,7 @@ v1.2.0 continues to manage legluondunet/zelda3. This branch switches to
 ## Required pre-release checks
 
 - [ ] CI builds and tests pass: Linux, Windows, AppImage, Flatpak.
+- [ ] PyInstaller extractor self-test validates bundled Z3R modules and data on each platform (not a substitute for a ROM-backed runtime test).
 - [ ] Fresh installation using a compatible US ROM generates
       `Z3R/zelda3_assets.dat` and starts Z3R.
 - [ ] Verify the generated asset file with Z3R's *matching* v0.2.4 binary:
