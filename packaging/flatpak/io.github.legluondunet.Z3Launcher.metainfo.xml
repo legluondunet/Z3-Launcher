@@ -19,6 +19,9 @@
   </categories>
   <launchable type="desktop-id">io.github.legluondunet.Z3Launcher.desktop</launchable>
   <releases>
+    <release version="2.0.0" date="2026-11-13">
+      <description><p>Exclusively install, update and configure Z3R v0.2.4 using verified official archives and a bundled matching ROM resource extractor. Preserve previous installations and user settings.</p></description>
+    </release>
     <release version="1.2.0" date="2026-11-12">
       <description><p>Improve portable installations and nearby ROM detection, add an external tiled background override, polish the interface, and migrate the launcher journal to Z3-Launcher.log.</p></description>
     </release>
