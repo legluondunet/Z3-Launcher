@@ -9,26 +9,6 @@ Z3-Launcher is a desktop application for [legluondunet/zelda3](https://github.co
 <img width="1251" height="863" alt="image" src="https://github.com/user-attachments/assets/0d97a976-0465-49c0-b5a8-6f93f79b094b" />
 
 
-### Custom launcher background
-
-To replace the built-in forest background **without recompiling and without enabling portable mode**, place a PNG called `background.png` in a `config/` directory next to the actual executable or AppImage. Restart the launcher after replacing it.
-
-For example:
-
-```text
-Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
-config/
-  background.png
-```
-
-The launcher searches for an override in this order:
-
-1. `config/background.png` beside the executable or original AppImage.
-2. `background.png` directly beside the executable or original AppImage.
-3. `background.png` in the platform's normal Z3-Launcher configuration directory (including the AppImage `.home/.config/Z3-Launcher` location when applicable).
-
-The first valid image takes priority. Invalid images are skipped, and the built-in background is used if none can be loaded. Startup diagnostics in `Z3-Launcher.log` and the interface journal report the selected source or an image-loading error. The override is drawn as repeating tiles, not stretched; for invisible joins, the image itself must be seamlessly tileable on all four edges.
-
 ## Features
 
 - **Install and play:** select a compatible US ROM, download the latest game release, extract assets locally, and launch Zelda 3.
