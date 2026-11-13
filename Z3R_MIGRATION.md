@@ -4,7 +4,9 @@
 v1.2.0 continues to manage legluondunet/zelda3. This branch switches to
 [xander-haj/Z3R](https://github.com/xander-haj/Z3R) exclusively.
 
-- Game releases come from `xander-haj/Z3R`.
+- Game releases come from `xander-haj/Z3R`. The currently bundled extractor
+  is pinned to **v0.2.4**; newer releases are deliberately blocked until their
+  asset format and standalone extractor have been validated.
 - Linux: `Z3R-linux-x64.tar.gz` (native `zelda3`), Windows:
   `Z3R-windows-x64.zip` (`zelda3.exe`).
 - The GitHub release asset `sha256:` digest must be present and match.
