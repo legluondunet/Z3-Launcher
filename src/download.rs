@@ -147,12 +147,11 @@ fn validate_package(destination: &Path) -> Result<()> {
 /// symlinks or paths outside our staging directory, even for a malicious archive.
 #[cfg(target_os = "linux")]
 fn unpack_linux_tar(data: &[u8], destination: &Path) -> Result<()> {
-    use std::process::Command;
     let temporary = tempfile::tempdir()?;
     let archive = temporary.path().join("Z3R.tar.gz");
     fs::write(&archive, data)?;
     for member in ["zelda3", "zelda3.ini", "LICENSE.txt", "readme.md"] {
-        let output = Command::new("tar")
+        let output = crate::platform::host_command("tar")
             .arg("-xOzf")
             .arg(&archive)
             .arg(format!("./{member}"))
