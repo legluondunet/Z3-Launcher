@@ -6,6 +6,9 @@ on:
       - "tools/z3r-extractor.py"
       - ".github/workflows/z3r-extractor.yml"
   workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   extractor:
     strategy:
