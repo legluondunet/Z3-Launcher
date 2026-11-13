@@ -30,7 +30,7 @@ jobs:
         run: |
           python -m pip install pyinstaller==6.16.0 Pillow==11.3.0 PyYAML==6.0.2
           python -m PyInstaller --noconfirm --onedir --distpath tools-dist --name z3r-extractor --add-data "z3r-upstream/assets:assets" --add-data "z3r-upstream/other/3x5_font.png:other" --paths z3r-upstream/assets --hidden-import compile_resources --hidden-import extract_resources --hidden-import PIL.Image --hidden-import yaml tools/extract-z3r.py
-          tools-dist/z3r-extractor/z3r-extractor --help
+          tools-dist/z3r-extractor/z3r-extractor --self-test
       - name: Build Flatpak
         run: |
           flatpak-builder --force-clean --default-branch=stable --repo=flatpak-repo flatpak-build packaging/flatpak/io.github.legluondunet.Z3Launcher.yml
