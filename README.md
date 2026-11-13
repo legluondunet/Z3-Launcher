@@ -145,6 +145,6 @@ For non-GUI tests, run `cargo test --no-default-features`. To build the Linux Ap
 
 ## License and credits
 
-Z3-Launcher is distributed under **GPL-3.0-or-later**. See [LICENSE](LICENSE) and [LICENSING.md](LICENSING.md) for license details and preserved upstream notices.
+Z3-Launcher is distributed under **GPL-3.0-or-later**. The original [Zelda 3 Launcher](https://github.com/RadzPrower/Zelda-3-Launcher) by Anthony Johns (RadzPrower) is credited as a historical reference, but its C#/WinForms code and assets are not included in the current Rust implementation. The separately bundled Z3R resource extractor retains its upstream MIT license and notice. See [LICENSE](LICENSE) and [LICENSING.md](LICENSING.md) for details.
 
 Game project: [xander-haj/Z3R](https://github.com/xander-haj/Z3R) (MIT) · Original Zelda 3 reverse-engineering project: [snesrev/zelda3](https://github.com/snesrev/zelda3). Upstream Z3R asset-tool licensing notices accompany the bundled resource extractor.

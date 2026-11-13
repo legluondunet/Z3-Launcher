@@ -30,7 +30,7 @@ cp -- "$project"/locales/*.json "$appdir/usr/bin/locales/"
 mkdir -p "$appdir/usr/bin/extractor"
 cp -a "$project/tools-dist/z3r-extractor/." "$appdir/usr/bin/extractor/"
 cp "$project/z3r-upstream/LICENSE.txt" "$appdir/usr/bin/extractor/Z3R-LICENSE.txt"
-cp -- "$project/LICENSE" "$project/LICENSE-MIT-original" "$project/LICENSING.md" "$project/APPIMAGE.md" "$project/assets/DejaVu-LICENSE.txt" "$appdir/usr/share/doc/z3-launcher/"
+cp -- "$project/LICENSE" "$project/LICENSING.md" "$project/APPIMAGE.md" "$project/assets/DejaVu-LICENSE.txt" "$appdir/usr/share/doc/z3-launcher/"
 # eframe loads these libraries dynamically, so ldd alone cannot discover them.
 cache="$(ldconfig -p)"
 libraries=()
