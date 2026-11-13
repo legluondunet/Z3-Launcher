@@ -12,7 +12,20 @@ The first expanded source import on GitHub, [b83ca1b](https://github.com/legluon
 
 Release 1.1.0 introduces automatic system-language detection while retaining the existing 1.0.0 release and historical tags.
 
-The next release, 1.2.0, consolidates the portable workspace, adjacent-ROM discovery, customizable forest background, interface refinements, and launcher journal migration.
+Release 1.2.0 consolidated the portable workspace, adjacent-ROM discovery, customizable forest background, interface refinements, and launcher journal migration.
+
+Release 2.0.0 changes the supported game to Z3R exclusively, while preserving the launcher interface and separating old installations from new ones.
+
+## 2.0.0 — 2026-11-13
+
+- Change the exclusively supported game from `legluondunet/zelda3` to [Z3R](https://github.com/xander-haj/Z3R). The Z3R v0.2.4 game release is pinned until a newer resource pipeline is validated.
+- Download official Z3R native Linux TAR.GZ and Windows ZIP packages using SHA-256 digests from the GitHub Releases API, with archive validation and staged installation.
+- Bundle a standalone ROM resource extractor based on the exact Z3R v0.2.4 asset scripts, eliminating any need for user-installed Python or development tools.
+- Install to `Z3R/` without modifying legacy `zelda3/` installations. Preserve saves, language resources, MSU files, and personal settings on updates.
+- Edit `zelda3.user.ini` with upstream `zelda3.ini` defaults as fallback and retain user overrides.
+- Extend CI to test the packaged Z3R asset tools and required resource files on Linux, Windows, AppImage, and Flatpak.
+- Update translations and documentation for the Z3R-only workflow. Keep portable mode, automatic ROM discovery, standalone launcher/game logs, and existing CLI diagnostics.
+- Publish Windows x86_64 ZIP, Linux x86_64 TAR.GZ, Linux AppImage and its checksum, and experimental Flatpak.
 
 ## 1.2.0 — 2026-11-12
 
