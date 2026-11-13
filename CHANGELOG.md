@@ -21,6 +21,7 @@ The next release, 1.2.0, consolidates the portable workspace, adjacent-ROM disco
 - Allow a replacement `config/background.png` or adjacent `background.png` without recompilation or portable mode. Tile the background and safely fall back when an override cannot be loaded.
 - Improve the forest UI with a compact translucent header, clearer app/version information, a slightly dimmed background, aligned controls and a vertically resizable journal. Remove the routine embedded-background journal message.
 - Rename the launcher journal to `Z3-Launcher.log`. Preserve older `launcher.log` data during migration without overwriting an existing new log.
+- Split game runtime output into `zelda3.log` beside `Z3-Launcher.log` at the workspace root, with two selectable journal views. Retain game output between sessions.
 - Keep the five interface translations and document the updated installation and portable-mode behavior.
 
 

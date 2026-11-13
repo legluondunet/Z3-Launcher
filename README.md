@@ -39,7 +39,7 @@ The first valid image takes priority. Invalid images are skipped, and the built-
 - **Input configuration:** assign keyboard shortcuts and SDL gamepad bindings, capture inputs, and restore default controller bindings.
 - **Graphics customization:** choose display and fullscreen modes, rendering options, Link sprites and compatible OpenGL `.glsl` / `.glslp` shaders.
 - **Multilingual interface:** English, French, German, Spanish and Italian, with automatic system-language detection on first launch and English fallback. Importing a supported game-language ROM is a separate feature and does not change the interface language.
-- **Portable installations:** keep game files, preferences, shaders and logs in the executable/AppImage directory when `portable.txt` is present, without an extra nested workspace.
+- **Portable installations:** keep game files, preferences, shaders and logs in the executable/AppImage directory when `portable.txt` is present, without an extra nested workspace. Both `Z3-Launcher.log` and `zelda3.log` are stored at the workspace root.
 - **Forest-inspired interface:** pixel-art background, translucent panels, gold-accented controls and scrollbars.
 
 ## Supported platforms
@@ -78,6 +78,7 @@ Z3-Launcher/
 ├── z3-launcher.exe
 ├── portable.txt
 ├── Z3-Launcher.log
+├── zelda3.log
 ├── config/
 └── zelda3/
 ```
@@ -106,6 +107,12 @@ Alternatively, without `portable.txt`, create a directory matching the **entire 
 At startup, the launcher checks for a compatible headerless US `.sfc` or `.smc` ROM next to its executable or the original AppImage. It verifies the ROM's SHA-256 hash and preselects the matching file. Your original ROM remains untouched: on installation, a copy named `zelda3.sfc` is written inside the installed `zelda3/` directory only after resource generation succeeds.
 
 The adjacent-ROM detection and external `background.png` override work **without** portable mode. Use `portable.txt` only when you also want launcher-generated files to live beside the executable.
+
+### Separate launcher and game journals
+
+Installation, update and launcher messages are written to `Z3-Launcher.log`. When the game runs, its standard output and error output are captured separately in `zelda3.log`, **right beside the launcher log in the workspace root**, rather than inside the `zelda3/` folder. The journal panel offers two views: **Z3-Launcher** and **Zelda 3**. Both files accumulate output across sessions.
+
+With `portable.txt`, both logs are directly next to the launcher executable or original AppImage. Without portable mode, both logs are kept together in the selected user-writable workspace rather than relying on permission to write beside a system-installed executable.
 
 ## Quick start
 

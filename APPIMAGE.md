@@ -34,6 +34,10 @@ If FUSE is unavailable, try `--appimage-extract-and-run`. A compatible user-prov
 - To override the embedded forest image without rebuilding, place `config/background.png` or `background.png` beside the original AppImage. A normal per-user configuration path is a further fallback. Invalid images are skipped, and the embedded image remains the final fallback. The image is tiled (repeated), not stretched.
 - A compatible US `.sfc` or `.smc` beside the original AppImage is detected by SHA-256 and preselected. This does not require `portable.txt`.
 
+## Separate logs
+
+The launcher writes `Z3-Launcher.log` and saves Zelda 3 runtime output to `zelda3.log` beside it, at the workspace root. With `portable.txt`, both logs are next to the original AppImage. Without portable mode, both stay together in the user's data directory. Use the two journal views inside Z3-Launcher to inspect them.
+
 ## Validation before publication
 
 Use the `main` GitHub Actions workflow to verify build and unit tests on Linux, Windows, AppImage and experimental Flatpak. Download the **current commit's** AppImage artifact for Linux runtime checks: launching on X11/Wayland, ROM selection, installation/update, controllers, language changes, window resizing, portable mode, external backgrounds, logging, and paths with spaces or accented characters. For checksum verification, use the adjacent `.sha256` file. A successful compilation alone does not validate runtime behavior on every distribution.

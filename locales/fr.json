@@ -90,7 +90,7 @@
     "text.extend_height_to_240_lines": "Étendre la hauteur à 240 lignes",
     "text.format": "Format",
     "text.french": "Français",
-    "text.full_log_in_working_directory": "Journal complet : Z3-Launcher.log dans le dossier de travail",
+    "text.full_log_in_working_directory": "Journaux dans le dossier de travail : Z3-Launcher.log et zelda3.log",
     "text.fullscreen": "Plein écran",
     "text.fullscreen_mode": "Mode plein écran",
     "text.game_language_matching_assets_required": "Langue (ressources correspondantes requises)",
@@ -337,6 +337,9 @@
     "text.controls": "Contrôles",
     "updates.game": "Zelda3 : nouvelle version disponible ({version})",
     "updates.launcher": "Launcher : nouvelle version disponible ({version})",
-    "settings.auto_saved_next_launch": "Le réglage a été automatiquement sauvegardé et sera appliqué au prochain lancement du jeu."
+    "settings.auto_saved_next_launch": "Le réglage a été automatiquement sauvegardé et sera appliqué au prochain lancement du jeu.",
+    "journal.game_started": "Lancement de Zelda 3 (journal du jeu : {path})",
+    "journal.game_stopped": "Zelda 3 s'est terminé normalement.",
+    "journal.game_failed": "Échec de Zelda 3 : {error}"
   }
 }
