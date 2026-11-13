@@ -27,7 +27,8 @@ pub fn check() -> Updates {
         .connect_timeout(Duration::from_secs(5)).timeout(Duration::from_secs(15)).build()
         else { return Updates::default(); };
     let package = if cfg!(windows) { "Z3R-windows-x64.zip" } else { "Z3R-linux-x64.tar.gz" };
-    let game = latest(&client, "xander-haj/Z3R").filter(|r| std::env::consts::ARCH == "x86_64"
+    let game = latest(&client, "xander-haj/Z3R").filter(|r| r.tag_name == crate::download::SUPPORTED_Z3R_RELEASE
+        && std::env::consts::ARCH == "x86_64"
         && r.assets.iter().any(|a| a.name == package)).map(|r| r.tag_name);
     let launcher = latest(&client, "legluondunet/Z3-Launcher").filter(|r| newer(&r.tag_name, env!("CARGO_PKG_VERSION")))
         .map(|r| r.tag_name);
