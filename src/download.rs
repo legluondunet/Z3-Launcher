@@ -13,6 +13,9 @@ use std::{
 };
 
 const API: &str = "https://api.github.com/repos/xander-haj/Z3R/releases/latest";
+/// The bundled Z3R asset generator is built from this exact upstream tag.
+/// A future release must be validated before we allow generating its assets.
+pub const SUPPORTED_Z3R_RELEASE: &str = "v0.2.4";
 const MAX_DOWNLOAD: u64 = 512 * 1024 * 1024;
 #[derive(Deserialize)]
 struct Release {
@@ -79,6 +82,7 @@ pub fn game(destination: &Path, log: &Log) -> Result<String> {
         return Err(tr("download.no_release").into());
     }
     let release: Release = response.error_for_status()?.json()?;
+    ensure_supported_release(&release.tag_name)?;
     let asset = release
         .assets
         .iter()
@@ -104,6 +108,15 @@ pub fn game(destination: &Path, log: &Log) -> Result<String> {
     executable(&destination.join(crate::platform::GAME_BINARY))?;
     Ok(release.tag_name)
 }
+fn ensure_supported_release(tag: &str) -> Result<()> {
+    if tag != SUPPORTED_Z3R_RELEASE {
+        return Err(format!(
+            "Z3R release {tag} is newer than the tested {SUPPORTED_Z3R_RELEASE} asset extractor.              Update Z3-Launcher when support for this release is available."
+        ).into());
+    }
+    Ok(())
+}
+
 fn validate_package(destination: &Path) -> Result<()> {
     // Z3R's native releases contain only the game, its configuration and notices.
     for entry in fs::read_dir(destination)? {
@@ -333,6 +346,8 @@ mod tests {
         assert!(verify_digest(b"bad", Some(&digest)).is_err());
         assert!(verify_digest(b"ok", None).is_err());
         assert!(verify_digest(b"ok", Some("sha256:not-a-valid-hash")).is_err());
+        assert!(ensure_supported_release("v0.2.4").is_ok());
+        assert!(ensure_supported_release("v0.3.0").is_err());
         for p in ["../escape", "/escape", "a/../b", "C:/file", "a\\b"] {
             assert!(relative(p).is_err());
         }
