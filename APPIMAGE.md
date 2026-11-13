@@ -12,13 +12,13 @@ sudo apt-get install -y build-essential pkg-config cmake curl file python3 libsd
 bash ./build-appimage.sh
 ```
 
-The script tests translation catalogs, builds Z3-Launcher in release mode, bundles the required libraries, translations and licenses, and writes `dist/Z3-Launcher-<version>-x86_64.AppImage` and the matching `.sha256` file. CI stamps the Cargo version with the short commit hash, for example `1.2.0+abcdef0`. The script downloads linuxdeploy from its official release if it is not cached; to use a specific version, set `LINUXDEPLOY` to an existing absolute path.
+The script tests translation catalogs, builds Z3-Launcher in release mode, bundles the required libraries, translations and licenses, and writes `dist/Z3-Launcher-<version>-x86_64.AppImage` and the matching `.sha256` file. CI stamps the Cargo version with the short commit hash, for example `2.0.0+abcdef0`. The script downloads linuxdeploy from its official release if it is not cached; to use a specific version, set `LINUXDEPLOY` to an existing absolute path.
 
 ## Run
 
 ```bash
-chmod +x Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
-./Z3-Launcher-1.2.0+abcdef0-x86_64.AppImage
+chmod +x Z3-Launcher-2.0.0+abcdef0-x86_64.AppImage
+./Z3-Launcher-2.0.0+abcdef0-x86_64.AppImage
 ```
 
 If FUSE is unavailable, try `--appimage-extract-and-run`. A compatible user-provided ROM is required to generate Z3R resources. The launcher downloads a prebuilt native Z3R Linux package, validates its GitHub SHA-256 digest, and generates resources locally with its bundled Z3R-specific extractor. It does **not** compile the game from source, and its user does **not** need Rust, Python or Make. Z3R's native Linux executable requires a working SDL2 runtime.
