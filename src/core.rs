@@ -37,7 +37,7 @@ impl Launcher {
         })
     }
     pub fn repo(&self) -> PathBuf {
-        self.root.join("zelda3")
+        self.root.join("Z3R")
     }
     pub fn log(&self, callback: Log) -> Result<Log> {
         let log_path = self.root.join(LOG_FILENAME);
@@ -79,7 +79,7 @@ impl Launcher {
         }))
     }
     /// Find a compatible US ROM next to the launcher without changing the original.
-    /// Installation copies it to zelda3/zelda3.sfc only after assets are generated.
+    /// Installation copies it to Z3R/zelda3.sfc only after assets are generated.
     pub fn adjacent_rom() -> Option<PathBuf> {
         let dir = crate::platform::executable_dir()?;
         let mut candidates: Vec<PathBuf> = fs::read_dir(dir).ok()?
@@ -107,7 +107,9 @@ impl Launcher {
         })
     }
     fn extract(&self, package: &Path, workspace: &Path, args: &[&str], log: &Log) -> Result<()> {
-        let tool = package.join(crate::download::extractor_name());
+        // The Z3R release does not ship an extractor. Use the standalone
+        // extractor bundled with this launcher instead of the game archive.
+        let tool = crate::platform::bundled_extractor();
         if !tool.is_file() {
             return Err(tr("download.extractor_missing").into());
         }
@@ -162,7 +164,7 @@ impl Launcher {
         let temporary = tempfile::tempdir_in(&self.root)?;
         let staged = temporary.path().join("package");
         fs::create_dir(&staged)?;
-        let version = crate::download::game(&staged, log)?;
+        let version = crate::z3r_source::game(&staged, log)?;
         // New installations use OpenGL; the installer preserves existing user settings.
         let ini_path = staged.join("zelda3.ini");
         let mut ini = crate::ini::Ini::parse(&fs::read_to_string(&ini_path)?);
@@ -177,6 +179,10 @@ impl Launcher {
             crate::download::copy_tree(&self.repo().join("assets"), &resources.join("assets"))?;
         }
         self.generate(&staged, &resources, rom, log)?;
+        // Check the exact Z3R asset signature and all payload bounds before
+        // replacing any existing installation.
+        let generated = fs::read(resources.join("zelda3_assets.dat"))?;
+        crate::z3r_source::validate_assets_file(&generated)?;
         fs::rename(
             resources.join("zelda3_assets.dat"),
             staged.join("zelda3_assets.dat"),
@@ -230,6 +236,9 @@ impl Launcher {
             return Err(tr("game_language.resources_missing").into());
         }
         self.generate(&self.repo(), &resources, &us, log)?;
+        crate::z3r_source::validate_assets_file(
+            &fs::read(resources.join("zelda3_assets.dat"))?
+        )?;
         fs::rename(
             resources.join("zelda3_assets.dat"),
             staged.join("zelda3_assets.dat"),

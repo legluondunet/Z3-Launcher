@@ -58,7 +58,7 @@ pub fn config_dir() -> PathBuf {
     portable_dir().map(|root|root.join("config")).unwrap_or_else(||std::env::var_os("XDG_CONFIG_HOME").map(PathBuf::from).unwrap_or_else(|| home().join(".config")).join("Z3-Launcher"))
 }
 #[cfg(not(windows))]
-pub const GAME_BINARY: &str = "zelda3.AppImage";
+pub const GAME_BINARY: &str = "zelda3";
 #[cfg(windows)]
 pub const GAME_BINARY: &str = "zelda3.exe";
 #[cfg(test)]
@@ -116,6 +116,14 @@ pub fn host_command(program: &str) -> std::process::Command {
             .env_remove("Z3_XKB_PRELOAD").env_remove("Z3_HOST_LD_PRELOAD");
     }
     command
+}
+
+/// Use the path inside the actual launcher bundle, including the mounted AppImage.
+pub fn bundled_extractor() -> PathBuf {
+    let name = if cfg!(windows) { "zelda3-extractor.exe" } else { "zelda3-extractor" };
+    std::env::current_exe().unwrap_or_else(|_| PathBuf::from("z3-launcher"))
+        .parent().unwrap_or_else(|| Path::new("."))
+        .join("extractor").join(name)
 }
 
 pub fn shaders_dir() -> PathBuf { data_dir().join("shaders") }

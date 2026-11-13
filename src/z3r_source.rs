@@ -86,6 +86,25 @@ pub fn verify_package(package: &[u8], asset: &Asset) -> Result<()> {
     Ok(())
 }
 
+/// Fetch and stage the official Z3R game package. Never touches an installed game.
+pub fn game(destination: &std::path::Path, log: &crate::core::Log) -> Result<String> {
+    let name = package_name()?;
+    log(crate::i18n::tr("download.lookup").into());
+    let client = client()?;
+    let release = latest(&client)?;
+    let asset = select_asset(&release, name)?;
+    log(crate::i18n::tf("download.package", &[
+        ("version", release.tag_name.clone()), ("name", name.to_owned())
+    ]));
+    let package = download_package(&client, asset)?;
+    if cfg!(windows) {
+        crate::z3r_archive::unpack_zip(&package, destination)?;
+    } else {
+        crate::z3r_archive::unpack_tar_gz(&package, destination)?;
+    }
+    Ok(release.tag_name)
+}
+
 pub fn download_package(client: &Client, asset: &Asset) -> Result<Vec<u8>> {
     if !valid_digest(asset.digest.as_deref())
         || !asset.browser_download_url.starts_with(&format!(
