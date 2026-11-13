@@ -1,6 +1,6 @@
 # Windows
 
-Download the compiled Z3-Launcher from GitHub Actions, then run `z3-launcher.exe`. No MSYS2, Git, Python, Make or GCC installation is required to use it.
+Download the Windows ZIP from the [latest Z3-Launcher release](https://github.com/legluondunet/Z3-Launcher/releases/latest), extract it, then run `z3-launcher.exe`. No MSYS2, Git, Python, Make or GCC installation is required to use it.
 
 Choose the headerless US ROM and click **Download and install**. The launcher downloads the supported Windows x86_64 ZIP from `xander-haj/Z3R` Releases, verifies the release asset's GitHub SHA-256 digest, and runs the standalone Z3R extractor bundled with the launcher locally. The generated `zelda3_assets.dat` sits beside the game executable and its DLLs.
 

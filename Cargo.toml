@@ -1,12 +1,12 @@
 [package]
 name = "z3-launcher"
-version = "1.2.0"
+version = "2.0.0"
 edition = "2021"
 rust-version = "1.88"
 license = "GPL-3.0-or-later"
 authors = ["legluondunet (https://github.com/legluondunet)"]
 repository = "https://github.com/legluondunet/Z3-Launcher"
-description = "Linux and Windows desktop interface for snesrev/zelda3"
+description = "Linux and Windows desktop installer and configuration manager for Z3R"
 
 [features]
 default = ["gui"]
