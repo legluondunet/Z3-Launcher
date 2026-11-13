@@ -37,13 +37,17 @@ def self_test():
     for path in (assets / "palette_usage.bin", root / "other" / "3x5_font.png"):
         if not path.is_file() or not path.stat().st_size:
             raise FileNotFoundError(f"Missing bundled Z3R resource: {path}")
+    # Compile all bundled sources to catch missing/corrupted scripts without
+    # executing code that requires a ROM. compile_resources.py references
+    # util.ROM at import time and cannot be imported before ROM loading.
+    for name in required_scripts:
+        script = assets / name
+        compile(script.read_bytes(), str(script), "exec")
+
     sys.path.insert(0, str(assets))
-    for name in (
-        "util", "tables", "extract_resources", "compile_resources",
-        "sprite_sheets", "sprite_sheet_info",
-    ):
+    for name in ("util", "tables", "sprite_sheet_info", "sprite_sheets", "extract_resources"):
         importlib.import_module(name)
-    print("Z3R resource builder self-test passed (imports and bundled data).")
+    print("Z3R resource builder self-test passed (imports, syntax and bundled data).")
 
 
 def main():
