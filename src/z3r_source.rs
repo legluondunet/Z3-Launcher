@@ -107,6 +107,49 @@ pub fn download_package(client: &Client, asset: &Asset) -> Result<Vec<u8>> {
     Ok(output)
 }
 
+// Verified against the exact kAssets_Sig and kNumberOfAssets constants
+// in xander-haj/Z3R src/assets.h at migration time. Equal signatures are
+// necessary, but not sufficient, to establish gameplay compatibility.
+const ASSET_COUNT: usize = 165;
+const ASSET_SIGNATURE: [u8; 48] = [
+    90, 101, 108, 100, 97, 51, 95, 118, 48, 32, 32, 32, 32, 32, 10, 0,
+    27, 174, 233, 45, 74, 174, 252, 50, 49, 27, 153, 197, 27, 43, 216, 197,
+    132, 101, 173, 169, 36, 108, 15, 155, 176, 169, 57, 131, 174, 101, 51, 207,
+];
+
+pub fn validate_assets_file(data: &[u8]) -> Result<()> {
+    let header_len = 88usize + ASSET_COUNT * 4;
+    if data.len() < header_len || data.get(..48) != Some(&ASSET_SIGNATURE) {
+        return Err("Z3R resource file has an incompatible signature".into());
+    }
+    let read_u32 = |offset: usize| -> Result<usize> {
+        let value = data.get(offset..offset + 4)
+            .ok_or("Z3R resource file has a truncated header")?;
+        Ok(u32::from_le_bytes(value.try_into()?) as usize)
+    };
+    if read_u32(80)? != ASSET_COUNT {
+        return Err("Z3R resource file has an unexpected asset count".into());
+    }
+    let key_len = read_u32(84)?;
+    let mut offset = header_len.checked_add(key_len)
+        .ok_or("Z3R resource file has an invalid key table length")?;
+    if offset > data.len() {
+        return Err("Z3R resource file has a truncated key table".into());
+    }
+    for index in 0..ASSET_COUNT {
+        let size = read_u32(88 + index * 4)?;
+        offset = offset.checked_add(3)
+            .map(|n| n & !3)
+            .ok_or("Z3R resource file has invalid alignment")?;
+        offset = offset.checked_add(size)
+            .ok_or("Z3R resource file has an invalid asset size")?;
+        if offset > data.len() {
+            return Err("Z3R resource file has truncated asset data".into());
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -146,6 +189,26 @@ mod tests {
         assert!(verify_package(b"modified", asset).is_err());
         assert!(!valid_digest(Some("sha256:xyz")));
         assert!(!valid_digest(Some("md5:aaaaaaaa")));
+    }
+
+    #[test]
+    fn asset_layout_validation_rejects_incompatible_or_truncated_payloads() {
+        let mut data = vec![0u8; 88 + ASSET_COUNT * 4];
+        data[..48].copy_from_slice(&ASSET_SIGNATURE);
+        data[80..84].copy_from_slice(&(ASSET_COUNT as u32).to_le_bytes());
+        assert!(validate_assets_file(&data).is_ok());
+
+        data[47] ^= 0xff;
+        assert!(validate_assets_file(&data).is_err());
+        data[47] ^= 0xff;
+        data[80..84].copy_from_slice(&164u32.to_le_bytes());
+        assert!(validate_assets_file(&data).is_err());
+        data[80..84].copy_from_slice(&(ASSET_COUNT as u32).to_le_bytes());
+        data[84..88].copy_from_slice(&1u32.to_le_bytes());
+        assert!(validate_assets_file(&data).is_err());
+        data[84..88].copy_from_slice(&0u32.to_le_bytes());
+        data[88..92].copy_from_slice(&1u32.to_le_bytes());
+        assert!(validate_assets_file(&data).is_err());
     }
 
     #[test]
