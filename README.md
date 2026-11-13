@@ -149,9 +149,16 @@ z3-launcher setup --rom /path/to/zelda3.sfc
 z3-launcher update
 z3-launcher run
 z3-launcher status
+z3-launcher --version
+z3-launcher status --verbose
+z3-launcher run --verbose
 ```
 
-Use `--dir DIRECTORY` to choose a different workspace. See [WINDOWS.md](WINDOWS.md) and [APPIMAGE.md](APPIMAGE.md) for platform-specific information.
+Use `--dir DIRECTORY` to choose a different workspace and `--rom US_ROM` with `setup`. The `--version` flag prints the installed launcher version and short build commit without launching the GUI or changing any files.
+
+The optional `--verbose` flag works with `setup`, `update`, `run` and `status`, before or after the command. It adds version, platform, workspace and path diagnostics to the terminal and `Z3-Launcher.log`. For `run --verbose`, Zelda 3 stdout/stderr are also shown in the terminal with a `[zelda3]` prefix, while the actual game output remains **only** in `zelda3.log` on disk. Without `--verbose`, the terminal remains concise and game output is still captured in its own log.
+
+The existing `status` command reports installation status; there is no separate `--verify` flag. See [WINDOWS.md](WINDOWS.md) and [APPIMAGE.md](APPIMAGE.md) for platform-specific information.
 
 ## Changelog
 

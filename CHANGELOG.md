@@ -22,6 +22,7 @@ The next release, 1.2.0, consolidates the portable workspace, adjacent-ROM disco
 - Improve the forest UI with a compact translucent header, clearer app/version information, a slightly dimmed background, aligned controls and a vertically resizable journal. Remove the routine embedded-background journal message.
 - Rename the launcher journal to `Z3-Launcher.log`. Preserve older `launcher.log` data during migration without overwriting an existing new log.
 - Split game runtime output into `zelda3.log` beside `Z3-Launcher.log` at the workspace root, with two selectable journal views. Retain game output between sessions.
+- Add `--version` (version and commit) and `--verbose` for diagnostic CLI output. Verbose `run` additionally echoes Zelda 3 output in the terminal without mixing game messages into the launcher log.
 - Keep the five interface translations and document the updated installation and portable-mode behavior.
 
 

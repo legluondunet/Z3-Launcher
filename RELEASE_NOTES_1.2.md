@@ -7,6 +7,7 @@ This release improves portable use of Z3-Launcher and polishes its forest-themed
 - **Custom background:** override the embedded forest artwork with `config/background.png` (or `background.png`) beside the executable/AppImage, without recompiling or enabling portable mode. The background repeats as tiles, and invalid images fall back safely.
 - **UI refinements:** a translucent compact header improves app-name/version legibility; backgrounds are slightly dimmed for contrast, form controls are better aligned, and the journal can be resized vertically. The unnecessary embedded-background startup message was removed.
 - **Separate journals:** installation and launch messages remain in `Z3-Launcher.log`, while the game's stdout/stderr are recorded in `zelda3.log` right next to it (not in `zelda3/`). The interface provides separate views. In portable mode, both files sit beside the executable/AppImage; existing legacy launcher logs are preserved on upgrade.
+- **Command-line support:** `--version` reports the launcher version and build commit without opening the GUI. `--verbose` adds diagnostic details to `setup`, `update`, `run` and `status`; verbose game output is echoed to the terminal while remaining isolated in `zelda3.log`.
 - **Documentation:** clarify AppImage portable-home priority, adjacent-ROM discovery and external background configuration.
 
 **Packages:** Windows x86_64 ZIP, Linux x86_64 TAR.GZ, AppImage (+ SHA-256 checksum), and experimental Flatpak.

@@ -62,7 +62,7 @@ impl Launcher {
         }))
     }
     /// Capture the game's own stdout and stderr independently of the launcher journal.
-    fn game_log(&self) -> Result<Log> {
+    fn game_log(&self, callback: Option<Log>) -> Result<Log> {
         let file = Arc::new(Mutex::new(
             fs::OpenOptions::new()
                 .create(true)
@@ -72,6 +72,9 @@ impl Launcher {
         Ok(Arc::new(move |line| {
             if let Ok(mut f) = file.lock() {
                 let _ = writeln!(f, "{line}");
+            }
+            if let Some(callback) = &callback {
+                callback(line);
             }
         }))
     }
@@ -236,6 +239,9 @@ impl Launcher {
         Ok(())
     }
     pub fn run(&self, log: &Log) -> Result<()> {
+        self.run_with_verbosity(log, false)
+    }
+    fn run_with_verbosity(&self, log: &Log, verbose: bool) -> Result<()> {
         let bin = self.repo().join(crate::platform::GAME_BINARY);
         if !bin.is_file() || !self.repo().join("zelda3_assets.dat").is_file() {
             return Err(tr("download.install_first").into());
@@ -256,7 +262,10 @@ impl Launcher {
         command.current_dir(self.repo());
         #[cfg(target_os = "linux")]
         command.env("APPIMAGE_EXTRACT_AND_RUN", "1");
-        let game_output = self.game_log()?;
+        let terminal_echo: Option<Log> = verbose.then(|| {
+            Arc::new(|line| println!("[zelda3] {line}")) as Log
+        });
+        let game_output = self.game_log(terminal_echo)?;
         log(tf("journal.game_started", &[("path", self.root.join(GAME_LOG_FILENAME).display().to_string())]));
         let result = run_logged(command, crate::platform::GAME_BINARY, &game_output);
         match &result {
@@ -266,10 +275,15 @@ impl Launcher {
         result
     }
     pub fn action(&self, action: &str, rom: Option<&Path>, log: &Log) -> Result<()> {
+        self.action_with_verbosity(action, rom, log, false)
+    }
+    pub fn action_with_verbosity(
+        &self, action: &str, rom: Option<&Path>, log: &Log, verbose: bool,
+    ) -> Result<()> {
         match action {
             "setup" => self.install_game(rom.ok_or(tr("text.select_a_us_rom"))?, log),
             "update" => self.update(log),
-            "run" => self.run(log),
+            "run" => self.run_with_verbosity(log, verbose),
             "status" => {
                 log(tf(
                     "launcher.status",
@@ -390,7 +404,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let launcher = Launcher { root: dir.path().to_owned() };
         let launcher_log = launcher.log(Arc::new(|_| {})).unwrap();
-        let game_log = launcher.game_log().unwrap();
+        let game_log = launcher.game_log(None).unwrap();
         launcher_log("Launcher event".to_owned());
         game_log("Game stdout".to_owned());
         game_log("Game stderr".to_owned());
@@ -409,8 +423,8 @@ mod tests {
     fn game_journal_appends_without_erasing_an_earlier_session() {
         let dir = tempfile::tempdir().unwrap();
         let launcher = Launcher { root: dir.path().to_owned() };
-        launcher.game_log().unwrap()("First session".to_owned());
-        launcher.game_log().unwrap()("Second session".to_owned());
+        launcher.game_log(None).unwrap()("First session".to_owned());
+        launcher.game_log(None).unwrap()("Second session".to_owned());
         let contents = fs::read_to_string(dir.path().join(GAME_LOG_FILENAME)).unwrap();
         assert!(contents.contains("First session"));
         assert!(contents.contains("Second session"));
